@@ -1,0 +1,118 @@
+/* Recruitment Module Styling - Light Orange & White Theme */
+
+.recruitment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .recruitment-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.screener-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-normal);
+}
+
+.screener-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-orange);
+}
+
+.match-score-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 0.825rem;
+  letter-spacing: 0.3px;
+}
+
+.score-high { 
+  background: #ecfdf5; 
+  color: #059669; 
+  border: 1px solid #a7f3d0; 
+}
+.score-medium { 
+  background: #fff7ed; 
+  color: #ea580c; 
+  border: 1px solid #fed7aa; 
+}
+.score-low { 
+  background: #fff1f2; 
+  color: #e11d48; 
+  border: 1px solid #fecdd3; 
+}
+
+.skill-tag {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-right: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+[data-theme="dark"] .skill-tag {
+  background: rgba(234, 88, 12, 0.15);
+  color: #fb923c;
+  border: 1px solid rgba(234, 88, 12, 0.3);
+}
+
+.timeline-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.timeline-step::before {
+  content: '';
+  position: absolute;
+  top: 24px;
+  left: 15px;
+  width: 2px;
+  height: calc(100% - 10px);
+  background: var(--border-color);
+}
+.timeline-step:last-child::before { display: none; }
+
+.timeline-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--brand-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--brand-orange);
+  flex-shrink: 0;
+  z-index: 2;
+  box-shadow: 0 2px 5px rgba(234, 88, 12, 0.2);
+}
+
+.timeline-icon.done {
+  background: var(--accent-emerald);
+  border-color: var(--accent-emerald);
+  color: #fff;
+  box-shadow: 0 2px 5px rgba(16, 185, 129, 0.25);
+}

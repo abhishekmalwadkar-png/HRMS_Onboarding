@@ -1,0 +1,40 @@
+Category	Use Case	Automation Example
+Recruitment	Resume Screening	Extract candidate details, skills, experience and match against JD
+ 	Interview Scheduling	Automatically schedule interviews based on candidate/interviewer availability
+ 	Candidate Communication	Send interview confirmation, reminders, rejection/selection emails
+ 	Offer Letter Generation	Generate offer letters from candidate/HRMS data
+ 	Background Verification	Trigger BGV request and track status
+Onboarding	New Employee Onboarding	Create employee record across HRMS, ITSM, AD and other systems
+ 	Document Collection	Collect Aadhaar/PAN, education certificates, bank details, etc.
+ 	Employee Account Creation	Create AD/email/application accounts
+ 	Access Provisioning	Assign applications/roles based on department and designation
+ 	Laptop/Asset Allocation	Create IT/asset requests and update inventory
+ 	Induction Management	Schedule induction and send training/calendar invitations
+Employee Services	HR Helpdesk	Chatbot/agent answers HR policy and employee queries
+ 	Leave Management	Check leave balance and submit/approve leave requests
+ 	Attendance Management	Retrieve attendance, identify missing punches and submit corrections
+ 	Payslip Retrieval	Automatically provide current/previous payslips
+ 	Salary/Compensation Queries	Retrieve salary-related information from HRMS
+ 	Employee Letter Generation	Generate experience, employment, salary and relieving letters
+ 	Employee Information Update	Automate changes to address, bank details, emergency contact, etc.
+Payroll	Payroll Data Validation	Validate attendance, leave, deductions and employee master data
+ 	Payroll Exception Handling	Identify missing/incorrect payroll information
+ 	Salary Revision	Update salary revisions across HR/payroll systems
+ 	Tax Document Processing	Collect and validate tax declarations/documents
+Performance	Performance Review Reminders	Notify employees/managers about review deadlines
+ 	Goal/Performance Data Collection	Collect employee goals and review inputs
+ 	Appraisal Workflow	Route appraisal for employee → manager → HR approval
+Learning & Development	Training Assignment	Automatically assign training based on role/department
+ 	Training Reminder	Send reminders for pending mandatory courses
+ 	Certification Tracking	Track employee certifications and expiry dates
+Employee Exit	Resignation Processing	Capture resignation and trigger exit workflow
+ 	Exit Approval	Route resignation through manager/HR approval
+ 	Access Revocation	Disable AD, email and application access
+ 	Asset Recovery	Generate asset-return request and track status
+ 	Exit Interview	Send questionnaire and collect responses
+ 	Full & Final Settlement	Trigger payroll/finance activities
+ 	Relieving/Experience Letter	Generate documents after exit clearance
+HR Analytics	HR Reports	Daily/weekly/monthly automated HR reports
+ 	Attrition Reporting	Consolidate employee exit data and generate reports
+ 	Workforce Reporting	Department-wise headcount, joining and exit reports
+ 	Compliance Monitoring	Identify missing employee documents/training/certifications

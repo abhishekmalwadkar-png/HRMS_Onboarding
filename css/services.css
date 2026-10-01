@@ -1,0 +1,127 @@
+/* Employee Services Module Styling - Light Orange & White Theme */
+
+.services-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .services-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Chatbot Widget */
+.chatbot-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  height: 480px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.chatbot-header {
+  padding: 1rem 1.25rem;
+  background: var(--bg-accent-soft);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  background: #ffffff;
+}
+
+[data-theme="dark"] .chat-messages {
+  background: var(--bg-secondary);
+}
+
+.chat-bubble {
+  max-width: 82%;
+  padding: 0.75rem 1.1rem;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.chat-bubble.bot {
+  background: #f8f6f4;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+[data-theme="dark"] .chat-bubble.bot {
+  background: #25201c;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chat-bubble.user {
+  background: var(--accent-gradient);
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 3px 8px rgba(234, 88, 12, 0.25);
+}
+
+.chat-input-row {
+  padding: 0.75rem 1rem;
+  background: #fcfaf8;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 0.5rem;
+}
+
+[data-theme="dark"] .chat-input-row {
+  background: #181512;
+}
+
+/* Leave Balance Cards */
+.leave-balance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.balance-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.1rem 1rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-fast);
+}
+
+.balance-card:hover {
+  border-color: var(--border-orange);
+  background: var(--bg-accent-soft);
+  transform: translateY(-1px);
+}
+
+.balance-card .val {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--brand-orange);
+  line-height: 1.2;
+}
+
+.balance-card .lbl {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  font-weight: 600;
+}

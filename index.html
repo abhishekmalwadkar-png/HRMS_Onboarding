@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MangoHRMS | Enterprise HR Automation Suite</title>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Stylesheets (Light Orange & White Theme) -->
+  <link rel="stylesheet" href="css/styles.css?v=7.0">
+  <link rel="stylesheet" href="css/wizard.css?v=7.0">
+  <link rel="stylesheet" href="css/dashboard.css?v=7.0">
+  <link rel="stylesheet" href="css/recruitment.css?v=7.0">
+  <link rel="stylesheet" href="css/services.css?v=7.0">
+  <link rel="stylesheet" href="css/exit.css?v=7.0">
+  <link rel="stylesheet" href="css/analytics.css?v=7.0">
+</head>
+<body>
+
+  <!-- FULLSCREEN LOGIN PORTAL (HR & CANDIDATE LOGINS) -->
+  <div id="loginView" class="login-page-wrapper">
+    <div class="login-modal-box">
+      <div class="login-brand-header">
+        <div class="brand" style="justify-content: center; margin-bottom: 0.75rem;">
+          <div class="brand-icon">
+            <i class="fa-solid fa-mango"></i>
+          </div>
+          <span class="brand-title">MangoHRMS Suite</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Enterprise HR Portal, Approvals & Service Catalog Suite</p>
+      </div>
+
+      <!-- Role Tabs Switcher -->
+      <div class="login-role-tabs">
+        <button type="button" class="login-role-btn active" id="btnRoleHR" onclick="selectLoginRole('hr')">
+          <i class="fa-solid fa-user-tie"></i> HR Administrator
+        </button>
+        <button type="button" class="login-role-btn" id="btnRoleCandidate" onclick="selectLoginRole('candidate')">
+          <i class="fa-solid fa-user"></i> Candidate / New Hire
+        </button>
+      </div>
+
+      <!-- HR Login Form -->
+      <div id="formSectionHR">
+        <form onsubmit="event.preventDefault(); loginAs('hr', document.getElementById('hrEmail').value);">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">HR Work Email</label>
+            <input type="email" id="hrEmail" class="form-control" value="hr.admin@mangohrms.com" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">Password</label>
+            <input type="password" class="form-control" value="••••••••" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem;">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Login as HR Administrator
+          </button>
+        </form>
+
+        <div class="quick-login-card">
+          <div style="font-size: 0.82rem; line-height: 1.4;">
+            <strong>⚡ Quick HR Access</strong>
+            <div style="color: var(--text-muted);">View candidates, manage Approvals & issue Laptop tickets.</div>
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="loginAs('hr', 'hr.admin@mangohrms.com', 'Victoria Vance')" style="padding: 0.45rem 0.85rem; font-size: 0.82rem; white-space: nowrap;">
+            Instant HR Login
+          </button>
+        </div>
+      </div>
+
+      <!-- Candidate Login Form -->
+      <div id="formSectionCandidate" style="display: none;">
+        <form onsubmit="event.preventDefault(); loginAs('candidate', document.getElementById('candEmail').value, document.getElementById('candName').value);">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">Candidate Full Legal Name</label>
+            <input type="text" id="candName" class="form-control" value="Sarah Jenkins" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">Personal Email Address</label>
+            <input type="email" id="candEmail" class="form-control" value="sarah.jenkins@mangohrms.com" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">Passcode / PIN</label>
+            <input type="password" class="form-control" value="123456" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem;">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Login as Candidate
+          </button>
+        </form>
+
+        <div class="quick-login-card">
+          <div style="font-size: 0.82rem; line-height: 1.4;">
+            <strong>⚡ Quick Candidate Access</strong>
+            <div style="color: var(--text-muted);">Fill personal details, upload docs & submit to ServiceNow.</div>
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="loginAs('candidate', 'sarah.jenkins@mangohrms.com', 'Sarah Jenkins')" style="padding: 0.45rem 0.85rem; font-size: 0.82rem; white-space: nowrap;">
+            Instant Candidate Login
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- App Layout Wrapper (Left Sidebar + Main Content) -->
+  <div class="app-layout">
+    
+    <!-- LEFT SIDEBAR MENU BAR -->
+    <aside class="sidebar navbar" id="appSidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <div class="brand-icon">
+            <i class="fa-solid fa-mango"></i>
+          </div>
+          <div class="brand-text">
+            <span class="brand-title">MangoHRMS</span>
+            <span class="brand-subtitle">Enterprise Suite</span>
+          </div>
+          <button class="sidebar-close-btn" onclick="toggleSidebarCollapse()" title="Close / Collapse Sidebar" id="sidebarCloseBtn">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+        </div>
+
+        <!-- Section Label -->
+        <div class="sidebar-section-title">MAIN NAVIGATION</div>
+
+        <!-- Vertical Menu Items -->
+        <nav class="sidebar-nav">
+          <button class="nav-tab-btn active" id="tabApprovals" onclick="switchView('approvals')">
+            <i class="fa-solid fa-clipboard-check"></i>
+            <span class="nav-label">Approvals</span>
+            <span class="count-bubble" id="approvalCountBadge" style="display: none;">0</span>
+          </button>
+          <button class="nav-tab-btn" id="tabRecruitment" onclick="switchView('recruitment')">
+            <i class="fa-solid fa-user-check"></i>
+            <span class="nav-label">Recruitment</span>
+          </button>
+          <button class="nav-tab-btn" id="tabDashboard" onclick="switchView('dashboard')">
+            <i class="fa-solid fa-users-gear"></i>
+            <span class="nav-label">Directory</span>
+          </button>
+          <button class="nav-tab-btn" id="tabWizard" onclick="switchView('wizard')">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span class="nav-label">Onboarding</span>
+          </button>
+          <button class="nav-tab-btn" id="tabServices" onclick="switchView('services')">
+            <i class="fa-solid fa-headset"></i>
+            <span class="nav-label">Services & AI</span>
+          </button>
+          <button class="nav-tab-btn" id="tabExit" onclick="switchView('exit')">
+            <i class="fa-solid fa-door-open"></i>
+            <span class="nav-label">Exit Management</span>
+          </button>
+          <button class="nav-tab-btn" id="tabAnalytics" onclick="switchView('analytics')">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span class="nav-label">HR Analytics</span>
+          </button>
+        </nav>
+
+        <!-- Quick Database Action -->
+        <div class="sidebar-action-box">
+          <button class="btn btn-secondary sidebar-action-btn" onclick="autoFillDemoData()" title="Pre-fill random Indian candidate data directly from autofill database">
+            <i class="fa-solid fa-database text-accent"></i> <span>Auto-Fill Indian Profile</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-controls">
+          <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+          <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Theme Mode</span>
+        </div>
+
+        <div id="navUserProfile">
+          <!-- Dynamically rendered by auth.js -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT MAIN CONTENT AREA -->
+    <div class="main-layout">
+      <!-- Slim Top Header Bar -->
+      <header class="top-header">
+        <div class="top-header-left">
+          <button class="sidebar-toggle-btn" onclick="toggleSidebar()" id="sidebarToggle" title="Toggle Sidebar">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="breadcrumb-container" id="currentViewBreadcrumb">
+            <span style="color: var(--text-muted); font-size: 0.82rem;">Enterprise Portal</span>
+            <span style="color: var(--border-orange-strong); margin: 0 5px;">/</span>
+            <strong style="color: var(--text-main); font-size: 0.95rem;">HR Approvals & Provisioning Orchestrator</strong>
+          </div>
+        </div>
+
+        <div class="top-header-right">
+          <!-- Live System Status Badges for all 4 Automated Engines -->
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary" onclick="autoFillDemoData()" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; border-color: var(--border-orange); background: var(--bg-accent-soft); font-weight: 700; color: var(--brand-orange);" title="Pre-fill random Indian candidate profile into Onboarding Wizard">
+              <i class="fa-solid fa-wand-magic-sparkles text-accent"></i> Auto-Fill Indian DB
+            </button>
+
+            <!-- 1. ServiceNow Badge -->
+            <span class="badge badge-verified" style="font-size: 0.73rem; padding: 0.35rem 0.65rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;" onclick="showServiceNowConfigModal()" title="ServiceNow Service Catalog Instance Active (ven04528)">
+              <span class="live-pulse-dot"></span> <strong>ServiceNow</strong>
+            </span>
+
+            <!-- 2. T4 AD Badge -->
+            <a href="https://t4.automationedge.com/#/login" target="_blank" class="badge" style="font-size: 0.73rem; padding: 0.35rem 0.65rem; border: 1px solid #fed7aa; color: #c2410c; background: #fff7ed; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;" title="AutomationEdge T4 Active Directory Engine Online">
+              <span class="live-pulse-dot"></span> <strong>T4 AD</strong>
+            </a>
+
+            <!-- 3. Microsoft 365 Badge -->
+            <a href="https://admin.microsoft.com/#/users" target="_blank" class="badge" style="font-size: 0.73rem; padding: 0.35rem 0.65rem; border: 1px solid #bfdbfe; color: #1d4ed8; background: #eff6ff; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;" title="Microsoft Office 365 / Entra ID Cloud Connected">
+              <span class="live-pulse-dot"></span> <strong>M365</strong>
+            </a>
+
+            <!-- 4. OrangeHRM Badge -->
+            <a href="http://10.41.5.39/orangehrm/web/index.php/auth/login" target="_blank" class="badge" style="font-size: 0.73rem; padding: 0.35rem 0.65rem; border: 1px solid #fed7aa; color: #ea580c; background: #fff7ed; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;" title="OrangeHRM PIM Enterprise Server Connected">
+              <span class="live-pulse-dot"></span> <strong>OrangeHRM</strong>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Container for Views -->
+      <div class="app-container">
+
+    <!-- MODULE 0: HR CANDIDATE APPROVALS & SERVICENOW LAPTOP PROVISIONING -->
+    <section id="approvalsView" class="view-section">
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <h2><i class="fa-solid fa-clipboard-check text-accent"></i> Candidate Verification & Approvals</h2>
+              <span class="badge badge-verified" onclick="showServiceNowConfigModal()" style="cursor: pointer;" title="ServiceNow Service Catalog Integration Active">
+                <i class="fa-solid fa-server"></i> ServiceNow: ven04528 (Online)
+              </span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+              Review candidate personal details and uploaded documents. Approve from HR portal or synchronize via ServiceNow to trigger Laptop IT asset ticket creation.
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <button class="btn btn-secondary" onclick="loadApprovals()" title="Refresh Approvals list">
+              <i class="fa-solid fa-rotate"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Approval Metric Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
+          <div class="stat-card">
+            <div class="stat-icon pending"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div class="stat-details">
+              <div class="stat-value" id="approvalsPendingCount">0</div>
+              <div class="stat-label">Pending HR Review</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon approved"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="stat-details">
+              <div class="stat-value" id="approvalsApprovedCount">0</div>
+              <div class="stat-label">Verified & Approved</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon laptop"><i class="fa-solid fa-laptop"></i></div>
+            <div class="stat-details">
+              <div class="stat-value" id="approvalsLaptopCount">0</div>
+              <div class="stat-label">Laptops Provisioned</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search, Filters and Pending Submissions Controls -->
+      <div style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+          <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-inbox text-accent"></i> Pending Onboarding Submissions (Action Required)
+          </h3>
+
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <div class="search-box" style="min-width: 260px;">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="approvalsSearchInput" class="form-control" placeholder="Search candidate, REQ, role..." oninput="filterApprovalsList()">
+            </div>
+            <button class="btn btn-secondary" onclick="syncServiceNowApprovals()" title="Synchronize pending approvals with ServiceNow PDI">
+              <i class="fa-solid fa-rotate text-accent"></i> Sync SN
+            </button>
+          </div>
+        </div>
+
+        <div id="pendingApprovalsContainer">
+          <!-- Dynamically loaded by approvals.js -->
+        </div>
+      </div>
+
+      <!-- Approved Onboarding & IT Asset History Table -->
+      <div class="glass-card">
+        <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-clock-rotate-left text-accent"></i> Approved Onboarding & Laptop Hardware History</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Candidate Profile</th>
+                <th>Role & Dept</th>
+                <th>ServiceNow Request</th>
+                <th>Doc Verification</th>
+                <th>Laptop Ticket & Hardware</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="approvedHistoryBody">
+              <!-- Dynamically loaded by approvals.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 1: RECRUITMENT -->
+    <section id="recruitmentView" class="view-section">
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <h2><i class="fa-solid fa-magnifying-glass-chart text-accent"></i> AI Recruitment & Talent Acquisition</h2>
+              <div id="aeRpaBadge"></div>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Resume Screening, JD Skill Matching, Automated Interview Scheduling & Candidate Communication.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-primary" onclick="simulateResumeScreening()">
+              <i class="fa-solid fa-user-plus"></i> Screen New Candidate
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="recruitment-grid" id="recruitmentContainer">
+        <!-- Dynamically rendered by recruitment.js -->
+      </div>
+    </section>
+
+
+    <!-- MODULE 2: ONBOARDING WIZARD -->
+    <section id="wizardView" class="view-section">
+      <div class="glass-card">
+        <!-- Wizard Header & Title -->
+        <div class="wizard-header">
+          <div class="wizard-title-bar">
+            <div class="wizard-title-group">
+              <h1>Employee Onboarding Portal</h1>
+              <p>Submit your personal details and upload required verification documents for HR & ServiceNow approval.</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <span class="badge badge-verified" style="cursor: pointer; padding: 0.4rem 0.75rem; font-size: 0.78rem;" onclick="showServiceNowConfigModal()" title="ServiceNow Service Catalog Integration Active">
+                <i class="fa-solid fa-server"></i> <strong>ServiceNow:</strong> ven04528 (Online)
+              </span>
+              <button type="button" class="btn btn-secondary" onclick="autoFillDemoData()" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;" title="Fetch random Indian candidate profile from autofill database">
+                <i class="fa-solid fa-database text-accent"></i> Auto-Fill Indian Profile
+              </button>
+              <div class="badge badge-pending" id="currentStepBadge">Step 1 of 2</div>
+            </div>
+          </div>
+
+          <!-- Stepper Progress Bar (2 Steps) -->
+          <div class="stepper" style="max-width: 600px; margin: 0 auto 2.5rem auto;">
+            <div class="stepper-progress" id="stepperProgress"></div>
+            
+            <div class="step-item active" data-step="1" onclick="jumpToStep(1)">
+              <div class="step-circle"><i class="fa-solid fa-user"></i></div>
+              <span class="step-label">Personal Details</span>
+            </div>
+
+            <div class="step-item" data-step="2" onclick="jumpToStep(2)">
+              <div class="step-circle"><i class="fa-solid fa-folder-open"></i></div>
+              <span class="step-label">Documents & Signature</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wizard Form -->
+        <form id="onboardingForm" onsubmit="handleFormSubmit(event)">
+
+          <!-- STEP 1: PERSONAL DETAILS (ONLY 7 REQUIRED FIELDS) -->
+          <div class="step-content active" data-step-content="1">
+            <h3 style="margin-bottom: 1.25rem;"><i class="fa-solid fa-id-card text-accent"></i> Personal Details</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Full Legal Name <span class="required">*</span></label>
+                <input type="text" id="fullName" class="form-control" placeholder="Sarah Jenkins" required>
+              </div>
+
+              <div class="form-group">
+                <label>Personal Email Address <span class="required">*</span></label>
+                <input type="email" id="email" class="form-control" placeholder="sarah.jenkins@mangohrms.com" required>
+              </div>
+
+              <div class="form-group">
+                <label>Phone Number <span class="required">*</span></label>
+                <input type="tel" id="phone" class="form-control" placeholder="+1(555) 349-8201" required>
+              </div>
+
+              <div class="form-group">
+                <label>Date of Birth <span class="required">*</span></label>
+                <input type="date" id="dob" class="form-control" required>
+              </div>
+
+              <div class="form-group">
+                <label>Emergency Contact Name <span class="required">*</span></label>
+                <input type="text" id="emergencyName" class="form-control" placeholder="Mark Jenkins (Spouse)" required>
+              </div>
+
+              <div class="form-group">
+                <label>Emergency Contact Phone <span class="required">*</span></label>
+                <input type="tel" id="emergencyPhone" class="form-control" placeholder="+1 (555) 882-1092" required>
+              </div>
+
+              <div class="form-group full" style="grid-column: span 2;">
+                <label>Residential Address <span class="required">*</span></label>
+                <input type="text" id="address" class="form-control" placeholder="742 Evergreen Terrace, San Francisco, CA 94102" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2: DOCUMENT UPLOAD & SERVICENOW SUBMISSION -->
+          <div class="step-content" data-step-content="2">
+            <h3 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-cloud-arrow-up text-accent"></i> Identity, Education & Compliance Documents</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Upload your verification documents below. Once submitted, a ServiceNow Service Request (REQ & RITM) is generated for HR verification and Laptop allocation.</p>
+
+            <div class="form-grid">
+              <!-- Doc 1: Govt ID / Aadhaar / PAN -->
+              <div class="form-group">
+                <label>1. Government ID / Aadhaar / PAN / Passport <span class="required">*</span></label>
+                <div class="dropzone" id="dropzoneId" onclick="triggerFileUpload('fileId')">
+                  <i class="fa-solid fa-file-shield dropzone-icon"></i>
+                  <div><strong>Click or drag Government ID file here</strong></div>
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">PDF, JPG, PNG (Aadhaar, PAN, Passport)</span>
+                  <input type="file" id="fileId" hidden onchange="handleFileSelected(event, 'previewId')">
+                </div>
+                <div id="previewId" class="uploaded-file-preview" style="display: none;"></div>
+              </div>
+
+              <!-- Doc 2: Education Certificate -->
+              <div class="form-group">
+                <label>2. Educational Degree / Qualification Certificate <span class="required">*</span></label>
+                <div class="dropzone" id="dropzoneEdu" onclick="triggerFileUpload('fileEdu')">
+                  <i class="fa-solid fa-graduation-cap dropzone-icon"></i>
+                  <div><strong>Click or drag Degree Certificate here</strong></div>
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">PDF or Scanned Degree Copy</span>
+                  <input type="file" id="fileEdu" hidden onchange="handleFileSelected(event, 'previewEdu')">
+                </div>
+                <div id="previewEdu" class="uploaded-file-preview" style="display: none;"></div>
+              </div>
+
+              <!-- Doc 3: Tax Form / W4 / Form 16 -->
+              <div class="form-group">
+                <label>3. Tax Declaration / W-4 / Form 16 <span class="required">*</span></label>
+                <div class="dropzone" id="dropzoneTax" onclick="triggerFileUpload('fileTax')">
+                  <i class="fa-solid fa-file-invoice-dollar dropzone-icon"></i>
+                  <div><strong>Click or drag Signed Tax Document here</strong></div>
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">PDF or Scanned Copy</span>
+                  <input type="file" id="fileTax" hidden onchange="handleFileSelected(event, 'previewTax')">
+                </div>
+                <div id="previewTax" class="uploaded-file-preview" style="display: none;"></div>
+              </div>
+
+              <!-- Doc 4: Signed Offer / Experience Letter -->
+              <div class="form-group">
+                <label>4. Signed Offer Letter / Relieving Certificate <span class="required">*</span></label>
+                <div class="dropzone" id="dropzoneOffer" onclick="triggerFileUpload('fileOffer')">
+                  <i class="fa-solid fa-file-signature dropzone-icon"></i>
+                  <div><strong>Click or drag Signed Offer Document here</strong></div>
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">Signed Offer Letter or Relieving Letter</span>
+                  <input type="file" id="fileOffer" hidden onchange="handleFileSelected(event, 'previewOffer')">
+                </div>
+                <div id="previewOffer" class="uploaded-file-preview" style="display: none;"></div>
+              </div>
+
+              <div class="form-group">
+                <label>Bank Account Number for Payroll <span class="required">*</span></label>
+                <input type="text" id="bankAccount" class="form-control" placeholder="e.g. 987654321012" value="987654321012" required>
+              </div>
+
+              <div class="form-group">
+                <label>Routing / IFSC / Swift Code <span class="required">*</span></label>
+                <input type="text" id="routingCode" class="form-control" placeholder="e.g. ACH12345678" value="ACH12345678" required>
+              </div>
+            </div>
+
+            <!-- ServiceNow Flow Notice Box -->
+            <div style="background: var(--bg-accent-soft); border: 1px solid var(--border-orange); border-radius: var(--radius-md); padding: 1.25rem; margin-top: 1.5rem;">
+              <h4 style="color: var(--brand-orange); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <i class="fa-solid fa-server"></i> ServiceNow Service Catalog (REQ / RITM) Automation
+              </h4>
+              <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+                Upon clicking Submit below, a ServiceNow Service Request will be created with message: <em>"Candidate has uploaded documents and filled personal details. Please verify and approve."</em> Once HR approves in ServiceNow, a confirmation is sent to the candidate and the Laptop request is automatically dispatched.
+              </p>
+            </div>
+          </div>
+
+          <!-- Wizard Footer Navigation Controls -->
+          <div class="wizard-footer">
+            <button type="button" class="btn btn-secondary" id="btnPrev" onclick="changeStep(-1)" style="display: none;">
+              <i class="fa-solid fa-arrow-left"></i> Previous (Personal Info)
+            </button>
+            <div style="margin-left: auto; display: flex; gap: 1rem;">
+              <button type="button" class="btn btn-primary" id="btnNext" onclick="changeStep(1)">
+                Proceed to Document Upload <i class="fa-solid fa-arrow-right"></i>
+              </button>
+              <button type="submit" class="btn btn-emerald" id="btnSubmit" style="display: none; background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);">
+                <i class="fa-solid fa-paper-plane"></i> Submit to ServiceNow (Verify Docs & Request Laptop)
+              </button>
+            </div>
+          </div>
+
+        </form>
+
+      </div>
+    </section>
+
+
+    <!-- MODULE 3: DIRECTORY & ADMIN DASHBOARD -->
+    <section id="dashboardView" class="view-section">
+      <div class="dashboard-header">
+        <div>
+          <h2>Employee Onboarding & Directory Dashboard</h2>
+          <p style="color: var(--text-muted); font-size: 0.95rem;">Track candidate progress, verify uploaded documents, and approve hardware dispatch.</p>
+        </div>
+        <button class="btn btn-primary" onclick="exportDataToCSV()">
+          <i class="fa-solid fa-file-csv"></i> Export Dossier CSV
+        </button>
+      </div>
+
+      <!-- Quick Metrics Grid (Clickable Filters) -->
+      <div class="stats-grid">
+        <div class="stat-card clickable active" id="statCardTotal" onclick="filterByStatCard('ALL')" style="cursor: pointer;">
+          <div class="stat-icon purple"><i class="fa-solid fa-users"></i></div>
+          <div class="stat-info">
+            <div class="stat-value" id="statTotal">4</div>
+            <div class="stat-label">Total Onboardings</div>
+          </div>
+        </div>
+
+        <div class="stat-card clickable" id="statCardPending" onclick="filterByStatCard('Pending Review')" style="cursor: pointer;">
+          <div class="stat-icon cyan"><i class="fa-solid fa-clock"></i></div>
+          <div class="stat-info">
+            <div class="stat-value" id="statPending">2</div>
+            <div class="stat-label">Pending Verification</div>
+          </div>
+        </div>
+
+        <div class="stat-card clickable" id="statCardApproved" onclick="filterByStatCard('Approved')" style="cursor: pointer;">
+          <div class="stat-icon emerald"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="stat-info">
+            <div class="stat-value" id="statApproved">2</div>
+            <div class="stat-label">Approved & Provisioned</div>
+          </div>
+        </div>
+
+        <div class="stat-card clickable" id="statCardHardware" onclick="filterByStatCard('Hardware Dispatched')" style="cursor: pointer;">
+          <div class="stat-icon amber"><i class="fa-solid fa-truck-fast"></i></div>
+          <div class="stat-info">
+            <div class="stat-value" id="statHardware">1</div>
+            <div class="stat-label">Hardware Dispatched</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls & Table Filters -->
+      <div class="glass-card" style="padding: 1.5rem;">
+        <div class="dashboard-controls">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" class="form-control" placeholder="Search candidate name, email or role..." onkeyup="filterCandidatesTable()">
+          </div>
+
+          <div class="filter-group">
+            <select id="deptFilter" class="form-control" style="width: auto;" onchange="filterCandidatesTable()">
+              <option value="ALL">All Departments</option>
+              <option value="Engineering">Engineering</option>
+              <option value="Product Design">Product Design</option>
+              <option value="Human Resources">Human Resources</option>
+              <option value="Marketing">Marketing</option>
+            </select>
+
+            <select id="statusFilter" class="form-control" style="width: auto;" onchange="filterCandidatesTable()">
+              <option value="ALL">All Statuses</option>
+              <option value="Approved">Approved</option>
+              <option value="Pending Review">Pending Review</option>
+              <option value="Draft">Draft</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Candidate Data Table -->
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Candidate</th>
+                <th>Department & Role</th>
+                <th>Start Date</th>
+                <th>Hardware Selection</th>
+                <th>Doc Verification</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="candidateTableBody">
+              <!-- Dynamically populated by dashboard.js -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- MODULE 4: EMPLOYEE SERVICES & AI CHATBOT -->
+    <section id="servicesView" class="view-section">
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <h2><i class="fa-solid fa-hands-holding-circle text-accent"></i> Employee Self-Services & AI Helpdesk</h2>
+        <p style="color: var(--text-muted);">Leave & attendance management, payslip retrieval, HR document generator, and policy AI chatbot.</p>
+      </div>
+
+      <div class="services-layout">
+        <!-- Left Column: Leave Management & HR Letters -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          
+          <!-- Leave Balances -->
+          <div class="glass-card" style="padding: 1.25rem;">
+            <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-calendar-check text-accent"></i> Leave & Attendance Balance</h3>
+            <div class="leave-balance-grid">
+              <div class="balance-card">
+                <div class="val">10</div>
+                <div class="lbl">Casual Leave Remaining</div>
+              </div>
+              <div class="balance-card">
+                <div class="val">8</div>
+                <div class="lbl">Sick Leave Remaining</div>
+              </div>
+              <div class="balance-card">
+                <div class="val">15</div>
+                <div class="lbl">Earned Leave Remaining</div>
+              </div>
+            </div>
+
+            <!-- Submit Leave Form -->
+            <form onsubmit="submitLeaveRequest(event)" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; align-items: flex-end;">
+              <div>
+                <label style="font-size: 0.8rem; color: var(--text-muted);">Type</label>
+                <select id="lvType" class="form-control" style="padding: 0.5rem;"><option>Casual Leave</option><option>Sick Leave</option></select>
+              </div>
+              <div>
+                <label style="font-size: 0.8rem; color: var(--text-muted);">From</label>
+                <input type="date" id="lvFrom" class="form-control" style="padding: 0.5rem;" required>
+              </div>
+              <div>
+                <label style="font-size: 0.8rem; color: var(--text-muted);">To</label>
+                <input type="date" id="lvTo" class="form-control" style="padding: 0.5rem;" required>
+              </div>
+              <input type="hidden" id="lvReason" value="Personal leave request">
+              <button type="submit" class="btn btn-primary" style="padding: 0.55rem 1rem;"><i class="fa-solid fa-plus"></i> Apply</button>
+            </form>
+          </div>
+
+          <!-- Leave History Table -->
+          <div class="glass-card" style="padding: 1.25rem;">
+            <h4 style="margin-bottom: 0.75rem;">Recent Leave Applications</h4>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead><tr><th>Employee</th><th>Leave Type</th><th>Dates</th><th>Reason</th><th>Status</th></tr></thead>
+                <tbody id="leaveTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- HR Document & Payslip Generator -->
+          <div class="glass-card" style="padding: 1.25rem;">
+            <h3 style="margin-bottom: 0.75rem;"><i class="fa-solid fa-file-pdf text-accent"></i> Automated HR Letter & Payslip Generator</h3>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <button class="btn btn-secondary" onclick="downloadHRDocument('September 2026 Payslip')"><i class="fa-solid fa-download"></i> Payslip (Sep 2026)</button>
+              <button class="btn btn-secondary" onclick="downloadHRDocument('Employment Verification Letter')"><i class="fa-solid fa-certificate"></i> Employment Letter</button>
+              <button class="btn btn-secondary" onclick="downloadHRDocument('Salary Certificate')"><i class="fa-solid fa-money-bill-wave"></i> Salary Certificate</button>
+              <button class="btn btn-secondary" onclick="downloadHRDocument('Experience Certificate')"><i class="fa-solid fa-award"></i> Experience Letter</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: AI Helpdesk Chatbot -->
+        <div>
+          <div class="chatbot-box">
+            <div class="chatbot-header">
+              <div class="brand-icon" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="fa-solid fa-robot"></i></div>
+              <div>
+                <strong style="display: block; font-size: 0.95rem;">MangoHRMS AI Policy Assistant</strong>
+                <span style="font-size: 0.75rem; color: var(--accent-emerald);">● Online 24/7</span>
+              </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+              <div class="chat-bubble bot">
+                👋 Hello! I am your AI HR Policy Assistant. Ask me anything about Leave rules, Payslips, Health insurance, or Employee letters!
+              </div>
+            </div>
+
+            <div class="chat-input-row">
+              <input type="text" id="chatInput" class="form-control" placeholder="Ask policy query (e.g. leave policy, payslip)..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+              <button class="btn btn-primary" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- MODULE 5: EMPLOYEE EXIT MANAGEMENT -->
+    <section id="exitView" class="view-section">
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2><i class="fa-solid fa-person-walking-arrow-right text-accent"></i> Employee Exit & Offboarding Management</h2>
+            <p style="color: var(--text-muted);">Resignation tracking, clearance approvals, Active Directory access revocation, and FnF settlement.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 1.5rem;">
+        
+        <!-- Submit Resignation Form -->
+        <div class="glass-card" style="padding: 1.5rem;">
+          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-file-signature text-accent"></i> Initiate Resignation Workflow</h3>
+          <form onsubmit="submitResignation(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="form-group">
+              <label>Employee Name</label>
+              <input type="text" id="exitEmpName" class="form-control" placeholder="e.g. Samantha Chang" required>
+            </div>
+            <div class="form-group">
+              <label>Department</label>
+              <select id="exitDept" class="form-control" required><option>Marketing</option><option>Engineering</option><option>Product Design</option></select>
+            </div>
+            <div class="form-group">
+              <label>Last Working Day (LWD)</label>
+              <input type="date" id="exitLwd" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Reason for Resignation</label>
+              <textarea id="exitReason" class="form-control" rows="3" placeholder="Brief reason..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-emerald"><i class="fa-solid fa-paper-plane"></i> Submit Resignation</button>
+          </form>
+        </div>
+
+        <!-- Clearance Pipeline Cards -->
+        <div>
+          <h3 style="margin-bottom: 1rem;">Active Exit & Offboarding Clearances</h3>
+          <div class="exit-pipeline" id="exitPipelineContainer"></div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- MODULE 6: HR ANALYTICS & REPORTING -->
+    <section id="analyticsView" class="view-section">
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2><i class="fa-solid fa-chart-line text-accent"></i> HR Intelligence & Workforce Analytics</h2>
+            <p style="color: var(--text-muted);">Headcount metrics, attrition reporting, department headcount breakdown & compliance audit.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" onclick="generateHRReport('Monthly Attrition')"><i class="fa-solid fa-file-pdf"></i> Attrition Report</button>
+            <button class="btn btn-primary" onclick="generateHRReport('Workforce Headcount')"><i class="fa-solid fa-file-excel"></i> Headcount Summary</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-grid" style="margin-bottom: 1.5rem;">
+        <div class="stat-card">
+          <div class="stat-icon purple"><i class="fa-solid fa-users"></i></div>
+          <div class="stat-info">
+            <div class="stat-value" id="analyticsTotalHeadcount">5</div>
+            <div class="stat-label">Total Headcount</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon emerald"><i class="fa-solid fa-user-check"></i></div>
+          <div class="stat-info">
+            <div class="stat-value" id="analyticsActiveCount">3</div>
+            <div class="stat-label">Active Permanent</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon amber"><i class="fa-solid fa-clock"></i></div>
+          <div class="stat-info">
+            <div class="stat-value" id="analyticsPendingCount">2</div>
+            <div class="stat-label">Pending Onboarding</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon cyan"><i class="fa-solid fa-percent"></i></div>
+          <div class="stat-info">
+            <div class="stat-value">3.2%</div>
+            <div class="stat-label">Monthly Attrition Rate</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="analytics-grid">
+        <div class="chart-card">
+          <h3>Department Headcount Breakdown</h3>
+          <div class="metric-bar-group" id="deptHeadcountBars"></div>
+        </div>
+
+        <div class="chart-card">
+          <h3>HR Compliance & Audit Board</h3>
+          <div class="metric-bar-group">
+            <div class="metric-bar-item">
+              <div class="metric-bar-label"><span>Aadhaar / ID Verification</span><span><strong>100%</strong></span></div>
+              <div class="progress-track"><div class="progress-fill" style="width: 100%; background: var(--accent-emerald);"></div></div>
+            </div>
+            <div class="metric-bar-item">
+              <div class="metric-bar-label"><span>Tax Forms W-4 / Form 16</span><span><strong>80%</strong></span></div>
+              <div class="progress-track"><div class="progress-fill" style="width: 80%;"></div></div>
+            </div>
+            <div class="metric-bar-item">
+              <div class="metric-bar-label"><span>Mandatory Compliance Training</span><span><strong>60%</strong></span></div>
+              <div class="progress-track"><div class="progress-fill" style="width: 60%; background: var(--accent-amber);"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+      </div> <!-- app-container -->
+    </div> <!-- main-layout -->
+  </div> <!-- app-layout -->
+
+  <!-- Candidate Details Dossier Modal -->
+  <div class="modal-overlay" id="dossierModal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 id="modalCandidateName"><i class="fa-solid fa-user-gear text-accent"></i> Candidate Dossier</h3>
+        <button class="icon-btn" onclick="closeDossierModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div id="modalBodyContent" style="display: flex; flex-direction: column; gap: 1rem;">
+        <!-- Filled by JS -->
+      </div>
+
+      <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button class="btn btn-secondary" onclick="closeDossierModal()">Close</button>
+        <button class="btn btn-primary" onclick="printDossier()"><i class="fa-solid fa-print"></i> Print Dossier</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="js/auth.js?v=7.0"></script>
+  <script src="js/approvals.js?v=7.0"></script>
+  <script src="js/signature.js?v=7.0"></script>
+  <script src="js/wizard.js?v=7.0"></script>
+  <script src="js/dashboard.js?v=7.0"></script>
+  <script src="js/recruitment.js?v=7.0"></script>
+  <script src="js/services.js?v=7.0"></script>
+  <script src="js/exit.js?v=7.0"></script>
+  <script src="js/analytics.js?v=7.0"></script>
+  <script src="js/app.js?v=7.0"></script>
+
+</body>
+</html>
