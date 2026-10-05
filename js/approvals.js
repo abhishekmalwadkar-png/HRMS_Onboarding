@@ -279,15 +279,10 @@ function renderApprovalsUI() {
             <span>Orchestrates 1st ServiceNow ➔ 2nd AD ➔ 3rd Office 365 ➔ 4th OrangeHRM (with O365 mail)</span>
           </div>
 
-          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-            <!-- Option 1: Approve from Portal -->
-            <button class="btn btn-primary" id="btnApprove_${cand.id}" onclick="executeHRApproval('${cand.id}', 'HR Portal')" style="padding: 0.6rem 1.35rem; font-size: 0.9rem; background: var(--accent-gradient); border-color: transparent; font-weight: 800; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);">
-              <i class="fa-solid fa-circle-check"></i> Approve & Trigger All 4 Engines
-            </button>
-            
-            <!-- Option 2: Approve via ServiceNow -->
-            <button class="btn btn-secondary" onclick="executeHRApproval('${cand.id}', 'ServiceNow (ven04528)')" style="padding: 0.6rem 1.25rem; font-size: 0.88rem; border-color: var(--border-orange); color: var(--brand-orange); background: white; font-weight: 700;" title="Synchronize Approval from ServiceNow PDI">
-              <i class="fa-solid fa-server text-accent"></i> Approve via ServiceNow
+          <div>
+            <!-- Single Approve Button -->
+            <button class="btn btn-primary" id="btnApprove_${cand.id}" onclick="executeHRApproval('${cand.id}', 'HR Portal')" style="padding: 0.6rem 1.6rem; font-size: 0.92rem; background: var(--accent-gradient); border-color: transparent; font-weight: 800; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35); border-radius: 8px;">
+              <i class="fa-solid fa-circle-check"></i> Approve
             </button>
           </div>
         </div>
@@ -381,7 +376,7 @@ async function executeHRApproval(candidateId, approvalSource) {
   const btn = document.getElementById('btnApprove_' + candidateId);
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Executing (1st SN ➔ 2nd AD ➔ 3rd M365 ➔ 4th OrangeHRM)...`;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Approving...`;
   }
 
   showToast(`⏳ [${approvalSource}] Initiating Sequential Provisioning for ${cand.fullName}: 1st ServiceNow ➔ 2nd AD ➔ 3rd Office 365 ➔ 4th OrangeHRM...`, 'info');
