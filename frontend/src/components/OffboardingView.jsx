@@ -498,50 +498,6 @@ export default function OffboardingView() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                    <div style={{ color: 'var(--text-muted)' }}>Manager Approval</div>
-                    <span style={{ color: '#10b981', fontWeight: 700 }}><i className="fa-solid fa-circle-check"></i> Approved</span>
-                  </div>
-                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                    <div style={{ color: 'var(--text-muted)' }}>IT Asset Recovery</div>
-                    <span style={{ color: isCleared ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
-                      <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-clock'}`}></i>{' '}
-                      {isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department'}
-                    </span>
-                  </div>
-                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                    <div style={{ color: 'var(--text-muted)' }}>FnF Settlement</div>
-                    <span style={{ color: item.financeClearance ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
-                      <i className={`fa-solid ${item.financeClearance ? 'fa-circle-check' : 'fa-clock'}`}></i> {item.fnfStatus}
-                    </span>
-                  </div>
-                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                    <div style={{ color: 'var(--text-muted)' }}>Active Directory</div>
-                    <span style={{ color: item.accessRevoked ? '#e11d48' : '#10b981', fontWeight: 700 }}>
-                      <i className={`fa-solid ${item.accessRevoked ? 'fa-user-slash' : 'fa-user-check'}`}></i> {item.accessRevoked ? 'Disabled' : 'Active'}
-                    </span>
-                  </div>
-                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                    <div style={{ color: 'var(--text-muted)' }}>Office 365 (Cloud)</div>
-                    <span style={{ color: item.o365Deleted ? '#e11d48' : '#10b981', fontWeight: 700 }}>
-                      <i className={`fa-brands fa-microsoft`}></i> {item.o365Deleted ? 'User Deleted' : 'Active'}
-                    </span>
-                  </div>
-                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                    <div style={{ color: 'var(--text-muted)' }}>OrangeHRM PIM</div>
-                    <span style={{ color: item.orangeHrmDeleted ? '#e11d48' : '#10b981', fontWeight: 700 }}>
-                      <i className={`fa-solid ${item.orangeHrmDeleted ? 'fa-trash-can' : 'fa-database'}`}></i> {item.orangeHrmDeleted ? 'Profile Deleted' : 'Active'}
-                    </span>
-                  </div>
-                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                    <div style={{ color: 'var(--text-muted)' }}>HR Notification</div>
-                    <span style={{ color: item.emailSent ? '#10b981' : 'var(--text-muted)', fontWeight: 700 }}>
-                      <i className={`fa-solid ${item.emailSent ? 'fa-envelope-circle-check' : 'fa-envelope'}`}></i> {item.emailSent ? 'Dispatched' : 'Pending Offboard'}
-                    </span>
-                  </div>
-                </div>
-
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                   <button
                     className="btn btn-secondary"
