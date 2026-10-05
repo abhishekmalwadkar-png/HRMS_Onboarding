@@ -1075,6 +1075,9 @@ export default function RecruitmentView() {
       {/* ========================================================= */}
       {/* 3. AI RESUME SCREENING & T4 MATCH EXECUTION FLOW MODAL */}
       {/* ========================================================= */}
+      {/* ========================================================= */}
+      {/* 3. AI RESUME SCREENING & T4 MATCH EXECUTION FLOW MODAL */}
+      {/* ========================================================= */}
       {showFlowModal && activeFlowCandidate && (
         <div
           style={{
@@ -1086,60 +1089,60 @@ export default function RecruitmentView() {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
-            padding: '1rem',
+            padding: '0.75rem',
           }}
         >
           <div
             className="glass-card"
             style={{
-              maxWidth: '680px',
+              maxWidth: '640px',
               width: '100%',
               background: '#ffffff',
-              borderRadius: '14px',
-              padding: '1.75rem',
+              borderRadius: '12px',
+              padding: '1.2rem 1.35rem',
               maxHeight: '92vh',
               overflowY: 'auto',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.25)',
             }}
           >
             {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.45rem' }}>
               <div>
-                <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
+                <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '1.05rem' }}>
                   <i className="fa-solid fa-sitemap" style={{ color: '#0284c7' }}></i> AI Resume Screening & T4 Matching Pipeline
                 </h3>
-                <p style={{ margin: '3px 0 0 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                  Sequential Orchestration Flow: Document Ingestion • T4 Get JD • T4 Match JD • AI Fitment Benchmark
+                <p style={{ margin: '2px 0 0 0', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                  Sequential Orchestration: Document Parsing • T4 Get JD • T4 Match JD • AI Scoring Fitment
                 </p>
               </div>
               <button
                 onClick={() => setShowFlowModal(false)}
-                style={{ background: 'none', border: 'none', fontSize: '1.3rem', color: '#64748b', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: '#64748b', cursor: 'pointer', padding: '2px 6px' }}
               >
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
             {/* Candidate & Role Quick Info Badge */}
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '7px', padding: '0.45rem 0.8rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
               <div>
-                <strong style={{ fontSize: '0.95rem', color: '#0f172a' }}>{activeFlowCandidate.name || activeFlowCandidate.candidateName}</strong>
-                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginLeft: '6px' }}>({activeFlowCandidate.department || 'Engineering'})</span>
+                <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{activeFlowCandidate.name || activeFlowCandidate.candidateName}</strong>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '5px' }}>({activeFlowCandidate.department || 'Engineering'})</span>
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                Role: <strong style={{ color: '#0284c7' }}>{activeFlowCandidate.role || activeFlowCandidate.appliedRole || 'Senior AI Engineer'}</strong> • Score: <span className="badge badge-verified" style={{ fontSize: '0.75rem' }}>{activeFlowCandidate.score || '94%'}</span>
+              <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                Role: <strong style={{ color: '#0284c7' }}>{activeFlowCandidate.role || activeFlowCandidate.appliedRole || 'Senior AI Engineer'}</strong> • Score: <span className="badge badge-verified" style={{ fontSize: '0.72rem', padding: '1px 6px' }}>{activeFlowCandidate.score || '94%'}</span>
               </div>
             </div>
 
             {/* Vertical Flow Steps with Timeline Line */}
-            <div style={{ position: 'relative', paddingLeft: '2.25rem' }}>
+            <div style={{ position: 'relative', paddingLeft: '1.9rem' }}>
               {/* Timeline Connecting Line */}
               <div
                 style={{
                   position: 'absolute',
-                  left: '13px',
-                  top: '12px',
-                  bottom: '24px',
+                  left: '11px',
+                  top: '10px',
+                  bottom: '16px',
                   width: '2px',
                   background: '#e2e8f0',
                   zIndex: 1,
@@ -1147,14 +1150,14 @@ export default function RecruitmentView() {
               />
 
               {/* STEP 1: Resume Document Parsing & Competency Extraction */}
-              <div style={{ position: 'relative', marginBottom: '0.9rem' }}>
+              <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: flowStepStatus.step1 === 'running' ? '#eff6ff' : '#f0fdf4',
                     border: `2px solid ${flowStepStatus.step1 === 'running' ? '#0284c7' : '#16a34a'}`,
@@ -1162,37 +1165,36 @@ export default function RecruitmentView() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: flowStepStatus.step1 === 'running' ? '#0284c7' : '#16a34a',
-                    fontSize: '0.78rem',
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
                   <i className={`fa-solid ${flowStepStatus.step1 === 'running' ? 'fa-spinner fa-spin' : 'fa-file-lines'}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#15803d' }}>1. Resume Document Parsing & Extraction</strong>
-                    <span className={`badge ${flowStepStatus.step1 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bbf7d0', borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#15803d' }}>1. Resume Document Parsing & Extraction</strong>
+                    <span className={`badge ${flowStepStatus.step1 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
                       {flowStepStatus.step1 === 'running' ? 'PARSING...' : '✓ EXTRACTED'}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    <div>• <strong>Extracted Candidate:</strong> {activeFlowCandidate.name || activeFlowCandidate.candidateName} ({activeFlowCandidate.email || 'candidate@example.com'})</div>
-                    <div>• <strong>Experience:</strong> {activeFlowCandidate.experienceYears || '5.5'} Years Technical Background</div>
-                    <div>• <strong>Extracted Skills:</strong> {(activeFlowCandidate.skills || ['Python', 'PyTorch', 'Generative AI', 'FastAPI']).slice(0, 5).join(', ')}</div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div>• <strong>Candidate:</strong> {activeFlowCandidate.name || activeFlowCandidate.candidateName} ({activeFlowCandidate.email || 'candidate@example.com'}) • <strong>Exp:</strong> {activeFlowCandidate.experienceYears || '5.5'} Yrs</div>
+                    <div>• <strong>Skills:</strong> {(activeFlowCandidate.skills || ['Python', 'PyTorch', 'Generative AI', 'FastAPI']).slice(0, 5).join(', ')}</div>
                   </div>
                 </div>
               </div>
 
               {/* STEP 2: T4 Workflow: HR Demo Recruitment Get JD */}
-              <div style={{ position: 'relative', marginBottom: '0.9rem' }}>
+              <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: flowStepStatus.step2 === 'running' ? '#eff6ff' : (flowStepStatus.step2 === 'complete' ? '#f0fdf4' : '#f8fafc'),
                     border: `2px solid ${flowStepStatus.step2 === 'running' ? '#0284c7' : (flowStepStatus.step2 === 'complete' ? '#16a34a' : '#cbd5e1')}`,
@@ -1200,41 +1202,36 @@ export default function RecruitmentView() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: flowStepStatus.step2 === 'running' ? '#0284c7' : (flowStepStatus.step2 === 'complete' ? '#16a34a' : '#94a3b8'),
-                    fontSize: '0.78rem',
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
                   <i className={`fa-solid ${flowStepStatus.step2 === 'running' ? 'fa-spinner fa-spin' : 'fa-robot'}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step2 === 'complete' ? '#bfdbfe' : '#e2e8f0'}`, borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#0369a1' }}>2. T4 RPA: HR Demo Recruitment Get JD</strong>
-                    <span className={`badge ${flowStepStatus.step2 === 'running' ? 'badge-pending' : (flowStepStatus.step2 === 'complete' ? 'badge-verified' : '')}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step2 === 'complete' ? '#bfdbfe' : '#e2e8f0'}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#0369a1' }}>2. T4 RPA: HR Demo Recruitment Get JD</strong>
+                    <span className={`badge ${flowStepStatus.step2 === 'running' ? 'badge-pending' : (flowStepStatus.step2 === 'complete' ? 'badge-verified' : '')}`} style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
                       {flowStepStatus.step2 === 'running' ? 'RUNNING ON T4' : (flowStepStatus.step2 === 'complete' ? '✓ WORKFLOW COMPLETE' : 'WAITING')}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    <div>• <strong>T4 Workflow:</strong> <code>HR Demo Recruitment Get JD</code></div>
-                    <div>• <strong>Input Parameter:</strong> <code>job_name: "{activeFlowCandidate.role || activeFlowCandidate.appliedRole || 'Senior AI Engineer'}"</code></div>
-                    <div>• <strong>Automation Request:</strong> <strong>#{flowData?.getJd?.automationRequestId || '3295982'}</strong></div>
-                    <div>• <strong>RPA Agent:</strong> <code>{flowData?.getJd?.agentName || 'mahesh@mspevent-win-1'}</code></div>
-                    <div style={{ color: '#15803d', fontSize: '0.74rem', marginTop: '2px', fontWeight: 600 }}>
-                      ✓ {flowData?.getJd?.message || `Job Description specifications retrieved for ${activeFlowCandidate.role || activeFlowCandidate.appliedRole || 'Senior AI Engineer'}`}
-                    </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div>• <strong>Workflow:</strong> <code>HR Demo Recruitment Get JD</code> &nbsp;•&nbsp; <strong>Param:</strong> <code>job_name: "{activeFlowCandidate.role || activeFlowCandidate.appliedRole || 'Senior AI Engineer'}"</code></div>
+                    <div>• <strong>Req:</strong> #{flowData?.getJd?.automationRequestId || '3295982'} • <strong>Agent:</strong> <code>{flowData?.getJd?.agentName || 'mahesh@mspevent-win-1'}</code> • <span style={{ color: '#15803d', fontWeight: 600 }}>✓ JD extracted from portal</span></div>
                   </div>
                 </div>
               </div>
 
               {/* STEP 3: T4 Workflow: HR Demo Recruitment Match JD */}
-              <div style={{ position: 'relative', marginBottom: '0.9rem' }}>
+              <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: flowStepStatus.step3 === 'running' ? '#eff6ff' : (flowStepStatus.step3 === 'complete' ? '#f0fdf4' : '#f8fafc'),
                     border: `2px solid ${flowStepStatus.step3 === 'running' ? '#0284c7' : (flowStepStatus.step3 === 'complete' ? '#16a34a' : '#cbd5e1')}`,
@@ -1242,41 +1239,36 @@ export default function RecruitmentView() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: flowStepStatus.step3 === 'running' ? '#0284c7' : (flowStepStatus.step3 === 'complete' ? '#16a34a' : '#94a3b8'),
-                    fontSize: '0.78rem',
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
                   <i className={`fa-solid ${flowStepStatus.step3 === 'running' ? 'fa-spinner fa-spin' : 'fa-magnifying-glass-chart'}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step3 === 'complete' ? '#bfdbfe' : '#e2e8f0'}`, borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#0369a1' }}>3. T4 RPA: HR Demo Recruitment Match JD</strong>
-                    <span className={`badge ${flowStepStatus.step3 === 'running' ? 'badge-pending' : (flowStepStatus.step3 === 'complete' ? 'badge-verified' : '')}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step3 === 'complete' ? '#bfdbfe' : '#e2e8f0'}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#0369a1' }}>3. T4 RPA: HR Demo Recruitment Match JD</strong>
+                    <span className={`badge ${flowStepStatus.step3 === 'running' ? 'badge-pending' : (flowStepStatus.step3 === 'complete' ? 'badge-verified' : '')}`} style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
                       {flowStepStatus.step3 === 'running' ? 'RUNNING ON T4' : (flowStepStatus.step3 === 'complete' ? '✓ WORKFLOW COMPLETE' : 'WAITING')}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    <div>• <strong>T4 Workflow:</strong> <code>HR Demo Recruitment Match JD</code></div>
-                    <div>• <strong>Input Parameter:</strong> <code>job_name: "{activeFlowCandidate.role || activeFlowCandidate.appliedRole || 'Senior AI Engineer'}"</code></div>
-                    <div>• <strong>Automation Request:</strong> <strong>#{flowData?.matchJd?.automationRequestId || '3295983'}</strong></div>
-                    <div>• <strong>RPA Agent:</strong> <code>{flowData?.matchJd?.agentName || 'mahesh@mspevent-win-1'}</code></div>
-                    <div style={{ color: '#15803d', fontSize: '0.74rem', marginTop: '2px', fontWeight: 600 }}>
-                      ✓ {flowData?.matchJd?.message || `Candidate competencies benchmarked against ${activeFlowCandidate.role || activeFlowCandidate.appliedRole || 'Senior AI Engineer'}`}
-                    </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div>• <strong>Workflow:</strong> <code>HR Demo Recruitment Match JD</code> &nbsp;•&nbsp; <strong>Param:</strong> <code>job_name: "{activeFlowCandidate.role || activeFlowCandidate.appliedRole || 'Senior AI Engineer'}"</code></div>
+                    <div>• <strong>Req:</strong> #{flowData?.matchJd?.automationRequestId || '3295983'} • <strong>Agent:</strong> <code>{flowData?.matchJd?.agentName || 'mahesh@mspevent-win-1'}</code> • <span style={{ color: '#15803d', fontWeight: 600 }}>✓ Candidate matched to JD</span></div>
                   </div>
                 </div>
               </div>
 
               {/* STEP 4: AI Match Score & Benchmark Computation */}
-              <div style={{ position: 'relative', marginBottom: '0.9rem' }}>
+              <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: flowStepStatus.step4 === 'running' ? '#eff6ff' : (flowStepStatus.step4 === 'complete' ? '#f0fdf4' : '#f8fafc'),
                     border: `2px solid ${flowStepStatus.step4 === 'running' ? '#0284c7' : (flowStepStatus.step4 === 'complete' ? '#16a34a' : '#cbd5e1')}`,
@@ -1284,23 +1276,22 @@ export default function RecruitmentView() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: flowStepStatus.step4 === 'running' ? '#0284c7' : (flowStepStatus.step4 === 'complete' ? '#16a34a' : '#94a3b8'),
-                    fontSize: '0.78rem',
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
                   <i className={`fa-solid ${flowStepStatus.step4 === 'running' ? 'fa-spinner fa-spin' : 'fa-brain'}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step4 === 'complete' ? '#fde68a' : '#e2e8f0'}`, borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#b45309' }}>4. AI Scoring & Fitment Benchmark</strong>
-                    <span className={`badge ${flowStepStatus.step4 === 'running' ? 'badge-pending' : (flowStepStatus.step4 === 'complete' ? 'badge-verified' : '')}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step4 === 'complete' ? '#fde68a' : '#e2e8f0'}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#b45309' }}>4. AI Scoring & Fitment Benchmark</strong>
+                    <span className={`badge ${flowStepStatus.step4 === 'running' ? 'badge-pending' : (flowStepStatus.step4 === 'complete' ? 'badge-verified' : '')}`} style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
                       {flowStepStatus.step4 === 'running' ? 'COMPUTING...' : `✓ MATCH: ${activeFlowCandidate.score || '94%'}`}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    <div>• <strong>Suitability Assessment:</strong> <span style={{ color: '#15803d', fontWeight: 700 }}>{activeFlowCandidate.recommendation || 'Strong Match - Highly Recommended for Technical Assessment'}</span></div>
-                    <div>• <strong>Role Compatibility:</strong> High domain alignment for {activeFlowCandidate.department || 'Engineering'}</div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div>• <strong>Suitability:</strong> <span style={{ color: '#15803d', fontWeight: 600 }}>{activeFlowCandidate.recommendation || 'Strong Match - Recommended for Technical Interview'}</span></div>
                   </div>
                 </div>
               </div>
@@ -1310,10 +1301,10 @@ export default function RecruitmentView() {
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: flowStepStatus.step5 === 'running' ? '#eff6ff' : (flowStepStatus.step5 === 'complete' ? '#f0fdf4' : '#f8fafc'),
                     border: `2px solid ${flowStepStatus.step5 === 'running' ? '#0284c7' : (flowStepStatus.step5 === 'complete' ? '#16a34a' : '#cbd5e1')}`,
@@ -1321,36 +1312,35 @@ export default function RecruitmentView() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: flowStepStatus.step5 === 'running' ? '#0284c7' : (flowStepStatus.step5 === 'complete' ? '#16a34a' : '#94a3b8'),
-                    fontSize: '0.78rem',
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
                   <i className={`fa-solid ${flowStepStatus.step5 === 'running' ? 'fa-spinner fa-spin' : 'fa-check-double'}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step5 === 'complete' ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#15803d' }}>5. Pipeline Ingestion & Ready for Interview</strong>
-                    <span className={`badge ${flowStepStatus.step5 === 'running' ? 'badge-pending' : (flowStepStatus.step5 === 'complete' ? 'badge-verified' : '')}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step5 === 'complete' ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#15803d' }}>5. Pipeline Ingestion & Ready for Interview</strong>
+                    <span className={`badge ${flowStepStatus.step5 === 'running' ? 'badge-pending' : (flowStepStatus.step5 === 'complete' ? 'badge-verified' : '')}`} style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
                       {flowStepStatus.step5 === 'running' ? 'INGESTING...' : '✓ ACTIVE IN PIPELINE'}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    <div>• Candidate profile active under <strong>{activeFlowCandidate.role || activeFlowCandidate.appliedRole || 'Senior AI Engineer'}</strong>.</div>
-                    <div>• Ready to schedule technical Google Meet interview.</div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div>• Candidate active in pipeline under <strong>{activeFlowCandidate.role || activeFlowCandidate.appliedRole || 'Senior AI Engineer'}</strong>.</div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Modal Footer Controls */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', gap: '0.6rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.85rem', gap: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.65rem' }}>
               <button
                 className="btn btn-secondary"
                 onClick={() => setShowFlowModal(false)}
-                style={{ fontSize: '0.85rem' }}
+                style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
               >
-                Close Pipeline View
+                Close View
               </button>
               <button
                 className="btn btn-primary"
@@ -1358,7 +1348,7 @@ export default function RecruitmentView() {
                   setShowFlowModal(false);
                   openInterviewModal(activeFlowCandidate);
                 }}
-                style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: 'transparent', fontWeight: 700, fontSize: '0.85rem' }}
+                style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: 'transparent', fontWeight: 700, fontSize: '0.8rem', padding: '0.35rem 0.85rem' }}
               >
                 <i className="fa-solid fa-calendar-plus"></i> Schedule Interview
               </button>

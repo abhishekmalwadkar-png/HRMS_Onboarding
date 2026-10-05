@@ -1,6 +1,258 @@
 {
   "employees": [],
-  "recruitment": [],
+  "recruitment": [
+    {
+      "id": "CAND-362",
+      "name": "Vikram Adve",
+      "candidateName": "Vikram Adve",
+      "email": "vikram.adve@valuedx.com",
+      "phone": "+91 98230 45678",
+      "experienceYears": 4.5,
+      "skills": [
+        "Python",
+        "PyTorch",
+        "Generative AI",
+        "LLMs",
+        "LangChain",
+        "RAG",
+        "FastAPI",
+        "Docker",
+        "Machine Learning",
+        "Transformers",
+        "NLP",
+        "Vector Databases",
+        "Prompt Engineering",
+        "Cloud Architecture",
+        "Kubernetes",
+        "AWS"
+      ],
+      "role": "Senior AI Engineer",
+      "appliedRole": "Senior AI Engineer",
+      "department": "Engineering",
+      "score": "98%",
+      "matchScore": "98%",
+      "stage": "AI Screened & Qualified",
+      "status": "Screened",
+      "recommendation": "Highly Recommended",
+      "matchedSkills": [
+        "Python",
+        "PyTorch",
+        "Generative AI",
+        "LLMs",
+        "LangChain",
+        "RAG",
+        "FastAPI",
+        "Docker",
+        "Machine Learning",
+        "Transformers",
+        "NLP",
+        "Vector Databases",
+        "Prompt Engineering",
+        "Cloud Architecture"
+      ],
+      "missingSkills": [
+        "TensorFlow"
+      ],
+      "allJobMatches": [
+        {
+          "jobId": "JOB-201",
+          "jobTitle": "Senior AI Engineer",
+          "dept": "Engineering",
+          "matchPercentage": "98%",
+          "matchScoreNum": 98,
+          "matchedSkills": [
+            "Python",
+            "PyTorch",
+            "Generative AI",
+            "LLMs",
+            "LangChain",
+            "RAG",
+            "FastAPI",
+            "Docker",
+            "Machine Learning",
+            "Transformers",
+            "NLP",
+            "Vector Databases",
+            "Prompt Engineering",
+            "Cloud Architecture"
+          ],
+          "missingSkills": [
+            "TensorFlow"
+          ],
+          "recommendation": "Highly Recommended"
+        },
+        {
+          "jobId": "JOB-204",
+          "jobTitle": "Senior Cloud & DevOps Engineer",
+          "dept": "Infrastructure",
+          "matchPercentage": "53%",
+          "matchScoreNum": 53,
+          "matchedSkills": [
+            "Python",
+            "Docker",
+            "Kubernetes",
+            "AWS"
+          ],
+          "missingSkills": [
+            "Azure",
+            "Terraform",
+            "CI/CD",
+            "Linux"
+          ],
+          "recommendation": "Potential Fit"
+        },
+        {
+          "jobId": "JOB-202",
+          "jobTitle": "Lead Product Manager",
+          "dept": "Product",
+          "matchPercentage": "45%",
+          "matchScoreNum": 45,
+          "matchedSkills": [],
+          "missingSkills": [
+            "Product Strategy",
+            "Agile",
+            "Scrum",
+            "Roadmapping"
+          ],
+          "recommendation": "Potential Fit"
+        },
+        {
+          "jobId": "JOB-203",
+          "jobTitle": "Enterprise ServiceNow Architect",
+          "dept": "IT Systems",
+          "matchPercentage": "45%",
+          "matchScoreNum": 45,
+          "matchedSkills": [],
+          "missingSkills": [
+            "ServiceNow",
+            "ITSM",
+            "Service Catalog",
+            "Workflow Design"
+          ],
+          "recommendation": "Potential Fit"
+        }
+      ],
+      "screenedAt": "2026-10-05 18:04:22",
+      "rawTextSnippet": "\n                Vikram Adve\n                Email: vikram.adve@valuedx.com | Phone: +91 98451 22345 | Bangalore, India\n                Senior AI Engineer & LLM Architect\n                Summary: Over 5.5 years of progressive experience building production-grade Generative AI pipelines, LangChain agents, PyTorch model fine-tuning, RAG frameworks, Vector Databases (Pinecone, ChromaDB), FastAPI micr",
+      "t4RecruitmentPipeline": {
+        "status": "success",
+        "jobName": "Senior AI Engineer",
+        "candidateName": "Vikram Adve",
+        "steps": [
+          {
+            "step": 1,
+            "workflow": "HR Demo Recruitment Get JD",
+            "params": {
+              "job_name": "Senior AI Engineer"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR Demo Recruitment Get JD",
+              "automationRequestId": 3296204,
+              "sourceId": "SID_1791203663170_853bd6381cda",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "JD extracted from portal",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296204",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "job_name": "Senior AI Engineer"
+              }
+            }
+          },
+          {
+            "step": 2,
+            "workflow": "HR Demo Recruitment Match JD",
+            "params": {
+              "job_name": "Senior AI Engineer"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR Demo Recruitment Match JD",
+              "automationRequestId": 3296206,
+              "sourceId": "SID_1791203670028_a505ff63c92b",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "JD matched with candidate",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296206",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "job_name": "Senior AI Engineer"
+              }
+            }
+          }
+        ],
+        "getJd": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR Demo Recruitment Get JD",
+          "automationRequestId": 3296204,
+          "sourceId": "SID_1791203663170_853bd6381cda",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "JD extracted from portal",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296204",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "job_name": "Senior AI Engineer"
+          }
+        },
+        "matchJd": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR Demo Recruitment Match JD",
+          "automationRequestId": 3296206,
+          "sourceId": "SID_1791203670028_a505ff63c92b",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "JD matched with candidate",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296206",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "job_name": "Senior AI Engineer"
+          }
+        }
+      },
+      "getJdResult": {
+        "status": "success",
+        "mode": "live_t4_rpa",
+        "workflowName": "HR Demo Recruitment Get JD",
+        "automationRequestId": 3296204,
+        "sourceId": "SID_1791203663170_853bd6381cda",
+        "executionStatus": "Complete",
+        "agentName": "mahesh@mspevent-win-1",
+        "message": "JD extracted from portal",
+        "errorDetails": null,
+        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296204",
+        "serverUrl": "https://t4.automationedge.com/aeengine",
+        "params": {
+          "job_name": "Senior AI Engineer"
+        }
+      },
+      "matchJdResult": {
+        "status": "success",
+        "mode": "live_t4_rpa",
+        "workflowName": "HR Demo Recruitment Match JD",
+        "automationRequestId": 3296206,
+        "sourceId": "SID_1791203670028_a505ff63c92b",
+        "executionStatus": "Complete",
+        "agentName": "mahesh@mspevent-win-1",
+        "message": "JD matched with candidate",
+        "errorDetails": null,
+        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296206",
+        "serverUrl": "https://t4.automationedge.com/aeengine",
+        "params": {
+          "job_name": "Senior AI Engineer"
+        }
+      }
+    }
+  ],
   "leaveRequests": [],
   "exitRequests": [
     {
