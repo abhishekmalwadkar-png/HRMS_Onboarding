@@ -248,46 +248,27 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         elif self.path == '/api/exit':
             emp_name = payload.get('empName') or payload.get('name') or payload.get('employeeName') or payload.get('email')
-            o365_result = {}
-            orangehrm_result = {}
-            email_result = {}
-
-            if emp_name:
-                # 1. Delete Office 365 / Entra ID User Account
-                try:
-                    o365_result = office365_client.delete_user_account(emp_name)
-                    payload['o365DeleteResult'] = o365_result
-                    payload['o365Deleted'] = o365_result.get('deleted', True)
-                except Exception as e:
-                    payload['o365DeleteResult'] = {"status": "error", "message": str(e)}
-                    payload['o365Deleted'] = False
-
-                # 2. Delete Employee Record from OrangeHRM PIM
-                try:
-                    orangehrm_result = orangehrm_client.delete_employee_profile(emp_name)
-                    payload['orangeHrmDeleteResult'] = orangehrm_result
-                    payload['orangeHrmDeleted'] = orangehrm_result.get('deleted', True)
-                except Exception as e:
-                    payload['orangeHrmDeleteResult'] = {"status": "error", "message": str(e)}
-                    payload['orangeHrmDeleted'] = False
-
-                # 3. Send Automated Offboarding & Clearance Notification Email
-                try:
-                    email_result = office365_client.send_offboarding_email(payload, recipient_email="abhishek.malwadkar@valuedx.com")
-                    payload['emailNotificationResult'] = email_result
-                    payload['emailNotificationSent'] = email_result.get('sent', True)
-                except Exception as e:
-                    payload['emailNotificationResult'] = {"status": "error", "message": str(e)}
-                    payload['emailNotificationSent'] = False
+            
+            # 1. Create ServiceNow Offboarding Request & Laptop Recovery Incident assigned to a random user
+            sn_offboarding_res = sn_client.create_offboarding_request(payload)
+            payload['serviceNowReq'] = sn_offboarding_res.get('serviceNowReq')
+            payload['serviceNowRitm'] = sn_offboarding_res.get('serviceNowRitm')
+            payload['laptopTicket'] = sn_offboarding_res.get('laptopTicket')
+            payload['laptopTicketSysId'] = sn_offboarding_res.get('laptopTicketSysId')
+            payload['laptopTicketUrl'] = sn_offboarding_res.get('laptopTicketUrl')
+            payload['assignedTo'] = sn_offboarding_res.get('assignedTo')
+            payload['itClearance'] = False
+            payload['itClearanceStatus'] = 'Clearance waiting from IT department'
+            payload['accessRevoked'] = False
+            payload['o365Deleted'] = False
+            payload['orangeHrmDeleted'] = False
+            payload['emailSent'] = False
 
             # Update status in employees list if present
             employees = db.get('employees', [])
             for emp in employees:
                 if emp.get('fullName') == emp_name or emp.get('name') == emp_name or emp.get('id') == payload.get('empId'):
-                    emp['status'] = 'Resigned / Offboarding'
-                    emp['o365Deleted'] = True
-                    emp['orangeHrmDeleted'] = True
-                    emp['accessRevoked'] = True
+                    emp['status'] = 'Resigned / Pending HR Offboarding'
                     break
             db['employees'] = employees
 
@@ -299,9 +280,37 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({
                 "status": "success",
                 "data": payload,
-                "office365": o365_result,
-                "orangehrm": orangehrm_result,
-                "email": email_result
+                "serviceNow": sn_offboarding_res
+            }).encode('utf-8'))
+
+        elif self.path == '/api/exit/check-clearance' or self.path == '/api/exit/toggle-clearance':
+            target_id = payload.get('id')
+            laptop_ticket = payload.get('laptopTicket') or payload.get('ticketNumber')
+            exits = db.get('exitRequests', [])
+            target_item = None
+
+            for item in exits:
+                if item.get('id') == target_id or (laptop_ticket and item.get('laptopTicket') == laptop_ticket):
+                    target_item = item
+                    break
+
+            if not target_item and exits:
+                target_item = exits[0]
+
+            check_res = {}
+            if target_item:
+                ticket_to_check = target_item.get('laptopTicket') or laptop_ticket
+                check_res = sn_client.check_incident_clearance(ticket_to_check)
+                target_item['itClearance'] = check_res.get('isCleared', False)
+                target_item['itClearanceStatus'] = check_res.get('uiMessage', 'Clearance waiting from IT department')
+                target_item['laptopIncidentState'] = check_res.get('stateLabel', 'In Progress')
+                self.write_db(db)
+
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "clearance": check_res,
+                "data": target_item
             }).encode('utf-8'))
 
         elif self.path == '/api/exit/update':
@@ -318,19 +327,51 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"status": "success", "data": exits}).encode('utf-8'))
 
-        elif self.path == '/api/o365/delete-user':
-            emp_ident = payload.get('identifier') or payload.get('email') or payload.get('employeeName') or payload.get('empName')
+        elif self.path == '/api/exit/revoke' or self.path == '/api/o365/delete-user':
+            emp_ident = payload.get('identifier') or payload.get('email') or payload.get('employeeName') or payload.get('empName') or payload.get('fullName')
+            target_id = payload.get('id')
+
+            # 1. Delete Office 365 User Account
             o365_result = office365_client.delete_user_account(emp_ident)
+
+            # 2. Delete OrangeHRM Employee Profile
             orangehrm_result = orangehrm_client.delete_employee_profile(emp_ident)
+
+            # 3. Send Clearance Email Notification
             email_result = office365_client.send_offboarding_email(
                 {"empName": emp_ident, "department": payload.get("department", "Engineering"), "lastWorkingDay": payload.get("lastWorkingDay", "2026-11-30")},
                 recipient_email="abhishek.malwadkar@valuedx.com"
             )
+
+            # Update status in db
+            exits = db.get('exitRequests', [])
+            for item in exits:
+                if item.get('id') == target_id or item.get('empName') == emp_ident:
+                    item['accessRevoked'] = True
+                    item['o365Deleted'] = True
+                    item['orangeHrmDeleted'] = True
+                    item['emailSent'] = True
+                    break
+            db['exitRequests'] = exits
+
+            employees = db.get('employees', [])
+            for emp in employees:
+                if emp.get('fullName') == emp_ident or emp.get('name') == emp_ident:
+                    emp['status'] = 'Offboarded & Deprovisioned'
+                    emp['o365Deleted'] = True
+                    emp['orangeHrmDeleted'] = True
+                    emp['accessRevoked'] = True
+                    break
+            db['employees'] = employees
+
+            self.write_db(db)
             self.end_headers()
             self.wfile.write(json.dumps({
+                "status": "success",
                 "office365": o365_result,
                 "orangehrm": orangehrm_result,
-                "email": email_result
+                "email": email_result,
+                "data": exits
             }).encode('utf-8'))
 
         else:

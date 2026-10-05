@@ -457,7 +457,7 @@
       "manager": "David Miller (VP of Technology)",
       "startDate": "2026-10-15",
       "hardware": "Apple MacBook Pro M3 Max",
-      "status": "Approved",
+      "status": "Resigned / Offboarding",
       "hardwareDispatched": true,
       "submittedAt": "10/1/2026",
       "serviceNowReq": "REQ0011912",
@@ -487,7 +487,10 @@
       "aeT4Agent": "mahesh@mspevent-win-1",
       "aeT4Message": "User 'Abhishek.Malwadkar' created successfully.",
       "aeT4Url": "https://t4.automationedge.com/#/workflowinstances/3276046",
-      "approvalSource": "HR Portal"
+      "approvalSource": "HR Portal",
+      "o365Deleted": true,
+      "orangeHrmDeleted": true,
+      "accessRevoked": true
     },
     {
       "id": "EMP-6291",
@@ -1866,6 +1869,45 @@
     }
   ],
   "exitRequests": [
+    {
+      "id": "EXIT-927",
+      "empName": "Abhishek Malwadkar",
+      "department": "Engineering",
+      "resignationDate": "2026-10-05",
+      "lastWorkingDay": "2026-11-30",
+      "reason": "Pursuing new professional opportunity.",
+      "itClearance": false,
+      "financeClearance": false,
+      "accessRevoked": true,
+      "o365Deleted": true,
+      "orangeHrmDeleted": true,
+      "emailSent": true,
+      "fnfStatus": "Pending Initiation",
+      "rpaResignationRequestId": "REQ-1889",
+      "o365DeleteResult": {
+        "status": "success",
+        "deleted": true,
+        "targetUser": "abhishek.malwadkar@automationedge.ai",
+        "message": "Successfully deleted Office 365 user account abhishek.malwadkar@automationedge.ai from Microsoft Entra ID."
+      },
+      "orangeHrmDeleteResult": {
+        "status": "success",
+        "deleted": true,
+        "empNumbers": [
+          21
+        ],
+        "targetName": "Abhishek Malwadkar",
+        "message": "Successfully deleted employee 'Abhishek Malwadkar' (Emp #21) from OrangeHRM PIM."
+      },
+      "emailNotificationResult": {
+        "status": "success",
+        "sent": true,
+        "recipient": "abhishek.malwadkar@valuedx.com",
+        "subject": "Offboarding & Clearance Completed: Abhishek Malwadkar (Engineering)",
+        "message": "Offboarding notification email sent successfully to abhishek.malwadkar@valuedx.com."
+      },
+      "emailNotificationSent": true
+    },
     {
       "id": "EXIT-726",
       "empName": "Aarav Sharma",

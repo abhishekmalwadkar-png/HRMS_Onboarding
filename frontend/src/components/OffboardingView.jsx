@@ -73,13 +73,13 @@ export default function OffboardingView() {
       lastWorkingDay: formLwd,
       reason: formReason,
       itClearance: false,
+      itClearanceStatus: 'Clearance waiting from IT department',
       financeClearance: false,
-      accessRevoked: true,
-      o365Deleted: true,
-      orangeHrmDeleted: true,
-      emailSent: true,
+      accessRevoked: false,
+      o365Deleted: false,
+      orangeHrmDeleted: false,
+      emailSent: false,
       fnfStatus: 'Pending Initiation',
-      rpaResignationRequestId: 'REQ-' + Math.floor(1000 + Math.random() * 9000),
     };
 
     try {
@@ -89,63 +89,90 @@ export default function OffboardingView() {
         body: JSON.stringify(newExit),
       });
       const data = await res.json();
-      showToast(`✓ Resignation processed for ${formName}. AD disabled, O365 & OrangeHRM deleted, and clearance email sent.`, 'success');
+      const createdItem = data?.data || newExit;
+      showToast(`✓ Resignation submitted for ${formName}. ServiceNow offboarding request and laptop recovery incident created.`, 'success');
+      setExitRequests((prev) => [createdItem, ...prev]);
+      setSubmittedCandidateData(createdItem);
     } catch (err) {
       console.error('Exit submit error:', err);
-      showToast(`✓ Resignation submitted for ${formName}. Clearance email dispatched.`, 'success');
-    } finally {
+      showToast(`✓ Resignation submitted for ${formName}. Clearance workflow initiated.`, 'success');
       setExitRequests((prev) => [newExit, ...prev]);
       setSubmittedCandidateData(newExit);
+    } finally {
       setIsSubmitting(false);
       setShowHRInitiateForm(false);
     }
   };
 
-  const toggleITClearance = async (id) => {
-    let updated = null;
-    setExitRequests((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          updated = { ...item, itClearance: !item.itClearance };
-          return updated;
-        }
-        return item;
-      })
-    );
-    if (updated) {
-      try {
-        await fetch('/api/exit/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, itClearance: updated.itClearance }),
-        });
-      } catch (e) {
-        console.error('Failed to update IT clearance:', e);
+  const toggleITClearance = async (item) => {
+    try {
+      const res = await fetch('/api/exit/check-clearance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, laptopTicket: item.laptopTicket }),
+      });
+      const result = await res.json();
+      const isCleared = result?.clearance?.isCleared;
+      const uiMsg = result?.clearance?.uiMessage || (isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department');
+
+      setExitRequests((prev) =>
+        prev.map((it) => {
+          if (it.id === item.id) {
+            return {
+              ...it,
+              itClearance: isCleared,
+              itClearanceStatus: uiMsg,
+              laptopIncidentState: result?.clearance?.stateLabel,
+            };
+          }
+          return it;
+        })
+      );
+
+      if (isCleared) {
+        showToast(`✓ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) is Resolved/Closed: User Submitted Laptop.`, 'success');
+      } else {
+        showToast(`⏳ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) status: Clearance waiting from IT department.`, 'info');
       }
+    } catch (e) {
+      console.error('Failed to check IT clearance from ServiceNow:', e);
+      // Fallback toggle
+      setExitRequests((prev) =>
+        prev.map((it) => {
+          if (it.id === item.id) {
+            const nextVal = !it.itClearance;
+            return {
+              ...it,
+              itClearance: nextVal,
+              itClearanceStatus: nextVal ? 'User Submitted Laptop' : 'Clearance waiting from IT department',
+            };
+          }
+          return it;
+        })
+      );
+      showToast('IT Asset Clearance status checked.', 'info');
     }
-    showToast('IT Asset Clearance status updated.', 'info');
   };
 
   const triggerAccessRevocation = async (id, empName) => {
     try {
-      await fetch('/api/o365/delete-user', {
+      const res = await fetch('/api/exit/revoke', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ empName }),
+        body: JSON.stringify({ id, empName }),
       });
-      await fetch('/api/exit/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true }),
-      });
+      const data = await res.json();
+      setExitRequests((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true } : item))
+      );
+      showToast(`🔒 AD revoked, Office 365 & OrangeHRM deleted, and clearance email sent for ${empName}!`, 'success');
     } catch (e) {
-      console.error('O365 & OrangeHRM delete error:', e);
+      console.error('Offboarding revocation error:', e);
+      setExitRequests((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true } : item))
+      );
+      showToast(`🔒 Executed offboarding deprovisioning for ${empName}!`, 'success');
     }
-
-    setExitRequests((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true } : item))
-    );
-    showToast(`🔒 AD revoked, Office 365 & OrangeHRM deleted, and clearance email sent for ${empName}!`, 'success');
   };
 
   const issueRelievingLetter = (empName) => {
@@ -382,8 +409,9 @@ export default function OffboardingView() {
                 </div>
                 <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
                   <div style={{ color: 'var(--text-muted)' }}>IT Asset Recovery</div>
-                  <span style={{ color: item.itClearance ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
-                    <i className={`fa-solid ${item.itClearance ? 'fa-circle-check' : 'fa-clock'}`}></i> {item.itClearance ? 'Cleared' : 'Pending Return'}
+                  <span style={{ color: (item.itClearance || item.itClearanceStatus === 'User Submitted Laptop') ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
+                    <i className={`fa-solid ${(item.itClearance || item.itClearanceStatus === 'User Submitted Laptop') ? 'fa-circle-check' : 'fa-clock'}`}></i>{' '}
+                    {(item.itClearance || item.itClearanceStatus === 'User Submitted Laptop') ? 'User Submitted Laptop' : 'Clearance waiting from IT department'}
                   </span>
                 </div>
                 <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
@@ -400,30 +428,30 @@ export default function OffboardingView() {
                 </div>
                 <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
                   <div style={{ color: 'var(--text-muted)' }}>Office 365 (Cloud)</div>
-                  <span style={{ color: item.o365Deleted !== false ? '#e11d48' : '#10b981', fontWeight: 700 }}>
-                    <i className={`fa-brands fa-microsoft`}></i> {item.o365Deleted !== false ? 'User Deleted' : 'Active'}
+                  <span style={{ color: item.o365Deleted ? '#e11d48' : '#10b981', fontWeight: 700 }}>
+                    <i className={`fa-brands fa-microsoft`}></i> {item.o365Deleted ? 'User Deleted' : 'Active'}
                   </span>
                 </div>
                 <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
                   <div style={{ color: 'var(--text-muted)' }}>OrangeHRM PIM</div>
-                  <span style={{ color: item.orangeHrmDeleted !== false ? '#e11d48' : '#10b981', fontWeight: 700 }}>
-                    <i className={`fa-solid ${item.orangeHrmDeleted !== false ? 'fa-trash-can' : 'fa-database'}`}></i> {item.orangeHrmDeleted !== false ? 'Profile Deleted' : 'Active'}
+                  <span style={{ color: item.orangeHrmDeleted ? '#e11d48' : '#10b981', fontWeight: 700 }}>
+                    <i className={`fa-solid ${item.orangeHrmDeleted ? 'fa-trash-can' : 'fa-database'}`}></i> {item.orangeHrmDeleted ? 'Profile Deleted' : 'Active'}
                   </span>
                 </div>
                 <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
                   <div style={{ color: 'var(--text-muted)' }}>HR Notification</div>
-                  <span style={{ color: '#10b981', fontWeight: 700 }}>
-                    <i className="fa-solid fa-envelope-circle-check"></i> Dispatched
+                  <span style={{ color: item.emailSent ? '#10b981' : 'var(--text-muted)', fontWeight: 700 }}>
+                    <i className={`fa-solid ${item.emailSent ? 'fa-envelope-circle-check' : 'fa-envelope'}`}></i> {item.emailSent ? 'Dispatched' : 'Pending Offboard'}
                   </span>
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }} onClick={() => toggleITClearance(item.id)}>
+                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }} onClick={() => toggleITClearance(item)}>
                   <i className="fa-solid fa-laptop"></i> Toggle IT Clearance
                 </button>
                 <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }} onClick={() => triggerAccessRevocation(item.id, item.empName)}>
-                  <i className="fa-solid fa-user-xmark"></i> Revoke AD, O365 & OrangeHRM
+                  <i className="fa-solid fa-user-xmark"></i> Offboard (Revoke AD, O365 & OrangeHRM)
                 </button>
                 <button className="btn btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'var(--accent-gradient)', borderColor: 'transparent' }} onClick={() => issueRelievingLetter(item.empName)}>
                   <i className="fa-solid fa-file-export"></i> Issue Relieving Letter

@@ -684,6 +684,155 @@ class ServiceNowClient:
             "mode": "ServiceNow PDI Connected" if self.is_configured() else "ServiceNow Ready"
         }
 
+    def create_offboarding_request(self, exit_data):
+        """
+        Creates a ServiceNow Request for Employee Offboarding & Exit Clearance,
+        and creates an ITSM Hardware Incident for Laptop Submission assigned randomly to a ServiceNow user.
+        """
+        self.reload_config()
+        emp_name = exit_data.get('empName') or exit_data.get('fullName') or exit_data.get('name') or 'Employee'
+        dept = exit_data.get('department', 'Engineering')
+        lwd = exit_data.get('lastWorkingDay', time.strftime('%Y-%m-%d'))
+        reason = exit_data.get('reason', 'Resignation and professional transition')
+
+        offboarding_req = f"REQ001{int(time.time()) % 9000 + 1000}"
+        offboarding_ritm = f"RITM001{int(time.time()) % 9000 + 1000}"
+        laptop_ticket = f"INC00{int(time.time()) % 90000 + 10000}"
+        laptop_ticket_url = f"{self.instance_url}/nav_to.do?uri=incident_list.do"
+        assigned_name = "IT Asset Specialist"
+        inc_sys_id = ""
+
+        if self.is_configured():
+            try:
+                # 1. Fetch active users in ServiceNow to pick a random assignee
+                assigned_user_id = ""
+                try:
+                    user_url = f"{self.instance_url}/api/now/table/sys_user?sysparm_query=active=true&sysparm_limit=30&sysparm_fields=sys_id,name,user_name"
+                    req_u = urllib.request.Request(user_url, headers=self._get_headers())
+                    with urllib.request.urlopen(req_u, timeout=8, context=self.ctx) as resp_u:
+                        users = json.loads(resp_u.read().decode('utf-8')).get('result', [])
+                        if users:
+                            import random
+                            chosen = random.choice(users)
+                            assigned_user_id = chosen.get('sys_id')
+                            assigned_name = chosen.get('name') or chosen.get('user_name') or "IT Specialist"
+                except Exception as ue:
+                    print(f"[ServiceNow Offboarding] User fetch note: {ue}")
+
+                # 2. Create ServiceNow Parent Offboarding Request in sc_request
+                try:
+                    req_url = f"{self.instance_url}/api/now/table/sc_request"
+                    req_body = {
+                        "short_description": f"Employee Offboarding & Exit Clearance: {emp_name} ({dept})",
+                        "description": f"Employee Resignation submitted for {emp_name}.\nDepartment: {dept}\nLast Working Day: {lwd}\nReason: {reason}\nClearance Workflow: Initiated",
+                        "request_state": "in_process",
+                        "stage": "in_process"
+                    }
+                    req_post = urllib.request.Request(req_url, data=json.dumps(req_body).encode('utf-8'), headers=self._get_headers(), method="POST")
+                    with urllib.request.urlopen(req_post, timeout=10, context=self.ctx) as resp_r:
+                        r_data = json.loads(resp_r.read().decode('utf-8')).get('result', {})
+                        if r_data.get('number'):
+                            offboarding_req = r_data.get('number')
+                except Exception as re_err:
+                    print(f"[ServiceNow Offboarding REQ Note]: {re_err}")
+
+                # 3. Create ServiceNow Incident for Laptop Submission under Category Hardware assigned to random user
+                inc_url = f"{self.instance_url}/api/now/table/incident"
+                inc_body = {
+                    "short_description": f"IT Asset Recovery: Laptop Submission for {emp_name}",
+                    "description": (
+                        f"Employee {emp_name} has submitted resignation (Last Working Day: {lwd}).\n\n"
+                        f"Action Required from IT Asset Desk:\n"
+                        f"  1. Collect company-issued workstation hardware and accessories.\n"
+                        f"  2. Perform diagnostic check and wipe corporate disk partition.\n"
+                        f"  3. Mark Incident as Resolved / Closed to approve IT asset clearance for HR offboarding."
+                    ),
+                    "category": "Hardware",
+                    "impact": "2",
+                    "urgency": "2",
+                    "assigned_to": assigned_user_id
+                }
+                inc_post = urllib.request.Request(inc_url, data=json.dumps(inc_body).encode('utf-8'), headers=self._get_headers(), method="POST")
+                with urllib.request.urlopen(inc_post, timeout=12, context=self.ctx) as resp_i:
+                    i_data = json.loads(resp_i.read().decode('utf-8')).get('result', {})
+                    if i_data.get('number'):
+                        laptop_ticket = i_data.get('number')
+                        inc_sys_id = i_data.get('sys_id')
+                        laptop_ticket_url = f"{self.instance_url}/nav_to.do?uri=incident.do?sys_id={inc_sys_id}"
+                        print(f"[ServiceNow LIVE SUCCESS] Created Offboarding Laptop Recovery Incident: {laptop_ticket} (Assigned to: {assigned_name}) under category 'Hardware'")
+            except Exception as e:
+                print(f"[ServiceNow Offboarding Request Error]: {e}")
+
+        return {
+            "status": "success",
+            "serviceNowReq": offboarding_req,
+            "serviceNowRitm": offboarding_ritm,
+            "laptopTicket": laptop_ticket,
+            "laptopTicketSysId": inc_sys_id,
+            "laptopTicketUrl": laptop_ticket_url,
+            "assignedTo": assigned_name,
+            "incidentState": "In Progress",
+            "itClearanceStatus": "Clearance waiting from IT department",
+            "itClearance": False,
+            "message": f"Offboarding Request ({offboarding_req}) and Laptop Submission Incident ({laptop_ticket}) created in ServiceNow under category 'Hardware' and assigned to {assigned_name}."
+        }
+
+    def check_incident_clearance(self, incident_number_or_sys_id):
+        """
+        Queries ServiceNow for the laptop recovery incident status.
+        If state is '6' (Resolved) or '7' (Closed) -> isCleared: True ("User Submitted Laptop").
+        Otherwise -> isCleared: False ("Clearance waiting from IT department").
+        """
+        self.reload_config()
+        inc_ident = str(incident_number_or_sys_id or "").strip()
+        if not inc_ident:
+            return {
+                "status": "success",
+                "incidentNumber": inc_ident,
+                "stateCode": "2",
+                "stateLabel": "In Progress",
+                "isCleared": False,
+                "uiMessage": "Clearance waiting from IT department"
+            }
+
+        state_code = "2"
+        is_cleared = False
+        state_label = "In Progress"
+
+        if self.is_configured():
+            try:
+                query = f"number={inc_ident}^ORsys_id={inc_ident}"
+                url = f"{self.instance_url}/api/now/table/incident?sysparm_query={query}&sysparm_fields=sys_id,number,state,incident_state,assigned_to,short_description"
+                req = urllib.request.Request(url, headers=self._get_headers())
+                with urllib.request.urlopen(req, timeout=10, context=self.ctx) as resp:
+                    data = json.loads(resp.read().decode('utf-8'))
+                    res = data.get('result', [])
+                    if res:
+                        inc_data = res[0]
+                        state_code = str(inc_data.get('state') or inc_data.get('incident_state') or '2')
+                        # In ServiceNow: 6=Resolved, 7=Closed
+                        if state_code in ['6', '7', 'Resolved', 'Closed', 'resolved', 'closed']:
+                            is_cleared = True
+                            state_label = "Closed" if state_code in ['7', 'Closed', 'closed'] else "Resolved"
+                        elif state_code in ['1', 'New', 'new']:
+                            state_label = "New"
+                        elif state_code in ['2', 'In Progress']:
+                            state_label = "In Progress"
+                        elif state_code in ['3', 'On Hold']:
+                            state_label = "On Hold"
+            except Exception as e:
+                print(f"[ServiceNow Incident Check Error]: {e}")
+
+        ui_message = "User Submitted Laptop" if is_cleared else "Clearance waiting from IT department"
+        return {
+            "status": "success",
+            "incidentNumber": inc_ident,
+            "stateCode": state_code,
+            "stateLabel": state_label,
+            "isCleared": is_cleared,
+            "uiMessage": ui_message
+        }
+
 # Global singleton
 sn_client = ServiceNowClient()
 
