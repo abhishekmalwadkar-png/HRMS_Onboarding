@@ -56,6 +56,15 @@ function switchView(viewName) {
     sidebar.classList.remove('mobile-open');
   }
 
+  // Ensure header and sidebar autofill buttons are strictly hidden when in HR role
+  const isHR = typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'hr';
+  const sidebarAutofillBox = document.getElementById('sidebarAutofillBox');
+  const headerAutofillBtn = document.getElementById('headerAutofillBtn');
+  if (isHR) {
+    if (sidebarAutofillBox) sidebarAutofillBox.style.display = 'none';
+    if (headerAutofillBtn) headerAutofillBtn.style.display = 'none';
+  }
+
   // Re-trigger module specific data loads
   if (viewName === 'approvals') loadApprovals();
   if (viewName === 'dashboard') renderCandidatesTable();

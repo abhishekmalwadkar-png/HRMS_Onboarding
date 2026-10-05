@@ -156,8 +156,8 @@
           </button>
         </nav>
 
-        <!-- Quick Database Action -->
-        <div class="sidebar-action-box" id="sidebarAutofillBox">
+        <!-- Quick Database Action (Hidden for HR) -->
+        <div class="sidebar-action-box" id="sidebarAutofillBox" style="display: none;">
           <button class="btn btn-secondary sidebar-action-btn" onclick="autoFillDemoData()" title="Pre-fill candidate profile data">
             <i class="fa-solid fa-wand-magic-sparkles text-accent"></i> <span>Auto-Fill</span>
           </button>
@@ -197,7 +197,7 @@
         <div class="top-header-right">
           <!-- Live System Status Badges for all 4 Automated Engines -->
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-            <button class="btn btn-secondary" id="headerAutofillBtn" onclick="autoFillDemoData()" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; border-color: var(--border-orange); background: var(--bg-accent-soft); font-weight: 700; color: var(--brand-orange);" title="Pre-fill candidate profile into Onboarding Wizard">
+            <button class="btn btn-secondary" id="headerAutofillBtn" onclick="autoFillDemoData()" style="display: none; padding: 0.4rem 0.85rem; font-size: 0.8rem; border-color: var(--border-orange); background: var(--bg-accent-soft); font-weight: 700; color: var(--brand-orange);" title="Pre-fill candidate profile into Onboarding Wizard">
               <i class="fa-solid fa-wand-magic-sparkles text-accent"></i> Auto-Fill
             </button>
 
