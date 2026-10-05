@@ -89,10 +89,10 @@ export default function OffboardingView() {
         body: JSON.stringify(newExit),
       });
       const data = await res.json();
-      showToast(`✓ Resignation processed for ${formName}. AD disabled, O365 & OrangeHRM deleted, and clearance email sent to abhishek.malwadkar@valuedx.com.`, 'success');
+      showToast(`✓ Resignation processed for ${formName}. AD disabled, O365 & OrangeHRM deleted, and clearance email sent.`, 'success');
     } catch (err) {
       console.error('Exit submit error:', err);
-      showToast(`✓ Resignation submitted for ${formName}. Clearance email dispatched to abhishek.malwadkar@valuedx.com.`, 'success');
+      showToast(`✓ Resignation submitted for ${formName}. Clearance email dispatched.`, 'success');
     } finally {
       setExitRequests((prev) => [newExit, ...prev]);
       setSubmittedCandidateData(newExit);
@@ -145,11 +145,11 @@ export default function OffboardingView() {
     setExitRequests((prev) =>
       prev.map((item) => (item.id === id ? { ...item, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true } : item))
     );
-    showToast(`🔒 AD revoked, Office 365 & OrangeHRM deleted, and clearance email sent to abhishek.malwadkar@valuedx.com for ${empName}!`, 'success');
+    showToast(`🔒 AD revoked, Office 365 & OrangeHRM deleted, and clearance email sent for ${empName}!`, 'success');
   };
 
   const issueRelievingLetter = (empName) => {
-    showToast(`📄 Issued relieving & experience certificate for ${empName}! Sent to abhishek.malwadkar@valuedx.com.`, 'success');
+    showToast(`📄 Issued relieving & experience certificate for ${empName}!`, 'success');
   };
 
   /* -------------------------------------------------------------
@@ -412,7 +412,7 @@ export default function OffboardingView() {
                 </div>
                 <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
                   <div style={{ color: 'var(--text-muted)' }}>HR Notification</div>
-                  <span style={{ color: '#10b981', fontWeight: 700 }} title="abhishek.malwadkar@valuedx.com">
+                  <span style={{ color: '#10b981', fontWeight: 700 }}>
                     <i className="fa-solid fa-envelope-circle-check"></i> Dispatched
                   </span>
                 </div>
