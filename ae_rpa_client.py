@@ -334,13 +334,18 @@ class AutomationEdgeClient:
                 with urllib.request.urlopen(req, context=ctx, timeout=20) as resp:
                     resp_json = json.loads(resp.read().decode('utf-8'))
                     automation_req_id = resp_json.get('automationRequestId')
-                    print(f"[AE RPA Live] Workflow '{workflow_name}' Dispatched! AutomationRequestId: {automation_req_id}")
+                    is_success = resp_json.get('success', bool(automation_req_id and automation_req_id > 0))
+                    error_details = resp_json.get('errorDetails') or resp_json.get('message')
+                    if is_success:
+                        print(f"[AE RPA Live] Workflow '{workflow_name}' Dispatched! AutomationRequestId: {automation_req_id}")
+                    else:
+                        print(f"[AE RPA Live] Workflow '{workflow_name}' Request Error: {error_details} (Resp: {resp_json})")
 
-                execution_status = "In Progress"
+                execution_status = "In Progress" if is_success else "Failed"
                 agent_name = ""
-                message = f"Workflow '{workflow_name}' requested on AutomationEdge T4 (Req: {automation_req_id})"
+                message = f"Workflow '{workflow_name}' requested on AutomationEdge T4 (Req: {automation_req_id})" if is_success else f"Workflow '{workflow_name}' failed to create: {error_details}"
 
-                if automation_req_id:
+                if automation_req_id and automation_req_id > 0:
                     time.sleep(2)
                     poll_url = f"{self.server_url}/rest/workflowinstances/{automation_req_id}"
                     start_t = time.time()
@@ -374,7 +379,7 @@ class AutomationEdgeClient:
                             break
 
                 return {
-                    "status": "success",
+                    "status": "success" if is_success else "error",
                     "mode": "live_t4_rpa",
                     "workflowName": workflow_name,
                     "automationRequestId": automation_req_id,
@@ -382,6 +387,7 @@ class AutomationEdgeClient:
                     "executionStatus": execution_status,
                     "agentName": agent_name,
                     "message": message,
+                    "errorDetails": error_details,
                     "instanceUrl": f"https://t4.automationedge.com/#/workflowinstances/{automation_req_id}" if automation_req_id else "https://t4.automationedge.com/#/taskhistory",
                     "serverUrl": self.server_url,
                     "params": params_dict
@@ -489,24 +495,24 @@ class AutomationEdgeClient:
 
     # -------------------------------------------------------------------------
     # 7. Offboarding Resignation SN Req Workflow: "HR Demo Offboarding SN Req"
-    # Parameters: emp_id
+    # Parameters: EmpID
     # -------------------------------------------------------------------------
     def trigger_offboarding_sn_req(self, emp_id):
         params = {
-            "emp_id": str(emp_id)
+            "EmpID": str(emp_id)
         }
-        print(f"[AE RPA] Triggering 'HR Demo Offboarding SN Req' on T4 for emp_id={emp_id}...")
+        print(f"[AE RPA] Triggering 'HR Demo Offboarding SN Req' on T4 for EmpID={emp_id}...")
         return self.execute_workflow_sync("HR Demo Offboarding SN Req", params, max_wait_seconds=35)
 
     # -------------------------------------------------------------------------
     # 8. Offboarding Remove AD User Workflow: "HR Demo OffboardingRemoveADUser"
-    # Parameters: "AD username"
+    # Parameters: ADUserName
     # -------------------------------------------------------------------------
     def trigger_offboarding_remove_ad_user(self, ad_username):
         params = {
-            "AD username": str(ad_username)
+            "ADUserName": str(ad_username)
         }
-        print(f"[AE RPA] Triggering 'HR Demo OffboardingRemoveADUser' on T4 for AD username='{ad_username}'...")
+        print(f"[AE RPA] Triggering 'HR Demo OffboardingRemoveADUser' on T4 for ADUserName='{ad_username}'...")
         return self.execute_workflow_sync("HR Demo OffboardingRemoveADUser", params, max_wait_seconds=35)
 
     # -------------------------------------------------------------------------

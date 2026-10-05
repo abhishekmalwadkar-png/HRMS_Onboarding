@@ -4,6 +4,44 @@
   "leaveRequests": [],
   "exitRequests": [
     {
+      "id": "EXIT-391",
+      "empId": "EMP-1949",
+      "empName": "Marcus Aurelius",
+      "department": "Engineering",
+      "resignationDate": "2026-10-05",
+      "lastWorkingDay": "2026-11-30",
+      "reason": "Pursuing new professional opportunity.",
+      "itClearance": false,
+      "itClearanceStatus": "Clearance waiting from IT department",
+      "financeClearance": false,
+      "accessRevoked": false,
+      "o365Deleted": false,
+      "orangeHrmDeleted": false,
+      "emailSent": false,
+      "fnfStatus": "Pending Initiation",
+      "aeSnReqWorkflow": {
+        "status": "success",
+        "mode": "live_t4_rpa",
+        "workflowName": "HR Demo Offboarding SN Req",
+        "automationRequestId": 0,
+        "sourceId": "SID_1791197781716_599c304734dd",
+        "executionStatus": "In Progress",
+        "agentName": "",
+        "message": "Workflow 'HR Demo Offboarding SN Req' requested on AutomationEdge T4 (Req: 0)",
+        "instanceUrl": "https://t4.automationedge.com/#/taskhistory",
+        "serverUrl": "https://t4.automationedge.com/aeengine",
+        "params": {
+          "emp_id": "EMP-1949"
+        }
+      },
+      "serviceNowReq": "REQ0011933",
+      "serviceNowRitm": "RITM0019781",
+      "laptopTicket": "INC0040467",
+      "laptopTicketSysId": "d065783c3333c3105e900e570e5c7bbc",
+      "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident.do?sys_id=d065783c3333c3105e900e570e5c7bbc",
+      "assignedTo": "AE_Dev Mahesh_Badge"
+    },
+    {
       "id": "EXIT-539",
       "empName": "Gaurav Kulkarni",
       "department": "Engineering",
