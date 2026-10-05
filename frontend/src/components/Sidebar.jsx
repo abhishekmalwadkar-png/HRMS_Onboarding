@@ -41,7 +41,7 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, togg
             onClick={() => setCurrentView('wizard')}
           >
             <i className="fa-solid fa-wand-magic-sparkles"></i>
-            <span className="nav-label">Add Candidate</span>
+            <span className="nav-label">Onboarding</span>
           </button>
 
           <button
