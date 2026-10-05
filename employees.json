@@ -2,146 +2,64 @@
   "employees": [],
   "recruitment": [
     {
-      "id": "CAND-564",
-      "name": "Vikram Adve",
-      "candidateName": "Vikram Adve",
-      "email": "vikram.adve@valuedx.com",
-      "phone": "+91 98230 45678",
-      "experienceYears": 4.5,
+      "id": "CAND-901",
+      "name": "Aarav Sharma",
+      "candidateName": "Aarav Sharma",
+      "email": "aarav.sharma@example.com",
+      "role": "Senior AI Engineer",
+      "appliedRole": "Senior AI Engineer",
+      "department": "Engineering",
+      "score": "94%",
+      "matchScore": "94%",
+      "stage": "Offer Accepted",
       "skills": [
         "Python",
         "PyTorch",
         "Generative AI",
-        "LLMs",
         "LangChain",
-        "RAG",
-        "FastAPI",
-        "Docker",
-        "Machine Learning",
-        "Transformers",
-        "NLP",
-        "Vector Databases",
-        "Prompt Engineering",
-        "Cloud Architecture",
-        "Kubernetes",
-        "AWS"
+        "FastAPI"
       ],
-      "role": "Senior AI Engineer",
-      "appliedRole": "Senior AI Engineer",
-      "department": "Engineering",
-      "score": "98%",
-      "matchScore": "98%",
-      "stage": "Interview Scheduled (Google Meet)",
-      "status": "Screened",
-      "recommendation": "Highly Recommended",
-      "matchedSkills": [
-        "Python",
-        "PyTorch",
-        "Generative AI",
-        "LLMs",
-        "LangChain",
-        "RAG",
-        "FastAPI",
-        "Docker",
-        "Machine Learning",
-        "Transformers",
-        "NLP",
-        "Vector Databases",
-        "Prompt Engineering",
-        "Cloud Architecture"
+      "experienceYears": 5.5
+    },
+    {
+      "id": "CAND-902",
+      "name": "Priya Iyer",
+      "candidateName": "Priya Iyer",
+      "email": "priya.iyer@example.com",
+      "role": "Lead Product Manager",
+      "appliedRole": "Lead Product Manager",
+      "department": "Product",
+      "score": "89%",
+      "matchScore": "89%",
+      "stage": "Technical Interview",
+      "skills": [
+        "Product Strategy",
+        "Agile",
+        "Roadmapping",
+        "Scrum",
+        "User Stories"
       ],
-      "missingSkills": [
-        "TensorFlow"
+      "experienceYears": 6.0
+    },
+    {
+      "id": "CAND-903",
+      "name": "Rohan Mehta",
+      "candidateName": "Rohan Mehta",
+      "email": "rohan.mehta@example.com",
+      "role": "Enterprise ServiceNow Architect",
+      "appliedRole": "Enterprise ServiceNow Architect",
+      "department": "IT Systems",
+      "score": "91%",
+      "matchScore": "91%",
+      "stage": "HR Screening",
+      "skills": [
+        "ServiceNow",
+        "ITSM",
+        "Workflow Design",
+        "Service Catalog",
+        "IntegrationHub"
       ],
-      "allJobMatches": [
-        {
-          "jobId": "JOB-201",
-          "jobTitle": "Senior AI Engineer",
-          "dept": "Engineering",
-          "matchPercentage": "98%",
-          "matchScoreNum": 98,
-          "matchedSkills": [
-            "Python",
-            "PyTorch",
-            "Generative AI",
-            "LLMs",
-            "LangChain",
-            "RAG",
-            "FastAPI",
-            "Docker",
-            "Machine Learning",
-            "Transformers",
-            "NLP",
-            "Vector Databases",
-            "Prompt Engineering",
-            "Cloud Architecture"
-          ],
-          "missingSkills": [
-            "TensorFlow"
-          ],
-          "recommendation": "Highly Recommended"
-        },
-        {
-          "jobId": "JOB-204",
-          "jobTitle": "Senior Cloud & DevOps Engineer",
-          "dept": "Infrastructure",
-          "matchPercentage": "53%",
-          "matchScoreNum": 53,
-          "matchedSkills": [
-            "Python",
-            "Docker",
-            "Kubernetes",
-            "AWS"
-          ],
-          "missingSkills": [
-            "Azure",
-            "Terraform",
-            "CI/CD",
-            "Linux"
-          ],
-          "recommendation": "Potential Fit"
-        },
-        {
-          "jobId": "JOB-202",
-          "jobTitle": "Lead Product Manager",
-          "dept": "Product",
-          "matchPercentage": "45%",
-          "matchScoreNum": 45,
-          "matchedSkills": [],
-          "missingSkills": [
-            "Product Strategy",
-            "Agile",
-            "Scrum",
-            "Roadmapping"
-          ],
-          "recommendation": "Potential Fit"
-        },
-        {
-          "jobId": "JOB-203",
-          "jobTitle": "Enterprise ServiceNow Architect",
-          "dept": "IT Systems",
-          "matchPercentage": "45%",
-          "matchScoreNum": 45,
-          "matchedSkills": [],
-          "missingSkills": [
-            "ServiceNow",
-            "ITSM",
-            "Service Catalog",
-            "Workflow Design"
-          ],
-          "recommendation": "Potential Fit"
-        }
-      ],
-      "screenedAt": "2026-10-05 17:37:44",
-      "rawTextSnippet": "\n                Vikram Adve\n                Email: vikram.adve@valuedx.com | Phone: +91 98451 22345 | Bangalore, India\n                Senior AI Engineer & LLM Architect\n                Summary: Over 5.5 years of progressive experience building production-grade Generative AI pipelines, LangChain agents, PyTorch model fine-tuning, RAG frameworks, Vector Databases (Pinecone, ChromaDB), FastAPI micr",
-      "aeScreeningRequestId": "AE-T4-1791202064-F278",
-      "meetingLink": "https://meet.google.com/htu-eylx-wov",
-      "interviewDate": "Monday, October 05, 2026",
-      "interviewTime": "03:00 PM - 03:45 PM IST",
-      "interviewType": "Technical & AI Architecture Screening",
-      "interviewScheduled": true,
-      "emailSent": true,
-      "emailRecipient": "abhishek.malwadkar@valuedx.com"
+      "experienceYears": 5.0
     }
   ],
   "leaveRequests": [],

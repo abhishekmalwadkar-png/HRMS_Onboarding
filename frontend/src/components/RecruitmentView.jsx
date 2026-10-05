@@ -739,10 +739,11 @@ export default function RecruitmentView() {
                     style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: 'transparent', fontWeight: 700 }}
                     onClick={() => {
                       setShowScreenModal(false);
-                      openInterviewModal(lastScreenedResult);
+                      setLastScreenedResult(null);
+                      setSelectedFile(null);
                     }}
                   >
-                    <i className="fa-solid fa-calendar-plus"></i> Schedule Google Meet Interview
+                    <i className="fa-solid fa-check"></i> Done
                   </button>
                 </div>
               </div>
