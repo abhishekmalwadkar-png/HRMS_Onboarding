@@ -35,7 +35,7 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, togg
 
         <div className="sidebar-section-title">Main Navigation</div>
 
-        <nav className="nav-menu">
+        <nav className="sidebar-nav">
           {/* HR ONLY TABS */}
           {isHR && (
             <>
