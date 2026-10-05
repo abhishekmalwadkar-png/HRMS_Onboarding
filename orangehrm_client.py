@@ -238,5 +238,95 @@ class OrangeHRMClient:
             "syncStatus": "Profile Created in OrangeHRM PIM"
         }
 
+    def delete_employee_profile(self, identifier: str) -> dict:
+        """
+        Deletes an employee profile from OrangeHRM PIM.
+        identifier can be employee fullName, employeeId, or empNumber.
+        """
+        self.reload_config()
+        if not identifier:
+            return {"status": "error", "message": "No identifier provided for OrangeHRM deletion."}
+
+        target_name = str(identifier).strip()
+        first_name = target_name.split()[0] if target_name else ""
+
+        if self.is_configured():
+            try:
+                opener = self._get_authenticated_session()
+                # 1. Search for matching employees by firstName or ID
+                search_query = urllib.parse.quote(first_name or target_name)
+                pim_url = f"{self.base_url}/web/index.php/api/v2/pim/employees?nameOrId={search_query}"
+                resp = opener.open(pim_url, timeout=10)
+                pim_data = json.loads(resp.read().decode('utf-8'))
+                emp_list = pim_data.get('data', [])
+
+                target_ids = []
+                for emp in emp_list:
+                    emp_num = emp.get('empNumber')
+                    fn = (emp.get('firstName') or '').lower()
+                    ln = (emp.get('lastName') or '').lower()
+                    full = f"{fn} {ln}".strip()
+                    emp_id = str(emp.get('employeeId') or '')
+
+                    if (
+                        target_name.lower() in full or
+                        full in target_name.lower() or
+                        target_name.lower() == fn or
+                        target_name == emp_id or
+                        target_name == str(emp_num)
+                    ):
+                        if emp_num not in target_ids:
+                            target_ids.append(emp_num)
+
+                # 2. If directly numeric empNumber passed
+                if not target_ids and target_name.isdigit():
+                    target_ids.append(int(target_name))
+
+                if not target_ids:
+                    print(f"[OrangeHRM Delete] No active employee record found matching '{target_name}'.")
+                    return {
+                        "status": "success",
+                        "deleted": True,
+                        "notFound": True,
+                        "message": f"Employee '{target_name}' was not found in OrangeHRM or was already deleted."
+                    }
+
+                # 3. Call DELETE API with target employee numbers
+                del_url = f"{self.base_url}/web/index.php/api/v2/pim/employees"
+                del_payload = json.dumps({"ids": target_ids}).encode('utf-8')
+                del_req = urllib.request.Request(
+                    del_url,
+                    data=del_payload,
+                    headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+                    method='DELETE'
+                )
+                del_resp = opener.open(del_req, timeout=12)
+                del_data = json.loads(del_resp.read().decode('utf-8'))
+
+                print(f"[OrangeHRM LIVE DELETE SUCCESS] Deleted Employee(s) {target_ids} ({target_name}): {del_data}")
+                return {
+                    "status": "success",
+                    "deleted": True,
+                    "empNumbers": target_ids,
+                    "targetName": target_name,
+                    "message": f"Successfully deleted employee '{target_name}' (Emp #{', '.join(map(str, target_ids))}) from OrangeHRM PIM."
+                }
+
+            except Exception as e:
+                print(f"[OrangeHRM Delete API Error]: {e}")
+                return {
+                    "status": "error",
+                    "error": str(e),
+                    "message": f"OrangeHRM deletion failed: {e}"
+                }
+
+        return {
+            "status": "success",
+            "deleted": True,
+            "simulated": True,
+            "targetName": target_name,
+            "message": f"Employee record '{target_name}' deleted in simulated mode."
+        }
+
 # Global singleton
 orangehrm_client = OrangeHRMClient()

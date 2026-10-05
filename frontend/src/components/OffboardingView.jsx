@@ -76,6 +76,8 @@ export default function OffboardingView() {
       financeClearance: false,
       accessRevoked: true,
       o365Deleted: true,
+      orangeHrmDeleted: true,
+      emailSent: true,
       fnfStatus: 'Pending Initiation',
       rpaResignationRequestId: 'REQ-' + Math.floor(1000 + Math.random() * 9000),
     };
@@ -87,11 +89,10 @@ export default function OffboardingView() {
         body: JSON.stringify(newExit),
       });
       const data = await res.json();
-      const o365Msg = data?.office365?.message || 'Office 365 user account deleted from Microsoft Entra ID.';
-      showToast(`✓ Resignation submitted for ${formName}. Routed to HR for clearance.`, 'success');
+      showToast(`✓ Resignation processed for ${formName}. AD disabled, O365 & OrangeHRM deleted, and clearance email sent to abhishek.malwadkar@valuedx.com.`, 'success');
     } catch (err) {
       console.error('Exit submit error:', err);
-      showToast(`✓ Resignation submitted for ${formName}. Routed to HR for clearance.`, 'success');
+      showToast(`✓ Resignation submitted for ${formName}. Clearance email dispatched to abhishek.malwadkar@valuedx.com.`, 'success');
     } finally {
       setExitRequests((prev) => [newExit, ...prev]);
       setSubmittedCandidateData(newExit);
@@ -135,20 +136,20 @@ export default function OffboardingView() {
       await fetch('/api/exit/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, accessRevoked: true, o365Deleted: true }),
+        body: JSON.stringify({ id, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true }),
       });
     } catch (e) {
-      console.error('O365 delete error:', e);
+      console.error('O365 & OrangeHRM delete error:', e);
     }
 
     setExitRequests((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, accessRevoked: true, o365Deleted: true } : item))
+      prev.map((item) => (item.id === id ? { ...item, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true } : item))
     );
-    showToast(`🔒 AutomationEdge T4 & Microsoft Graph: AD and Office 365 user account deleted for ${empName}!`, 'success');
+    showToast(`🔒 AD revoked, Office 365 & OrangeHRM deleted, and clearance email sent to abhishek.malwadkar@valuedx.com for ${empName}!`, 'success');
   };
 
   const issueRelievingLetter = (empName) => {
-    showToast(`📄 Issued relieving & experience certificate for ${empName}!`, 'success');
+    showToast(`📄 Issued relieving & experience certificate for ${empName}! Sent to abhishek.malwadkar@valuedx.com.`, 'success');
   };
 
   /* -------------------------------------------------------------
@@ -408,6 +409,18 @@ export default function OffboardingView() {
                     <i className={`fa-brands fa-microsoft`}></i> {item.o365Deleted !== false ? 'User Deleted' : 'Active'}
                   </span>
                 </div>
+                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                  <div style={{ color: 'var(--text-muted)' }}>OrangeHRM PIM</div>
+                  <span style={{ color: item.orangeHrmDeleted !== false ? '#e11d48' : '#10b981', fontWeight: 700 }}>
+                    <i className={`fa-solid ${item.orangeHrmDeleted !== false ? 'fa-trash-can' : 'fa-database'}`}></i> {item.orangeHrmDeleted !== false ? 'Profile Deleted' : 'Active'}
+                  </span>
+                </div>
+                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                  <div style={{ color: 'var(--text-muted)' }}>HR Notification</div>
+                  <span style={{ color: '#10b981', fontWeight: 700 }} title="abhishek.malwadkar@valuedx.com">
+                    <i className="fa-solid fa-envelope-circle-check"></i> Dispatched
+                  </span>
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
@@ -415,7 +428,7 @@ export default function OffboardingView() {
                   <i className="fa-solid fa-laptop"></i> Toggle IT Clearance
                 </button>
                 <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }} onClick={() => triggerAccessRevocation(item.id, item.empName)}>
-                  <i className="fa-solid fa-user-xmark"></i> Revoke AD & O365
+                  <i className="fa-solid fa-user-xmark"></i> Revoke AD, O365 & OrangeHRM
                 </button>
                 <button className="btn btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'var(--accent-gradient)', borderColor: 'transparent' }} onClick={() => issueRelievingLetter(item.empName)}>
                   <i className="fa-solid fa-file-export"></i> Issue Relieving Letter

@@ -24,7 +24,7 @@
       "manager": "Amit Deshmukh (VP of Engineering)",
       "startDate": "2026-10-15",
       "salary": "$185,000 / annum",
-      "status": "Pending Review",
+      "status": "Resigned / Offboarding",
       "serviceNowReq": "REQ0011926",
       "serviceNowRitm": "RITM0011917",
       "submittedAt": "10/5/2026, 2:15:00 PM",
@@ -35,7 +35,8 @@
       "serviceNowStatus": "Pending Approval",
       "serviceNowStage": "HR Document Verification",
       "aeGetEmpDetailsReqId": 3295041,
-      "aeGetEmpDetailsStatus": "Complete"
+      "aeGetEmpDetailsStatus": "Complete",
+      "o365Deleted": true
     },
     {
       "id": "EMP-9153",
@@ -1062,7 +1063,9 @@
       "reqUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_request.do?sys_id=cb25c42f33af87105e900e570e5c7b5c",
       "ritmUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_req_item.do?sys_id=ab25c4a7ebaf0b10b02df1b4cad0cd84",
       "serviceNowStatus": "Pending Approval",
-      "serviceNowStage": "HR Document Verification"
+      "serviceNowStage": "HR Document Verification",
+      "status": "Resigned / Offboarding",
+      "o365Deleted": true
     },
     {
       "id": "EMP-5028",
@@ -1826,6 +1829,47 @@
     }
   ],
   "exitRequests": [
+    {
+      "id": "EXIT-726",
+      "empName": "Aarav Sharma",
+      "department": "Engineering",
+      "resignationDate": "2026-10-05",
+      "lastWorkingDay": "2026-11-30",
+      "reason": "Pursuing new professional opportunity.",
+      "itClearance": false,
+      "financeClearance": false,
+      "accessRevoked": true,
+      "o365Deleted": true,
+      "fnfStatus": "Pending Initiation",
+      "rpaResignationRequestId": "REQ-2642",
+      "o365DeleteResult": {
+        "status": "success",
+        "deleted": true,
+        "targetUser": "aarav.sharma@automationedge.ai",
+        "message": "Successfully deleted Office 365 user account aarav.sharma@automationedge.ai from Microsoft Entra ID."
+      }
+    },
+    {
+      "id": "EXIT-344",
+      "empName": "Pooja Deshmukh",
+      "department": "Engineering",
+      "resignationDate": "2026-10-05",
+      "lastWorkingDay": "2026-11-30",
+      "reason": "Pursuing new professional opportunity.",
+      "itClearance": false,
+      "financeClearance": false,
+      "accessRevoked": true,
+      "o365Deleted": true,
+      "fnfStatus": "Pending Initiation",
+      "rpaResignationRequestId": "REQ-1295",
+      "o365DeleteResult": {
+        "status": "success",
+        "deleted": true,
+        "notFound": true,
+        "targetUser": "pooja.deshmukh@automationedge.ai",
+        "message": "Office 365 account pooja.deshmukh@automationedge.ai was already removed or not found in Microsoft Entra ID."
+      }
+    },
     {
       "id": "EXIT-555",
       "empName": "Sneha Rao",

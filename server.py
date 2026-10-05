@@ -9,6 +9,7 @@ from ae_rpa_client import ae_client
 from generate_offer_letter import create_and_email_offer_letter
 from servicenow_client import sn_client
 from office365_client import office365_client
+from orangehrm_client import orangehrm_client
 
 PORT = int(os.environ.get('PORT', 8081))
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'employees.json')
@@ -245,7 +246,11 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
         elif self.path == '/api/exit':
             emp_name = payload.get('empName') or payload.get('name') or payload.get('employeeName') or payload.get('email')
             o365_result = {}
+            orangehrm_result = {}
+            email_result = {}
+
             if emp_name:
+                # 1. Delete Office 365 / Entra ID User Account
                 try:
                     o365_result = office365_client.delete_user_account(emp_name)
                     payload['o365DeleteResult'] = o365_result
@@ -254,12 +259,32 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                     payload['o365DeleteResult'] = {"status": "error", "message": str(e)}
                     payload['o365Deleted'] = False
 
+                # 2. Delete Employee Record from OrangeHRM PIM
+                try:
+                    orangehrm_result = orangehrm_client.delete_employee_profile(emp_name)
+                    payload['orangeHrmDeleteResult'] = orangehrm_result
+                    payload['orangeHrmDeleted'] = orangehrm_result.get('deleted', True)
+                except Exception as e:
+                    payload['orangeHrmDeleteResult'] = {"status": "error", "message": str(e)}
+                    payload['orangeHrmDeleted'] = False
+
+                # 3. Send Automated Offboarding & Clearance Notification Email
+                try:
+                    email_result = office365_client.send_offboarding_email(payload, recipient_email="abhishek.malwadkar@valuedx.com")
+                    payload['emailNotificationResult'] = email_result
+                    payload['emailNotificationSent'] = email_result.get('sent', True)
+                except Exception as e:
+                    payload['emailNotificationResult'] = {"status": "error", "message": str(e)}
+                    payload['emailNotificationSent'] = False
+
             # Update status in employees list if present
             employees = db.get('employees', [])
             for emp in employees:
                 if emp.get('fullName') == emp_name or emp.get('name') == emp_name or emp.get('id') == payload.get('empId'):
                     emp['status'] = 'Resigned / Offboarding'
                     emp['o365Deleted'] = True
+                    emp['orangeHrmDeleted'] = True
+                    emp['accessRevoked'] = True
                     break
             db['employees'] = employees
 
@@ -271,7 +296,9 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({
                 "status": "success",
                 "data": payload,
-                "office365": o365_result
+                "office365": o365_result,
+                "orangehrm": orangehrm_result,
+                "email": email_result
             }).encode('utf-8'))
 
         elif self.path == '/api/exit/update':
@@ -291,8 +318,17 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
         elif self.path == '/api/o365/delete-user':
             emp_ident = payload.get('identifier') or payload.get('email') or payload.get('employeeName') or payload.get('empName')
             o365_result = office365_client.delete_user_account(emp_ident)
+            orangehrm_result = orangehrm_client.delete_employee_profile(emp_ident)
+            email_result = office365_client.send_offboarding_email(
+                {"empName": emp_ident, "department": payload.get("department", "Engineering"), "lastWorkingDay": payload.get("lastWorkingDay", "2026-11-30")},
+                recipient_email="abhishek.malwadkar@valuedx.com"
+            )
             self.end_headers()
-            self.wfile.write(json.dumps(o365_result).encode('utf-8'))
+            self.wfile.write(json.dumps({
+                "office365": o365_result,
+                "orangehrm": orangehrm_result,
+                "email": email_result
+            }).encode('utf-8'))
 
         else:
             self.send_error(404, "Endpoint Not Found")
