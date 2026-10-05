@@ -216,6 +216,19 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "aeGetEmpDetails": ae_emp_result
             }).encode('utf-8'))
 
+        elif self.path == '/api/employees/clear-approved' or self.path == '/api/approvals/clear':
+            # Clear approved/completed onboarding history records
+            db['employees'] = [e for e in db.get('employees', []) if e.get('status') == 'Pending Review']
+            self.write_db(db)
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "success", "message": "Approval history logs cleared", "data": db['employees']}).encode('utf-8'))
+
+        elif self.path == '/api/employees/clear':
+            db['employees'] = []
+            self.write_db(db)
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "success", "message": "All employee records cleared", "data": []}).encode('utf-8'))
+
         elif self.path == '/api/employees/update':
             employees = db.get('employees', [])
             target_id = payload.get('id')
@@ -353,6 +366,12 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "clearance": check_res,
                 "data": target_item
             }).encode('utf-8'))
+
+        elif self.path == '/api/exit/clear':
+            db['exitRequests'] = []
+            self.write_db(db)
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "success", "message": "Exit requests cleared", "data": []}).encode('utf-8'))
 
         elif self.path == '/api/exit/update':
             exits = db.get('exitRequests', [])

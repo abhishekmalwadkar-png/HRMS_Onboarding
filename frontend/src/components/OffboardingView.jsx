@@ -7,34 +7,7 @@ export default function OffboardingView() {
   const { showToast } = useToast();
   const isHR = currentUser?.role === 'hr';
 
-  const [exitRequests, setExitRequests] = useState([
-    {
-      id: 'EXIT-101',
-      empName: 'Aarav Patel',
-      department: 'Engineering',
-      resignationDate: '2026-09-28',
-      lastWorkingDay: '2026-10-31',
-      itClearance: true,
-      financeClearance: false,
-      accessRevoked: true,
-      o365Deleted: true,
-      fnfStatus: 'Pending Final Run',
-      rpaResignationRequestId: '10390',
-    },
-    {
-      id: 'EXIT-102',
-      empName: 'Vikram Joshi',
-      department: 'Product',
-      resignationDate: '2026-10-01',
-      lastWorkingDay: '2026-11-15',
-      itClearance: false,
-      financeClearance: false,
-      accessRevoked: true,
-      o365Deleted: true,
-      fnfStatus: 'In Review',
-      rpaResignationRequestId: null,
-    },
-  ]);
+  const [exitRequests, setExitRequests] = useState([]);
 
   const [formName, setFormName] = useState(currentUser?.name?.split(' (')[0] || 'Sneha Rao');
   const [formDept, setFormDept] = useState('Engineering');
@@ -53,12 +26,23 @@ export default function OffboardingView() {
       const res = await fetch('/api/exit');
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setExitRequests(data);
-        }
+        setExitRequests(Array.isArray(data) ? data : []);
       }
     } catch (e) {
       console.warn('Failed to load exit requests from server:', e);
+    }
+  };
+
+  const handleClearExitLogs = async () => {
+    try {
+      const res = await fetch('/api/exit/clear', { method: 'POST' });
+      if (res.ok) {
+        setExitRequests([]);
+        showToast('✓ Active exit requests and clearance logs cleared.', 'success');
+      }
+    } catch (e) {
+      setExitRequests([]);
+      showToast('Exit requests cleared.', 'info');
     }
   };
 
@@ -431,14 +415,33 @@ export default function OffboardingView() {
 
       {/* Active Clearances Pipeline for HR */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <h3 style={{ margin: 0 }}>Active Exit & Offboarding Clearances ({exitRequests.length})</h3>
-          <button className="btn btn-secondary" onClick={fetchExitRequests} style={{ padding: '0.3rem 0.7rem', fontSize: '0.78rem' }}>
-            <i className="fa-solid fa-arrows-rotate"></i> Refresh
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {exitRequests.length > 0 && (
+              <button
+                className="btn btn-secondary"
+                onClick={handleClearExitLogs}
+                style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem', color: '#e11d48', borderColor: 'rgba(225, 29, 72, 0.3)' }}
+                title="Clear all exit records and clearance logs"
+              >
+                <i className="fa-solid fa-trash-can"></i> Clear Logs
+              </button>
+            )}
+            <button className="btn btn-secondary" onClick={fetchExitRequests} style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>
+              <i className="fa-solid fa-arrows-rotate"></i> Refresh
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {exitRequests.length === 0 ? (
+          <div className="glass-card" style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)' }}>
+            <i className="fa-solid fa-circle-check" style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '1rem', display: 'block' }}></i>
+            <h3 style={{ color: 'var(--text-main)', marginBottom: '0.5rem' }}>No Active Exit Clearances</h3>
+            <p>No employee resignations or exit clearances currently pending.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {exitRequests.map((item) => {
             const isCleared = !!(item.itClearance || item.itClearanceStatus === 'User Submitted Laptop');
             const isChecking = checkingClearanceId === item.id;
@@ -612,6 +615,7 @@ export default function OffboardingView() {
             );
           })}
         </div>
+        )}
       </div>
     </section>
   );

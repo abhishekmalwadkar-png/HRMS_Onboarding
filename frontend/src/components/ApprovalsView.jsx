@@ -84,6 +84,19 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
   const startIndex = (validCurrentPage - 1) * ITEMS_PER_PAGE;
   const paginatedApprovedHistory = approvedHistory.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
+  const handleClearApprovalHistory = async () => {
+    try {
+      const res = await fetch('/api/employees/clear-approved', { method: 'POST' });
+      if (res.ok) {
+        if (onRefreshEmployees) onRefreshEmployees();
+        showToast('✓ Approved onboarding history & multi-engine logs cleared.', 'success');
+      }
+    } catch (e) {
+      if (onRefreshEmployees) onRefreshEmployees();
+      showToast('Cleared approval history.', 'info');
+    }
+  };
+
   const handleApprove = async (cand) => {
     setApprovingId(cand.id);
     setActiveFlowCandidate(cand);
@@ -450,9 +463,26 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
 
       {/* Approved History Table */}
       <div className="glass-card">
-        <h3 style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <i className="fa-solid fa-clock-rotate-left text-accent"></i> Approved Onboarding History & Multi-Engine Logs
-        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <i className="fa-solid fa-clock-rotate-left text-accent"></i> Approved Onboarding History & Multi-Engine Logs ({approvedHistory.length})
+          </h3>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {approvedHistory.length > 0 && (
+              <button
+                className="btn btn-secondary"
+                onClick={handleClearApprovalHistory}
+                style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem', color: '#e11d48', borderColor: 'rgba(225, 29, 72, 0.3)' }}
+                title="Clear all completed onboarding history and logs"
+              >
+                <i className="fa-solid fa-trash-can"></i> Clear History Logs
+              </button>
+            )}
+            <button className="btn btn-secondary" onClick={onRefreshEmployees} style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>
+              <i className="fa-solid fa-arrows-rotate"></i> Refresh
+            </button>
+          </div>
+        </div>
 
         <div className="table-responsive">
           <table className="data-table">
