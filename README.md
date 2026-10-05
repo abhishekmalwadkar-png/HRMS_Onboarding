@@ -67,9 +67,12 @@ When HR approves an onboarding candidate from the dashboard or directly via Serv
 
 ## 🛠️ Tech Stack
 
-- **Server Runtime**: Python 3.8+
-- **Frontend**: HTML5, Vanilla CSS3, Vanilla JavaScript (ES6+)
-- **Icons & Fonts**: Font Awesome 6.5, Google Fonts (Plus Jakarta Sans, Inter)
+- **Frontend Framework**: **React 18 / 19** + **Vite 8**
+- **State & Context**: React Context API (`AuthContext`, `ToastContext`), Hooks
+- **Styling**: Modern CSS3 with Design Tokens, Glassmorphism, Responsive Grid
+- **Icons & Fonts**: Font Awesome 6.5, Lucide React, Google Fonts (Plus Jakarta Sans, Inter)
+- **Animation & FX**: Canvas-Confetti, Custom Smooth CSS Transitions
+- **Backend Runtime**: Python 3.8+ Multi-Threaded HTTP Server (`server.py`)
 - **External Integrations**:
   - ServiceNow REST Table API
   - AutomationEdge T4 RPA REST Engine
@@ -81,8 +84,8 @@ When HR approves an onboarding candidate from the dashboard or directly via Serv
 ## 🚀 Getting Started
 
 ### 1. Prerequisites
-- Python 3.8 or higher installed
-- Git installed
+- Python 3.8 or higher
+- Node.js 18+ and npm
 
 ### 2. Clone the Repository
 ```bash
@@ -96,12 +99,21 @@ Copy `.env.example` to `.env` and fill in your credentials:
 cp .env.example .env
 ```
 
-### 4. Start the Application Server
+### 4. Running the Application
+
+#### Option A: Run Full-Stack Server (Python Backend + Built React Frontend)
 ```bash
 python server.py
 ```
-The server will start at:
-👉 **`http://127.0.0.1:8080`** or **`http://localhost:8080`**
+Open **`http://localhost:8080`** in your browser.
+
+#### Option B: Run React Dev Server with Hot-Reload (Vite)
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open **`http://localhost:3000`** in your browser (API requests automatically proxy to Python server on port 8080).
 
 ---
 

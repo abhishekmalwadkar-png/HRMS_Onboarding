@@ -13,6 +13,19 @@ AUTOFILL_FILE = os.path.join(os.path.dirname(__file__), 'autofill.json')
 
 class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
 
+    def translate_path(self, path):
+        dist_dir = os.path.join(os.path.dirname(__file__), 'frontend', 'dist')
+        if os.path.exists(dist_dir) and not path.startswith('/api/') and not path.startswith('/generated_offers/'):
+            clean_path = path.split('?', 1)[0].split('#', 1)[0]
+            rel_path = clean_path.lstrip('/')
+            full_path = os.path.join(dist_dir, rel_path)
+            if os.path.exists(full_path) and not os.path.isdir(full_path):
+                return full_path
+            index_path = os.path.join(dist_dir, 'index.html')
+            if os.path.exists(index_path):
+                return index_path
+        return super().translate_path(path)
+
     def read_autofill_db(self):
         if not os.path.exists(AUTOFILL_FILE):
             return {"autofillProfiles": []}
