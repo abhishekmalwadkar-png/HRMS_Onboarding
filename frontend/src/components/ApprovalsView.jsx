@@ -340,43 +340,6 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                 </div>
               </div>
 
-              {/* 4-Step Sequential Pipeline Progress Track */}
-              <div
-                style={{
-                  background: 'var(--bg-primary)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '0.75rem 1rem',
-                  marginBottom: '1.25rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '0.5rem',
-                }}
-              >
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Approval Flow Sequence:
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', fontSize: '0.8rem', fontWeight: 700 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#059669', background: '#ecfdf5', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid #a7f3d0' }}>
-                    <i className="fa-solid fa-laptop"></i> 1. ServiceNow
-                  </span>
-                  <i className="fa-solid fa-arrow-right" style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}></i>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#c2410c', background: '#fff7ed', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid #fed7aa' }}>
-                    <i className="fa-solid fa-robot"></i> 2. AD
-                  </span>
-                  <i className="fa-solid fa-arrow-right" style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}></i>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#1d4ed8', background: '#eff6ff', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
-                    <i className="fa-brands fa-microsoft"></i> 3. 365
-                  </span>
-                  <i className="fa-solid fa-arrow-right" style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}></i>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#ea580c', background: '#fff7ed', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid #fed7aa' }}>
-                    <i className="fa-solid fa-user-check"></i> 4. OrangeHRM
-                  </span>
-                </div>
-              </div>
-
               {/* 2-Column Details Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
                 {/* Column 1: Candidate Info */}
