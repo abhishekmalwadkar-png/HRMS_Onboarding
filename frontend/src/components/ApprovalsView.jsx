@@ -337,9 +337,6 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                       <i className="fa-solid fa-box"></i> RITM: <span>{cand.serviceNowRitm || 'RITM0010076'}</span>
                     </a>
                   </div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    <i className="fa-solid fa-server text-accent"></i> SN: <strong>ven04528</strong> | OrangeHRM: <strong>10.41.5.39</strong> | O365: <strong>automationedge.ai</strong> | AE T4: <strong>t4.automationedge.com</strong>
-                  </span>
                 </div>
               </div>
 
