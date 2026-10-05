@@ -8,6 +8,7 @@ import threading
 import base64
 from ae_rpa_client import ae_client
 from generate_offer_letter import create_and_email_offer_letter
+from generate_relieving_letter import generate_relieving_letter_pdf
 from servicenow_client import sn_client
 from office365_client import office365_client
 from orangehrm_client import orangehrm_client
@@ -152,6 +153,12 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 selected = dict(random.choice(profiles)) if profiles else {}
                 selected['autofillProfiles'] = profiles
                 self.wfile.write(json.dumps(selected).encode('utf-8'))
+            elif self.path.startswith('/api/orangehrm/random-employee'):
+                emp = orangehrm_client.get_random_employee()
+                self.wfile.write(json.dumps(emp).encode('utf-8'))
+            elif self.path.startswith('/api/orangehrm/employees'):
+                emps = orangehrm_client.get_active_employees()
+                self.wfile.write(json.dumps(emps).encode('utf-8'))
             elif self.path.startswith('/api/db'):
                 self.wfile.write(json.dumps(db).encode('utf-8'))
             else:
@@ -364,14 +371,21 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             # Parse candidate & match against all Job Descriptions
             candidate_data = resume_screener.parse_resume_details(raw_text, file_name)
+            matched_job_name = candidate_data.get('role') or candidate_data.get('appliedRole') or payload.get('jobName') or "Senior AI Engineer"
 
-            # Optional AutomationEdge T4 Resume Screening trigger
+            # Execute T4 Workflows: "HR Demo Recruitment Get JD" & "HR Demo Recruitment Match JD" with param job_name
             ae_screening_res = {}
             try:
-                ae_screening_res = ae_client.trigger_resume_screening(candidate_data)
-                candidate_data['aeScreeningRequestId'] = ae_screening_res.get('requestId')
+                ae_screening_res = ae_client.trigger_recruitment_screening_pipeline(
+                    job_name=matched_job_name,
+                    candidate_name=candidate_data.get('name')
+                )
+                candidate_data['t4RecruitmentPipeline'] = ae_screening_res
+                candidate_data['getJdResult'] = ae_screening_res.get('getJd')
+                candidate_data['matchJdResult'] = ae_screening_res.get('matchJd')
             except Exception as ae_err:
-                print(f"[AE Resume Screening Warning]: {ae_err}")
+                print(f"[AE T4 Recruitment Pipeline Error]: {ae_err}")
+                candidate_data['t4RecruitmentError'] = str(ae_err)
 
             # Store in DB recruitment pipeline
             rec_list = db.get('recruitment', [])
@@ -735,6 +749,67 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "orangehrm": orangehrm_result,
                 "email": email_result,
                 "data": exits
+            }).encode('utf-8'))
+
+        elif self.path == '/api/exit/issue-relieving-letter':
+            emp_ident = payload.get('empName') or payload.get('employeeName') or payload.get('fullName') or "Valued Employee"
+            target_id = payload.get('id')
+            emp_id = payload.get('empId') or payload.get('emp_id') or target_id
+
+            exits = db.get('exitRequests', [])
+            target_exit = None
+            for item in exits:
+                if item.get('id') == target_id or item.get('empName') == emp_ident:
+                    target_exit = item
+                    break
+
+            employees = db.get('employees', [])
+            target_emp = None
+            for emp in employees:
+                if emp.get('fullName') == emp_ident or emp.get('name') == emp_ident or (emp_id and emp.get('id') == emp_id):
+                    target_emp = emp
+                    break
+
+            emp_data = {
+                'empName': emp_ident,
+                'empId': emp_id or (target_exit and target_exit.get('empId')) or (target_emp and target_emp.get('id')) or f"EMP-{int(time.time()) % 9000 + 1000}",
+                'designation': payload.get('designation') or (target_emp and target_emp.get('jobTitle')) or payload.get('jobTitle') or 'Senior Software Engineer',
+                'department': payload.get('department') or (target_exit and target_exit.get('department')) or (target_emp and target_emp.get('department')) or 'Engineering',
+                'joiningDate': payload.get('joiningDate') or (target_emp and target_emp.get('joiningDate')) or 'January 15, 2023',
+                'lastWorkingDay': payload.get('lastWorkingDay') or (target_exit and target_exit.get('lastWorkingDay')) or time.strftime('%B %d, %Y'),
+                'laptopTicket': (target_exit and target_exit.get('laptopTicket')) or payload.get('laptopTicket') or 'INC0040469',
+                'serviceNowReq': (target_exit and target_exit.get('serviceNowReq')) or payload.get('serviceNowReq') or 'REQ0014290',
+            }
+
+            # 1. Generate PDF Relieving & Experience Letter
+            pdf_path = generate_relieving_letter_pdf(emp_data)
+
+            # 2. Send Relieving Letter Email to abhishek.malwadkar@valuedx.com
+            recipient = payload.get('recipientEmail') or "abhishek.malwadkar@valuedx.com"
+            email_res = office365_client.send_relieving_letter_email(emp_data, pdf_path, recipient_email=recipient)
+
+            # 3. Update DB
+            if target_exit:
+                target_exit['relievingLetterIssued'] = True
+                target_exit['relievingLetterPdf'] = pdf_path
+                target_exit['relievingLetterDate'] = time.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                for item in exits:
+                    if item.get('empName') == emp_ident:
+                        item['relievingLetterIssued'] = True
+                        item['relievingLetterPdf'] = pdf_path
+                        item['relievingLetterDate'] = time.strftime('%Y-%m-%d %H:%M:%S')
+                        break
+            db['exitRequests'] = exits
+            self.write_db(db)
+
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "message": f"Relieving letter issued and emailed to {recipient} for {emp_ident}",
+                "pdfPath": pdf_path,
+                "emailResult": email_res,
+                "data": target_exit or exits
             }).encode('utf-8'))
 
         else:

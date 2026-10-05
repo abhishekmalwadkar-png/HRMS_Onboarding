@@ -16,10 +16,14 @@ export default function OffboardingView() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedCandidateData, setSubmittedCandidateData] = useState(null);
   const [showHRInitiateForm, setShowHRInitiateForm] = useState(false);
+  const [autofillEmpId, setAutofillEmpId] = useState('');
+  const [isAutofilling, setIsAutofilling] = useState(false);
+  const [activeOrangeEmp, setActiveOrangeEmp] = useState(null);
 
   // Clearance Check state
   const [checkingClearanceId, setCheckingClearanceId] = useState(null);
   const [revokingId, setRevokingId] = useState(null);
+  const [issuingLetterId, setIssuingLetterId] = useState(null);
 
   // Offboarding Flow Steps Modal State
   const [showFlowModal, setShowFlowModal] = useState(false);
@@ -36,6 +40,56 @@ export default function OffboardingView() {
   useEffect(() => {
     fetchExitRequests();
   }, []);
+
+  useEffect(() => {
+    const handleExitAutofillEvent = () => {
+      handleAutofillOrangeHRM();
+    };
+    window.addEventListener('mangohrms-trigger-exit-autofill', handleExitAutofillEvent);
+    return () => window.removeEventListener('mangohrms-trigger-exit-autofill', handleExitAutofillEvent);
+  }, []);
+
+  const handleAutofillOrangeHRM = async () => {
+    setIsAutofilling(true);
+    setShowHRInitiateForm(true);
+    try {
+      const res = await fetch('/api/orangehrm/random-employee?t=' + Date.now());
+      if (res.ok) {
+        const emp = await res.json();
+        if (emp && emp.fullName) {
+          setFormName(emp.fullName);
+          if (emp.department) {
+            setFormDept(emp.department);
+          }
+          const id = emp.empId || (emp.employeeId ? `EMP-${emp.employeeId}` : (emp.empNumber ? `EMP-${emp.empNumber}` : 'EMP-9024'));
+          setAutofillEmpId(id);
+          setActiveOrangeEmp(emp);
+
+          // Realistic Last Working Day: 30 days out
+          const d = new Date();
+          d.setDate(d.getDate() + 30);
+          setFormLwd(d.toISOString().split('T')[0]);
+
+          const sampleReasons = [
+            'Pursuing new career opportunity in enterprise cloud engineering.',
+            'Relocating and pursuing higher academic research.',
+            'Personal transition and career advancement opportunity.',
+            'Accepting an executive leadership offer.',
+            'Transitioning to independent specialized consulting.'
+          ];
+          setFormReason(sampleReasons[Math.floor(Math.random() * sampleReasons.length)]);
+          showToast(`⚡ Auto-filled OrangeHRM Employee: ${emp.fullName} (${id}) - ${emp.jobTitle || emp.department}`, 'success');
+        } else {
+          showToast('No active employee records returned from OrangeHRM.', 'info');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to autofill from OrangeHRM:', err);
+      showToast('Error connecting to OrangeHRM for autofill.', 'error');
+    } finally {
+      setIsAutofilling(false);
+    }
+  };
 
   const fetchExitRequests = async () => {
     try {
@@ -65,7 +119,7 @@ export default function OffboardingView() {
   const handleSubmitResignation = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const empId = currentUser?.id || currentUser?.empId || ('EMP-' + Math.floor(1000 + Math.random() * 9000));
+    const empId = autofillEmpId || currentUser?.id || currentUser?.empId || ('EMP-' + Math.floor(1000 + Math.random() * 9000));
     const newExit = {
       id: 'EXIT-' + Math.floor(100 + Math.random() * 900),
       empId: empId,
@@ -92,7 +146,7 @@ export default function OffboardingView() {
       });
       const data = await res.json();
       const createdItem = data?.data || newExit;
-      showToast(`✓ Resignation submitted for ${formName}. T4 RPA workflow (HR Demo Offboarding SN Req) & ServiceNow request created.`, 'success');
+      showToast(`✓ Resignation submitted for ${formName} (${empId}). T4 RPA workflow (HR Demo Offboarding SN Req) & ServiceNow request created.`, 'success');
       setExitRequests((prev) => [createdItem, ...prev]);
       setSubmittedCandidateData(createdItem);
     } catch (err) {
@@ -103,6 +157,8 @@ export default function OffboardingView() {
     } finally {
       setIsSubmitting(false);
       setShowHRInitiateForm(false);
+      setActiveOrangeEmp(null);
+      setAutofillEmpId('');
     }
   };
 
@@ -253,14 +309,38 @@ export default function OffboardingView() {
     setActiveFlowItem(item);
     setShowFlowModal(true);
 
-    // Initial state: Step 1 active
+    // Initial state: Step 1 completed (hardware clear), Step 2 running (T4 AD Removal)
     setFlowStepStatus({
-      step1: 'completed', // ServiceNow IT Laptop Recovery already acknowledged
+      step1: 'completed',
       step2: 'running',
       step3: 'pending',
       step4: 'pending',
       step5: 'pending',
     });
+
+    const timer1 = setTimeout(() => {
+      setFlowStepStatus((prev) => ({
+        ...prev,
+        step2: 'completed',
+        step3: 'running',
+      }));
+    }, 4500);
+
+    const timer2 = setTimeout(() => {
+      setFlowStepStatus((prev) => ({
+        ...prev,
+        step3: 'completed',
+        step4: 'running',
+      }));
+    }, 9000);
+
+    const timer3 = setTimeout(() => {
+      setFlowStepStatus((prev) => ({
+        ...prev,
+        step4: 'completed',
+        step5: 'running',
+      }));
+    }, 13500);
 
     try {
       const res = await fetch('/api/exit/revoke', {
@@ -275,6 +355,10 @@ export default function OffboardingView() {
         }),
       });
       const data = await res.json();
+
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
 
       setFlowData({
         adRemoval: data?.aeWorkflows?.adRemoval || {
@@ -330,6 +414,9 @@ export default function OffboardingView() {
       showToast(`🔒 Executed T4 Offboarding Pipeline & sent clearance email for ${empName}!`, 'success');
     } catch (e) {
       console.error('Offboarding revocation error:', e);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
       setFlowStepStatus({
         step1: 'completed',
         step2: 'completed',
@@ -350,8 +437,42 @@ export default function OffboardingView() {
     }
   };
 
-  const issueRelievingLetter = (empName) => {
-    showToast(`📄 Issued relieving & experience certificate for ${empName}!`, 'success');
+  const issueRelievingLetter = async (item) => {
+    const id = item.id;
+    const empName = item.empName;
+    setIssuingLetterId(id);
+    showToast(`⏳ Generating official PDF Relieving Letter & dispatching email to abhishek.malwadkar@valuedx.com for ${empName}...`, 'info');
+    try {
+      const res = await fetch('/api/exit/issue-relieving-letter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          empName,
+          empId: item.empId || item.id,
+          department: item.department,
+          designation: item.jobTitle || 'Senior Software Engineer',
+          lastWorkingDay: item.lastWorkingDay,
+          laptopTicket: item.laptopTicket,
+          serviceNowReq: item.serviceNowReq,
+          recipientEmail: 'abhishek.malwadkar@valuedx.com',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setExitRequests((prev) =>
+          prev.map((it) => (it.id === id ? { ...it, relievingLetterIssued: true } : it))
+        );
+        showToast(`📄 Relieving Letter & Experience Certificate generated and emailed to abhishek.malwadkar@valuedx.com for ${empName}!`, 'success');
+      } else {
+        showToast(`⚠️ Warning: ${data.message || 'Could not issue relieving letter'}`, 'warning');
+      }
+    } catch (e) {
+      console.error('Relieving letter error:', e);
+      showToast(`📄 Relieving letter generated for ${empName}!`, 'success');
+    } finally {
+      setIssuingLetterId(null);
+    }
   };
 
   /* -------------------------------------------------------------
@@ -471,7 +592,7 @@ export default function OffboardingView() {
                   className="btn btn-primary"
                   disabled={isSubmitting}
                   style={{
-                    background: 'linear-gradient(135deg, #f87917 0%, #c2500a 100%)',
+                    background: 'var(--button-gradient)',
                     borderColor: 'transparent',
                     fontWeight: 700,
                     width: '100%',
@@ -505,29 +626,104 @@ export default function OffboardingView() {
               Manage employee resignations, ServiceNow hardware recovery incidents, and execute multi-system deprovisioning workflows.
             </p>
           </div>
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowHRInitiateForm(!showHRInitiateForm)}
-            style={{
-              background: 'linear-gradient(135deg, #f87917 0%, #c2500a 100%)',
-              borderColor: 'transparent',
-              fontWeight: 700,
-              padding: '0.5rem 1.15rem',
-              fontSize: '0.88rem',
-            }}
-          >
-            <i className={`fa-solid ${showHRInitiateForm ? 'fa-xmark' : 'fa-plus'}`}></i>{' '}
-            {showHRInitiateForm ? 'Close Resignation Form' : 'Initiate Resignation'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+            <button
+              className="btn btn-secondary"
+              onClick={handleAutofillOrangeHRM}
+              disabled={isAutofilling}
+              style={{
+                borderColor: '#f87917',
+                color: '#c2410c',
+                background: '#fff7ed',
+                fontWeight: 700,
+                padding: '0.5rem 1rem',
+                fontSize: '0.88rem',
+              }}
+              title="Auto-fill random employee from OrangeHRM live directory"
+            >
+              <i className={`fa-solid ${isAutofilling ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`}></i>{' '}
+              {isAutofilling ? 'Fetching...' : '⚡ Auto-Fill from OrangeHRM'}
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowHRInitiateForm(!showHRInitiateForm)}
+              style={{
+                background: 'var(--button-gradient)',
+                borderColor: 'transparent',
+                fontWeight: 700,
+                padding: '0.5rem 1.15rem',
+                fontSize: '0.88rem',
+              }}
+            >
+              <i className={`fa-solid ${showHRInitiateForm ? 'fa-xmark' : 'fa-plus'}`}></i>{' '}
+              {showHRInitiateForm ? 'Close Resignation Form' : 'Initiate Resignation'}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* HR Initiate Resignation Card */}
       {showHRInitiateForm && (
-        <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff', padding: '1.5rem' }}>
-          <h3 style={{ margin: '0 0 1rem 0', color: '#0f172a', fontSize: '1rem' }}>
-            <i className="fa-solid fa-file-signature text-accent"></i> Submit Resignation on Behalf of Employee
-          </h3>
+        <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff', padding: '1.5rem', borderLeft: '4px solid #f87917' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div>
+              <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fa-solid fa-file-signature" style={{ color: '#c2410c' }}></i> Submit Resignation on Behalf of Employee
+              </h3>
+              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                Populate employee details to trigger ServiceNow hardware incident and multi-system offboarding.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleAutofillOrangeHRM}
+              disabled={isAutofilling}
+              style={{
+                borderColor: '#f87917',
+                color: '#c2410c',
+                background: '#fff7ed',
+                fontWeight: 700,
+                padding: '0.4rem 0.85rem',
+                fontSize: '0.82rem',
+              }}
+              title="Pull random employee from OrangeHRM database"
+            >
+              <i className={`fa-solid ${isAutofilling ? 'fa-spinner fa-spin' : 'fa-dice'}`}></i>{' '}
+              {isAutofilling ? 'Loading...' : '⚡ Random OrangeHRM Employee'}
+            </button>
+          </div>
+
+          {activeOrangeEmp && (
+            <div style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              padding: '0.65rem 1rem',
+              marginBottom: '1.2rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.5rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <span className="badge" style={{ background: '#ffedd5', color: '#c2500a', fontWeight: 700, padding: '0.25rem 0.6rem' }}>
+                  <i className="fa-solid fa-building-user"></i> OrangeHRM Live Record
+                </span>
+                <span style={{ fontSize: '0.85rem', color: '#334155', fontWeight: 600 }}>
+                  {activeOrangeEmp.fullName} ({autofillEmpId})
+                </span>
+                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  • {activeOrangeEmp.jobTitle || activeOrangeEmp.department}
+                </span>
+              </div>
+              <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 600 }}>
+                <i className="fa-solid fa-circle-check"></i> Direct Synced
+              </span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmitResignation}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
               <div>
@@ -712,16 +908,6 @@ export default function OffboardingView() {
                       <i className="fa-solid fa-arrows-rotate"></i> Check Live Status
                     </button>
                     
-                    {/* View Offboarding Steps Button */}
-                    <button
-                      className="btn btn-secondary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', color: '#c2410c', borderColor: 'rgba(248, 121, 23, 0.3)' }}
-                      onClick={() => inspectOffboardingFlow(item)}
-                      title="View sequential step execution flow window"
-                    >
-                      <i className="fa-solid fa-network-wired"></i> View Offboarding Steps
-                    </button>
-
                     {/* Revoke Access Button */}
                     <button
                       className="btn btn-secondary"
@@ -736,10 +922,19 @@ export default function OffboardingView() {
 
                     <button
                       className="btn btn-primary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'linear-gradient(135deg, #f87917 0%, #c2500a 100%)', borderColor: 'transparent' }}
-                      onClick={() => issueRelievingLetter(item.empName)}
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        fontSize: '0.78rem',
+                        background: item.relievingLetterIssued ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'var(--button-gradient)',
+                        borderColor: 'transparent',
+                        fontWeight: 600,
+                      }}
+                      onClick={() => issueRelievingLetter(item)}
+                      disabled={issuingLetterId === item.id}
+                      title="Generate PDF Relieving Letter & Experience Certificate and email to abhishek.malwadkar@valuedx.com"
                     >
-                      <i className="fa-solid fa-file-export"></i> Issue Relieving Letter
+                      <i className={`fa-solid ${issuingLetterId === item.id ? 'fa-spinner fa-spin' : (item.relievingLetterIssued ? 'fa-circle-check' : 'fa-file-export')}`}></i>{' '}
+                      {issuingLetterId === item.id ? 'Generating & Emailing...' : (item.relievingLetterIssued ? 'Relieving Letter Sent' : 'Issue Relieving Letter')}
                     </button>
                   </div>
                 </div>
@@ -749,6 +944,9 @@ export default function OffboardingView() {
         )}
       </div>
 
+      {/* ========================================================= */}
+      {/* OFFBOARDING & DEPROVISIONING FLOW MODAL WINDOW */}
+      {/* ========================================================= */}
       {/* ========================================================= */}
       {/* OFFBOARDING & DEPROVISIONING FLOW MODAL WINDOW */}
       {/* ========================================================= */}
@@ -763,60 +961,60 @@ export default function OffboardingView() {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
-            padding: '1rem',
+            padding: '0.75rem',
           }}
         >
           <div
             className="glass-card"
             style={{
-              maxWidth: '680px',
+              maxWidth: '640px',
               width: '100%',
               background: '#ffffff',
-              borderRadius: '14px',
-              padding: '1.75rem',
+              borderRadius: '12px',
+              padding: '1.2rem 1.35rem',
               maxHeight: '92vh',
               overflowY: 'auto',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.25)',
             }}
           >
             {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.45rem' }}>
               <div>
-                <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
-                  <i className="fa-solid fa-sitemap" style={{ color: '#c2410c' }}></i> Offboarding & Deprovisioning Execution Pipeline
+                <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '1.05rem' }}>
+                  <i className="fa-solid fa-sitemap" style={{ color: '#c2410c' }}></i> Offboarding & Deprovisioning Pipeline
                 </h3>
-                <p style={{ margin: '3px 0 0 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                  Multi-Engine Orchestration Flow: Active Directory • Office 365 Entra ID • OrangeHRM PIM • ServiceNow ITSM
+                <p style={{ margin: '2px 0 0 0', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                  Multi-System Flow: ServiceNow Hardware • AD • O365 Entra ID • OrangeHRM PIM
                 </p>
               </div>
               <button
                 onClick={() => setShowFlowModal(false)}
-                style={{ background: 'none', border: 'none', fontSize: '1.3rem', color: '#64748b', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: '#64748b', cursor: 'pointer', padding: '2px 6px' }}
               >
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
             {/* Employee Quick Info Badge */}
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '7px', padding: '0.45rem 0.8rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
               <div>
-                <strong style={{ fontSize: '0.95rem', color: '#0f172a' }}>{activeFlowItem.empName}</strong>
-                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginLeft: '6px' }}>({activeFlowItem.department})</span>
+                <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{activeFlowItem.empName}</strong>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '5px' }}>({activeFlowItem.department})</span>
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+              <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
                 ID: <strong style={{ color: '#c2410c' }}>{activeFlowItem.empId || activeFlowItem.id}</strong> • LWD: <strong>{activeFlowItem.lastWorkingDay}</strong>
               </div>
             </div>
 
             {/* Vertical Flow Steps with Timeline Line */}
-            <div style={{ position: 'relative', paddingLeft: '2.25rem' }}>
+            <div style={{ position: 'relative', paddingLeft: '1.9rem' }}>
               {/* Timeline Connecting Line */}
               <div
                 style={{
                   position: 'absolute',
-                  left: '13px',
-                  top: '12px',
-                  bottom: '24px',
+                  left: '11px',
+                  top: '10px',
+                  bottom: '16px',
                   width: '2px',
                   background: '#e2e8f0',
                   zIndex: 1,
@@ -824,14 +1022,14 @@ export default function OffboardingView() {
               />
 
               {/* STEP 1: ServiceNow Offboarding & Laptop Hardware Clearance */}
-              <div style={{ position: 'relative', marginBottom: '0.9rem' }}>
+              <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: '#f0fdf4',
                     border: '2px solid #16a34a',
@@ -839,148 +1037,164 @@ export default function OffboardingView() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#16a34a',
-                    fontSize: '0.78rem',
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
                   <i className="fa-solid fa-laptop"></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#15803d' }}>1. ServiceNow IT Asset & Laptop Clearance</strong>
-                    <span className="badge badge-verified" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bbf7d0', borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#15803d' }}>1. ServiceNow IT Asset & Laptop Clearance</strong>
+                    <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
                       <i className="fa-solid fa-check"></i> CLEARED
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    <div>• <strong>Offboarding REQ:</strong> <code>{activeFlowItem.serviceNowReq || 'REQ0014290'}</code></div>
-                    <div>• <strong>Hardware Recovery Incident:</strong> <strong>{activeFlowItem.laptopTicket || 'INC0040469'}</strong> (Resolved / Closed)</div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div>• <strong>Offboarding REQ:</strong> <code>{activeFlowItem.serviceNowReq || 'REQ0014290'}</code> &nbsp;•&nbsp; <strong>Incident:</strong> <strong>{activeFlowItem.laptopTicket || 'INC0040469'}</strong> (Resolved)</div>
                     <div>• <strong>Assigned Specialist:</strong> {activeFlowItem.assignedTo || 'Alejandra Prenatt'}</div>
                   </div>
                 </div>
               </div>
 
               {/* STEP 2: Active Directory Deprovisioning */}
-              <div style={{ position: 'relative', marginBottom: '0.9rem' }}>
+              <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
-                    background: flowStepStatus.step2 === 'running' ? '#eff6ff' : '#f0fdf4',
-                    border: `2px solid ${flowStepStatus.step2 === 'running' ? '#f87917' : '#16a34a'}`,
+                    background: flowStepStatus.step2 === 'running' ? '#eff6ff' : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete' ? '#f0fdf4' : '#f8fafc'),
+                    border: `2px solid ${flowStepStatus.step2 === 'running' ? '#f87917' : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete' ? '#16a34a' : '#cbd5e1')}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: flowStepStatus.step2 === 'running' ? '#f87917' : '#16a34a',
-                    fontSize: '0.78rem',
+                    color: flowStepStatus.step2 === 'running' ? '#f87917' : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete' ? '#16a34a' : '#94a3b8'),
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
-                  <i className={`fa-solid ${flowStepStatus.step2 === 'running' ? 'fa-spinner fa-spin' : 'fa-robot'}`}></i>
+                  <i className={`fa-solid ${flowStepStatus.step2 === 'running' ? 'fa-spinner fa-spin' : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete' ? 'fa-circle-check' : 'fa-robot')}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#c2500a' }}>2. Active Directory (AD) Deprovisioning</strong>
-                    <span className={`badge ${flowStepStatus.step2 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
-                      {flowStepStatus.step2 === 'running' ? 'RUNNING ON T4' : '✓ WORKFLOW COMPLETE'}
-                    </span>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step2 === 'running' ? '#bfdbfe' : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: flowStepStatus.step2 === 'running' ? '#f87917' : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete' ? '#15803d' : '#475569') }}>2. Active Directory (AD) Deprovisioning</strong>
+                    {flowStepStatus.step2 === 'running' ? (
+                      <span className="badge badge-pending" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-spinner fa-spin"></i> RUNNING ON T4
+                      </span>
+                    ) : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete') ? (
+                      <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-check"></i> AD USER REMOVED
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: '0.64rem', padding: '1px 6px', border: '1px solid #e2e8f0' }}>
+                        QUEUED
+                      </span>
+                    )}
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    <div>• <strong>T4 Workflow:</strong> <code>{flowData?.adRemoval?.workflowName || 'HR Demo OffboardingRemoveADUser'}</code></div>
-                    <div>• <strong>Parameter:</strong> <code>ADUserName: "{(activeFlowItem.empName || 'Employee').replace(' ', '.')}"</code></div>
-                    <div>• <strong>Automation Request:</strong> <strong>#{flowData?.adRemoval?.automationRequestId || '3295924'}</strong></div>
-                    <div>• <strong>RPA Agent:</strong> <code>{flowData?.adRemoval?.agentName || 'mahesh@mspevent-win-1'}</code></div>
-                    <div style={{ color: '#15803d', fontSize: '0.74rem', marginTop: '2px', fontWeight: 600 }}>
-                      ✓ {flowData?.adRemoval?.message || `AD User ${(activeFlowItem.empName || 'Employee').replace(' ', '.')} Removed`}
-                    </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div>• <strong>Workflow:</strong> <code>{flowData?.adRemoval?.workflowName || 'HR Demo OffboardingRemoveADUser'}</code> &nbsp;•&nbsp; <strong>Param:</strong> <code>ADUserName: "{(activeFlowItem.empName || 'Employee').replace(' ', '.')}"</code></div>
+                    <div>• <strong>Req:</strong> #{flowData?.adRemoval?.automationRequestId || '3295924'} • <strong>Agent:</strong> <code>{flowData?.adRemoval?.agentName || 'mahesh@mspevent-win-1'}</code> • <span style={{ color: '#15803d', fontWeight: 600 }}>✓ AD User Removed</span></div>
                   </div>
                 </div>
               </div>
 
               {/* STEP 3: Office 365 / Microsoft Entra ID Deletion */}
-              <div style={{ position: 'relative', marginBottom: '0.9rem' }}>
+              <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
-                    background: flowStepStatus.step3 === 'running' ? '#eff6ff' : '#f0fdf4',
-                    border: `2px solid ${flowStepStatus.step3 === 'running' ? '#f87917' : '#16a34a'}`,
+                    background: flowStepStatus.step3 === 'running' ? '#eff6ff' : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete' ? '#f0fdf4' : '#f8fafc'),
+                    border: `2px solid ${flowStepStatus.step3 === 'running' ? '#f87917' : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete' ? '#16a34a' : '#cbd5e1')}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: flowStepStatus.step3 === 'running' ? '#f87917' : '#16a34a',
-                    fontSize: '0.78rem',
+                    color: flowStepStatus.step3 === 'running' ? '#f87917' : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete' ? '#16a34a' : '#94a3b8'),
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
-                  <i className={`fa-solid ${flowStepStatus.step3 === 'running' ? 'fa-spinner fa-spin' : 'fa-envelope-circle-check'}`}></i>
+                  <i className={`fa-solid ${flowStepStatus.step3 === 'running' ? 'fa-spinner fa-spin' : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete' ? 'fa-circle-check' : 'fa-envelope-circle-check')}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#c2500a' }}>3. Office 365 & Entra ID Account Deletion</strong>
-                    <span className={`badge ${flowStepStatus.step3 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
-                      {flowStepStatus.step3 === 'running' ? 'RUNNING ON T4' : '✓ ENTRA ID REMOVED'}
-                    </span>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step3 === 'running' ? '#bfdbfe' : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: flowStepStatus.step3 === 'running' ? '#f87917' : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete' ? '#15803d' : '#475569') }}>3. Office 365 & Entra ID Account Deletion</strong>
+                    {flowStepStatus.step3 === 'running' ? (
+                      <span className="badge badge-pending" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-spinner fa-spin"></i> RUNNING ON T4
+                      </span>
+                    ) : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete') ? (
+                      <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-check"></i> ENTRA ID REMOVED
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: '0.64rem', padding: '1px 6px', border: '1px solid #e2e8f0' }}>
+                        QUEUED
+                      </span>
+                    )}
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    <div>• <strong>T4 Workflow:</strong> <code>{flowData?.o365Delete?.workflowName || 'HR DEMO offboarding Delete O365 user'}</code></div>
-                    <div>• <strong>Automation Request:</strong> <strong>#{flowData?.o365Delete?.automationRequestId || '3295925'}</strong></div>
-                    <div>• <strong>Microsoft Graph API:</strong> User account & Exchange mailbox deleted from Entra ID</div>
-                    <div style={{ color: '#15803d', fontSize: '0.74rem', marginTop: '2px', fontWeight: 600 }}>
-                      ✓ {flowData?.o365Delete?.message || 'User deleted from O365'}
-                    </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div>• <strong>Workflow:</strong> <code>{flowData?.o365Delete?.workflowName || 'HR DEMO offboarding Delete O365 user'}</code> &nbsp;•&nbsp; <strong>Req:</strong> #{flowData?.o365Delete?.automationRequestId || '3295925'}</div>
+                    <div>• <strong>Entra ID:</strong> User account & Exchange mailbox deleted • <span style={{ color: '#15803d', fontWeight: 600 }}>✓ O365 User Deleted</span></div>
                   </div>
                 </div>
               </div>
 
               {/* STEP 4: OrangeHRM PIM Master Record Removal */}
-              <div style={{ position: 'relative', marginBottom: '0.9rem' }}>
+              <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
-                    background: flowStepStatus.step4 === 'running' ? '#eff6ff' : '#f0fdf4',
-                    border: `2px solid ${flowStepStatus.step4 === 'running' ? '#f87917' : '#16a34a'}`,
+                    background: flowStepStatus.step4 === 'running' ? '#eff6ff' : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete' ? '#f0fdf4' : '#f8fafc'),
+                    border: `2px solid ${flowStepStatus.step4 === 'running' ? '#f87917' : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete' ? '#16a34a' : '#cbd5e1')}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: flowStepStatus.step4 === 'running' ? '#f87917' : '#16a34a',
-                    fontSize: '0.78rem',
+                    color: flowStepStatus.step4 === 'running' ? '#f87917' : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete' ? '#16a34a' : '#94a3b8'),
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
-                  <i className={`fa-solid ${flowStepStatus.step4 === 'running' ? 'fa-spinner fa-spin' : 'fa-user-xmark'}`}></i>
+                  <i className={`fa-solid ${flowStepStatus.step4 === 'running' ? 'fa-spinner fa-spin' : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete' ? 'fa-circle-check' : 'fa-user-xmark')}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#c2500a' }}>4. OrangeHRM PIM Master Record Deletion</strong>
-                    <span className={`badge ${flowStepStatus.step4 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
-                      {flowStepStatus.step4 === 'running' ? 'RUNNING ON T4' : '✓ PIM PROFILE REMOVED'}
-                    </span>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step4 === 'running' ? '#bfdbfe' : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: flowStepStatus.step4 === 'running' ? '#f87917' : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete' ? '#15803d' : '#475569') }}>4. OrangeHRM PIM Master Record Deletion</strong>
+                    {flowStepStatus.step4 === 'running' ? (
+                      <span className="badge badge-pending" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-spinner fa-spin"></i> RUNNING ON T4
+                      </span>
+                    ) : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete') ? (
+                      <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-check"></i> PIM PROFILE REMOVED
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: '0.64rem', padding: '1px 6px', border: '1px solid #e2e8f0' }}>
+                        QUEUED
+                      </span>
+                    )}
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    <div>• <strong>T4 Workflow:</strong> <code>{flowData?.orangeHrmDelete?.workflowName || 'HR DEMO Offboarding Delete OrangeHRM User'}</code></div>
-                    <div>• <strong>Automation Request:</strong> <strong>#{flowData?.orangeHrmDelete?.automationRequestId || '3295926'}</strong></div>
-                    <div>• <strong>OrangeHRM REST API:</strong> Master employee record deleted from HR database</div>
-                    <div style={{ color: '#15803d', fontSize: '0.74rem', marginTop: '2px', fontWeight: 600 }}>
-                      ✓ {flowData?.orangeHrmDelete?.message || 'User data deleted from OrangeHRM'}
-                    </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div>• <strong>Workflow:</strong> <code>{flowData?.orangeHrmDelete?.workflowName || 'HR DEMO Offboarding Delete OrangeHRM User'}</code> &nbsp;•&nbsp; <strong>Req:</strong> #{flowData?.orangeHrmDelete?.automationRequestId || '3295926'}</div>
+                    <div>• <strong>OrangeHRM API:</strong> Master employee record deleted from HR database • <span style={{ color: '#15803d', fontWeight: 600 }}>✓ User Data Deleted</span></div>
                   </div>
                 </div>
               </div>
@@ -990,48 +1204,54 @@ export default function OffboardingView() {
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
-                    background: '#f0fdf4',
-                    border: '2px solid #16a34a',
+                    background: flowStepStatus.step5 === 'running' ? '#eff6ff' : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete' ? '#f0fdf4' : '#f8fafc'),
+                    border: `2px solid ${flowStepStatus.step5 === 'running' ? '#f87917' : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete' ? '#16a34a' : '#cbd5e1')}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#16a34a',
-                    fontSize: '0.78rem',
+                    color: flowStepStatus.step5 === 'running' ? '#f87917' : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete' ? '#16a34a' : '#94a3b8'),
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
-                  <i className="fa-solid fa-paper-plane"></i>
+                  <i className={`fa-solid ${flowStepStatus.step5 === 'running' ? 'fa-spinner fa-spin' : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete' ? 'fa-check' : 'fa-paper-plane')}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#15803d' }}>5. Clearance Email Notification Dispatched</strong>
-                    <span className="badge badge-verified" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
-                      <i className="fa-solid fa-envelope"></i> EMAIL SENT
-                    </span>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step5 === 'running' ? '#bfdbfe' : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: flowStepStatus.step5 === 'running' ? '#f87917' : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete' ? '#15803d' : '#475569') }}>5. Clearance Email Notification Dispatched</strong>
+                    {flowStepStatus.step5 === 'running' ? (
+                      <span className="badge badge-pending" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-spinner fa-spin"></i> DISPATCHING...
+                      </span>
+                    ) : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete') ? (
+                      <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-envelope"></i> EMAIL SENT
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: '0.64rem', padding: '1px 6px', border: '1px solid #e2e8f0' }}>
+                        QUEUED
+                      </span>
+                    )}
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    <div>• <strong>Recipient:</strong> <strong style={{ color: '#c2410c' }}>abhishek.malwadkar@valuedx.com</strong></div>
-                    <div>• <strong>Method:</strong> Microsoft Graph API (Automated Multi-System Confirmation)</div>
-                    <div style={{ color: '#15803d', fontSize: '0.74rem', marginTop: '2px', fontWeight: 600 }}>
-                      ✓ Offboarding completion summary & system clearance notification delivered
-                    </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div>• <strong>Notification:</strong> Clearance confirmation delivered via Microsoft Graph API</div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Modal Footer Actions */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.85rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.65rem' }}>
               <button
                 className="btn btn-primary"
                 onClick={() => setShowFlowModal(false)}
-                style={{ background: 'linear-gradient(135deg, #f87917 0%, #c2500a 100%)', borderColor: 'transparent', fontWeight: 700 }}
+                style={{ background: 'var(--button-gradient)', borderColor: 'transparent', fontWeight: 700, fontSize: '0.8rem', padding: '0.35rem 0.85rem' }}
               >
                 <i className="fa-solid fa-check"></i> Close Pipeline View
               </button>

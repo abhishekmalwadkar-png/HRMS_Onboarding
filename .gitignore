@@ -28,9 +28,12 @@ wheels/
 .installed.cfg
 *.egg
 
-# Generated Dynamic PDF Offers (runtime output)
+# Generated Dynamic PDF Offers & Relieving Letters (runtime output)
 generated_offers/*.pdf
 !generated_offers/.gitkeep
+generated_relieving_letters/*.pdf
+!generated_relieving_letters/.gitkeep
+
 
 # Node & NPM dependencies
 node_modules/

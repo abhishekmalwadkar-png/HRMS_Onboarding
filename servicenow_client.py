@@ -550,11 +550,14 @@ class ServiceNowClient:
         print(f"\n[APPROVAL FLOW - STEP 7/7] Generating Offer Letter PDF and dispatching email to abhishek.malwadkar@valuedx.com for {emp_name}...")
         offer_letter_result = {}
         try:
+            sal = employee_data.get('salary') or employee_data.get('annualCtc') or '₹32,00,000 INR / annum (₹32.0 LPA)'
             candidate_offer_data = {
                 'candidateName': emp_name,
                 'appliedRole': employee_data.get('jobTitle', 'Staff AI Systems Engineer'),
                 'department': employee_data.get('department', 'Engineering'),
-                'annualCtc': employee_data.get('salary', '$185,000 / annum'),
+                'annualCtc': sal,
+                'baseSalary': '₹28,00,000 INR per annum (₹2,33,333 / month)',
+                'perfBonus': '₹4,00,000 INR Annual Target Evaluation',
                 'joiningDate': employee_data.get('startDate', '2026-10-15'),
                 'hardware': hardware,
                 'email': 'abhishek.malwadkar@valuedx.com'

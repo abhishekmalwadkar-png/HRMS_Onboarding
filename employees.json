@@ -1,7 +1,7 @@
 {
   "employees": [
     {
-      "id": "EMP-5725",
+      "id": "EMP-2116",
       "fullName": "Aarav Sharma",
       "email": "aarav.sharma@example.com",
       "phone": "+91 98230 45671",
@@ -25,272 +25,39 @@
       "startDate": "2026-10-15",
       "salary": "$185,000 / annum",
       "status": "Approved",
-      "serviceNowReq": "REQ0011936",
-      "serviceNowRitm": "RITM0011919",
-      "submittedAt": "10/5/2026, 5:43:38 PM",
-      "serviceNowReqId": "2f07c5f4eb370710b02df1b4cad0cdae",
-      "serviceNowRitmId": "6f07c5f4eb370710b02df1b4cad0cdaf",
-      "reqUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_request.do?sys_id=2f07c5f4eb370710b02df1b4cad0cdae",
-      "ritmUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_req_item.do?sys_id=6f07c5f4eb370710b02df1b4cad0cdaf",
+      "serviceNowReq": "REQ0011941",
+      "serviceNowRitm": "RITM0011921",
+      "submittedAt": "10/5/2026, 6:35:58 PM",
+      "serviceNowReqId": "160399bceb770710b02df1b4cad0cd24",
+      "serviceNowRitmId": "de0399bceb770710b02df1b4cad0cd24",
+      "reqUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_request.do?sys_id=160399bceb770710b02df1b4cad0cd24",
+      "ritmUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_req_item.do?sys_id=de0399bceb770710b02df1b4cad0cd24",
       "serviceNowStatus": "Approved",
       "serviceNowStage": "HR Document Verification",
-      "aeGetEmpDetailsReqId": 3296022,
+      "aeGetEmpDetailsReqId": 3296483,
       "aeGetEmpDetailsStatus": "Complete",
       "hardwareDispatched": true,
-      "laptopTicket": "INC0040470",
-      "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident.do?sys_id=4977c138eb370710b02df1b4cad0cd9e",
-      "approvedAt": "2026-10-05 17:45:25",
-      "orangeHrmProfileUrl": "http://10.41.5.39/orangehrm/web/index.php/pim/viewPersonalDetails/empNumber/38",
-      "orangeHrmEmpNumber": 38,
+      "laptopTicket": "INC0040475",
+      "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident.do?sys_id=4f53517c33f3c3105e900e570e5c7bfc",
+      "approvedAt": "2026-10-05 18:37:25",
+      "orangeHrmProfileUrl": "http://10.41.5.39/orangehrm/web/index.php/pim/viewPersonalDetails/empNumber/40",
+      "orangeHrmEmpNumber": 40,
       "orangeHrmStatus": "Profile Created in OrangeHRM PIM",
-      "o365UserId": "40f8211c-176a-4e75-aca3-2942d18fc30e",
+      "o365UserId": "33cb362e-c582-48eb-8f00-5747afd108f0",
       "o365Email": "aarav.sharma@automationedge.ai",
       "o365UserPrincipalName": "aarav.sharma@automationedge.ai",
       "o365DisplayName": "Aarav Sharma",
       "o365InitialPassword": "Welcome@2026!Onboard",
-      "o365AdminUrl": "https://portal.azure.com/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/40f8211c-176a-4e75-aca3-2942d18fc30e",
+      "o365AdminUrl": "https://portal.azure.com/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/33cb362e-c582-48eb-8f00-5747afd108f0",
       "o365Status": "Account Active in Office 365",
-      "aeT4RequestId": 3296028,
+      "aeT4RequestId": 3296487,
       "aeT4Workflow": "AD-Create User and Assin Role",
       "offerLetterEmailed": true,
       "offerLetterRecipient": "abhishek.malwadkar@valuedx.com",
-      "offerLetterPdf": "Offer_Letter_Aarav_Sharma_MNG-OFR-2524.pdf"
+      "offerLetterPdf": "Offer_Letter_Aarav_Sharma_MNG-OFR-5644.pdf"
     }
   ],
-  "recruitment": [
-    {
-      "id": "CAND-901",
-      "name": "Aarav Sharma",
-      "candidateName": "Aarav Sharma",
-      "email": "aarav.sharma@example.com",
-      "role": "Senior AI Engineer",
-      "appliedRole": "Senior AI Engineer",
-      "department": "Engineering",
-      "score": "94%",
-      "matchScore": "94%",
-      "stage": "Offer Accepted",
-      "skills": [
-        "Python",
-        "PyTorch",
-        "Generative AI",
-        "LangChain",
-        "FastAPI"
-      ],
-      "experienceYears": 5.5
-    },
-    {
-      "id": "CAND-902",
-      "name": "Priya Iyer",
-      "candidateName": "Priya Iyer",
-      "email": "priya.iyer@example.com",
-      "role": "Lead Product Manager",
-      "appliedRole": "Lead Product Manager",
-      "department": "Product",
-      "score": "89%",
-      "matchScore": "89%",
-      "stage": "Technical Interview",
-      "skills": [
-        "Product Strategy",
-        "Agile",
-        "Roadmapping",
-        "Scrum",
-        "User Stories"
-      ],
-      "experienceYears": 6.0
-    },
-    {
-      "id": "CAND-903",
-      "name": "Rohan Mehta",
-      "candidateName": "Rohan Mehta",
-      "email": "rohan.mehta@example.com",
-      "role": "Enterprise ServiceNow Architect",
-      "appliedRole": "Enterprise ServiceNow Architect",
-      "department": "IT Systems",
-      "score": "91%",
-      "matchScore": "91%",
-      "stage": "HR Screening",
-      "skills": [
-        "ServiceNow",
-        "ITSM",
-        "Workflow Design",
-        "Service Catalog",
-        "IntegrationHub"
-      ],
-      "experienceYears": 5.0
-    }
-  ],
+  "recruitment": [],
   "leaveRequests": [],
-  "exitRequests": [
-    {
-      "id": "EXIT-245",
-      "empId": "EMP-8664",
-      "empName": "Aditya Verma",
-      "department": "Engineering",
-      "resignationDate": "2026-10-05",
-      "lastWorkingDay": "2026-11-30",
-      "reason": "Pursuing new professional opportunity.",
-      "itClearance": true,
-      "itClearanceStatus": "User Submitted Laptop",
-      "financeClearance": false,
-      "accessRevoked": true,
-      "o365Deleted": true,
-      "orangeHrmDeleted": true,
-      "emailSent": true,
-      "fnfStatus": "Pending Initiation",
-      "aeSnReqWorkflow": {
-        "status": "success",
-        "mode": "live_t4_rpa",
-        "workflowName": "HR Demo Offboarding SN Req",
-        "automationRequestId": 3295918,
-        "sourceId": "SID_1791201059186_891058faa9ff",
-        "executionStatus": "Complete",
-        "agentName": "mahesh@mspevent-win-1",
-        "message": "Employee EMP-8664 Offboarding initiated and request submitted on ServiceNow",
-        "errorDetails": null,
-        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3295918",
-        "serverUrl": "https://t4.automationedge.com/aeengine",
-        "params": {
-          "EmpID": "EMP-8664"
-        }
-      },
-      "serviceNowReq": "REQ0011935",
-      "serviceNowRitm": "RITM0014065",
-      "laptopTicket": "INC0040469",
-      "laptopTicketSysId": "42e14d7cebf30710b02df1b4cad0cd5a",
-      "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident.do?sys_id=42e14d7cebf30710b02df1b4cad0cd5a",
-      "assignedTo": "Alejandra Prenatt",
-      "laptopIncidentState": "Resolved",
-      "t4RevokePipeline": {
-        "status": "success",
-        "employeeId": "EMP-8664",
-        "employeeName": "Aditya Verma",
-        "adUsername": "Aditya.Verma",
-        "steps": [
-          {
-            "step": 1,
-            "workflow": "HR Demo OffboardingRemoveADUser",
-            "params": {
-              "AD username": "Aditya.Verma"
-            },
-            "result": {
-              "status": "success",
-              "mode": "live_t4_rpa",
-              "workflowName": "HR Demo OffboardingRemoveADUser",
-              "automationRequestId": 3295924,
-              "sourceId": "SID_1791201122004_ba869474ba31",
-              "executionStatus": "Complete",
-              "agentName": "mahesh@mspevent-win-1",
-              "message": "AD User Aditya.Verma Removed",
-              "errorDetails": null,
-              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3295924",
-              "serverUrl": "https://t4.automationedge.com/aeengine",
-              "params": {
-                "ADUserName": "Aditya.Verma"
-              }
-            }
-          },
-          {
-            "step": 2,
-            "workflow": "HR DEMO offboarding Delete O365 user",
-            "params": {
-              "emp_id": "EMP-8664",
-              "emp_name": "Aditya Verma"
-            },
-            "result": {
-              "status": "success",
-              "mode": "live_t4_rpa",
-              "workflowName": "HR DEMO offboarding Delete O365 user",
-              "automationRequestId": 3295925,
-              "sourceId": "SID_1791201128993_f47f893d5a15",
-              "executionStatus": "Complete",
-              "agentName": "mahesh@mspevent-win-1",
-              "message": "User deleted from O365",
-              "errorDetails": null,
-              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3295925",
-              "serverUrl": "https://t4.automationedge.com/aeengine",
-              "params": {
-                "emp_id": "EMP-8664",
-                "emp_name": "Aditya Verma"
-              }
-            }
-          },
-          {
-            "step": 3,
-            "workflow": "HR DEMO Offboarding Delete OrangeHRM User",
-            "params": {
-              "emp_id": "EMP-8664",
-              "emp_name": "Aditya Verma"
-            },
-            "result": {
-              "status": "success",
-              "mode": "live_t4_rpa",
-              "workflowName": "HR DEMO Offboarding Delete OrangeHRM User",
-              "automationRequestId": 3295926,
-              "sourceId": "SID_1791201138125_6c84cbaa6f00",
-              "executionStatus": "Complete",
-              "agentName": "mahesh@mspevent-win-1",
-              "message": "User data deleted from OrangeHRM",
-              "errorDetails": null,
-              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3295926",
-              "serverUrl": "https://t4.automationedge.com/aeengine",
-              "params": {
-                "emp_id": "EMP-8664",
-                "emp_name": "Aditya Verma"
-              }
-            }
-          }
-        ],
-        "adRemoval": {
-          "status": "success",
-          "mode": "live_t4_rpa",
-          "workflowName": "HR Demo OffboardingRemoveADUser",
-          "automationRequestId": 3295924,
-          "sourceId": "SID_1791201122004_ba869474ba31",
-          "executionStatus": "Complete",
-          "agentName": "mahesh@mspevent-win-1",
-          "message": "AD User Aditya.Verma Removed",
-          "errorDetails": null,
-          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3295924",
-          "serverUrl": "https://t4.automationedge.com/aeengine",
-          "params": {
-            "ADUserName": "Aditya.Verma"
-          }
-        },
-        "o365Delete": {
-          "status": "success",
-          "mode": "live_t4_rpa",
-          "workflowName": "HR DEMO offboarding Delete O365 user",
-          "automationRequestId": 3295925,
-          "sourceId": "SID_1791201128993_f47f893d5a15",
-          "executionStatus": "Complete",
-          "agentName": "mahesh@mspevent-win-1",
-          "message": "User deleted from O365",
-          "errorDetails": null,
-          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3295925",
-          "serverUrl": "https://t4.automationedge.com/aeengine",
-          "params": {
-            "emp_id": "EMP-8664",
-            "emp_name": "Aditya Verma"
-          }
-        },
-        "orangeHrmDelete": {
-          "status": "success",
-          "mode": "live_t4_rpa",
-          "workflowName": "HR DEMO Offboarding Delete OrangeHRM User",
-          "automationRequestId": 3295926,
-          "sourceId": "SID_1791201138125_6c84cbaa6f00",
-          "executionStatus": "Complete",
-          "agentName": "mahesh@mspevent-win-1",
-          "message": "User data deleted from OrangeHRM",
-          "errorDetails": null,
-          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3295926",
-          "serverUrl": "https://t4.automationedge.com/aeengine",
-          "params": {
-            "emp_id": "EMP-8664",
-            "emp_name": "Aditya Verma"
-          }
-        }
-      }
-    }
-  ]
+  "exitRequests": []
 }

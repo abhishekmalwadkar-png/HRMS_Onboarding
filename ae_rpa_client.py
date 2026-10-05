@@ -595,6 +595,65 @@ class AutomationEdgeClient:
             "orangeHrmDelete": orange_res
         }
 
+    # -------------------------------------------------------------------------
+    # 11. Recruitment Get JD Workflow: "HR Demo Recruitment Get JD"
+    # Parameters: job_name
+    # -------------------------------------------------------------------------
+    def trigger_recruitment_get_jd(self, job_name):
+        params = {
+            "job_name": str(job_name)
+        }
+        print(f"[AE RPA] Triggering 'HR Demo Recruitment Get JD' on T4 for job_name='{job_name}'...")
+        return self.execute_workflow_sync("HR Demo Recruitment Get JD", params, max_wait_seconds=35)
+
+    # -------------------------------------------------------------------------
+    # 12. Recruitment Match JD Workflow: "HR Demo Recruitment Match JD"
+    # Parameters: job_name
+    # -------------------------------------------------------------------------
+    def trigger_recruitment_match_jd(self, job_name):
+        params = {
+            "job_name": str(job_name)
+        }
+        print(f"[AE RPA] Triggering 'HR Demo Recruitment Match JD' on T4 for job_name='{job_name}'...")
+        return self.execute_workflow_sync("HR Demo Recruitment Match JD", params, max_wait_seconds=35)
+
+    # -------------------------------------------------------------------------
+    # Recruitment Screening & Match Pipeline Orchestrator (Get JD -> Match JD)
+    # -------------------------------------------------------------------------
+    def trigger_recruitment_screening_pipeline(self, job_name, candidate_name=None):
+        print(f"\n[AE RPA] >>> Starting T4 Recruitment Screening Pipeline for Job: '{job_name}' (Candidate: {candidate_name}) <<<")
+        results = []
+
+        # Step 1: HR Demo Recruitment Get JD
+        print(f"[AE RPA] Step 1/2: Executing 'HR Demo Recruitment Get JD' with job_name='{job_name}'...")
+        get_jd_res = self.trigger_recruitment_get_jd(job_name)
+        results.append({
+            "step": 1,
+            "workflow": "HR Demo Recruitment Get JD",
+            "params": {"job_name": job_name},
+            "result": get_jd_res
+        })
+
+        # Step 2: HR Demo Recruitment Match JD
+        print(f"[AE RPA] Step 2/2: Executing 'HR Demo Recruitment Match JD' with job_name='{job_name}'...")
+        match_jd_res = self.trigger_recruitment_match_jd(job_name)
+        results.append({
+            "step": 2,
+            "workflow": "HR Demo Recruitment Match JD",
+            "params": {"job_name": job_name},
+            "result": match_jd_res
+        })
+
+        print(f"[AE RPA] [OK] Completed all Recruitment Screening RPA Workflows on T4!\n")
+        return {
+            "status": "success",
+            "jobName": job_name,
+            "candidateName": candidate_name,
+            "steps": results,
+            "getJd": get_jd_res,
+            "matchJd": match_jd_res
+        }
+
     def trigger_create_ad_account(self, data):
         full_name = data.get("fullName") or data.get("candidateName") or "New Employee"
         parts = full_name.strip().split(None, 1)
