@@ -523,7 +523,7 @@ export default function OffboardingView() {
                     style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
                     onClick={() => triggerAccessRevocation(item.id, item.empName)}
                   >
-                    <i className="fa-solid fa-user-xmark"></i> Offboard (Revoke AD, O365 & OrangeHRM)
+                    <i className="fa-solid fa-user-xmark"></i> Revoke Access
                   </button>
                   <button
                     className="btn btn-primary"

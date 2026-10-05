@@ -10,8 +10,8 @@
       "resignationDate": "2026-10-05",
       "lastWorkingDay": "2026-11-30",
       "reason": "Pursuing new professional opportunity.",
-      "itClearance": true,
-      "itClearanceStatus": "User Submitted Laptop",
+      "itClearance": false,
+      "itClearanceStatus": "Clearance waiting from IT department",
       "financeClearance": false,
       "accessRevoked": true,
       "o365Deleted": true,
@@ -24,7 +24,7 @@
       "laptopTicketSysId": "a34aa0f833ff83105e900e570e5c7b6b",
       "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident.do?sys_id=a34aa0f833ff83105e900e570e5c7b6b",
       "assignedTo": "Allyson Gillispie",
-      "laptopIncidentState": "Resolved"
+      "laptopIncidentState": "In Progress"
     }
   ]
 }
