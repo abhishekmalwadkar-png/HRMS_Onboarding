@@ -332,7 +332,7 @@ export default function RecruitmentView() {
 
       setCandidates(updatedCandidates);
       showToast(
-        `✓ Google Meet Interview scheduled! Invitation email dispatched to abhishek.malwadkar@valuedx.com.`,
+        `✓ Google Meet Interview scheduled! Invitation email dispatched successfully.`,
         'success'
       );
       setShowInterviewModal(false);
@@ -1034,13 +1034,6 @@ export default function RecruitmentView() {
                   required
                   style={{ fontWeight: 600, color: '#0284c7' }}
                 />
-              </div>
-
-              {/* Email Notification Note */}
-              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '0.75rem 0.9rem', marginBottom: '1.25rem', fontSize: '0.8rem', color: '#0369a1' }}>
-                <i className="fa-solid fa-paper-plane" style={{ marginRight: '6px' }}></i>
-                Interview invitation with the Google Meet conference bridge will be emailed directly to:
-                <strong style={{ display: 'block', marginTop: '2px', color: '#0284c7' }}>abhishek.malwadkar@valuedx.com</strong>
               </div>
 
               {/* Submit Buttons */}

@@ -1135,7 +1135,7 @@ export default function OffboardingView() {
                     </span>
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                    <div>• <strong>Recipient:</strong> <strong style={{ color: '#0284c7' }}>abhishek.malwadkar@valuedx.com</strong> • <strong>Method:</strong> Microsoft Graph API</div>
+                    <div>• <strong>Notification:</strong> Clearance confirmation delivered via Microsoft Graph API</div>
                   </div>
                 </div>
               </div>
