@@ -157,9 +157,9 @@
         </nav>
 
         <!-- Quick Database Action -->
-        <div class="sidebar-action-box">
-          <button class="btn btn-secondary sidebar-action-btn" onclick="autoFillDemoData()" title="Pre-fill random Indian candidate data directly from autofill database">
-            <i class="fa-solid fa-database text-accent"></i> <span>Auto-Fill Indian Profile</span>
+        <div class="sidebar-action-box" id="sidebarAutofillBox">
+          <button class="btn btn-secondary sidebar-action-btn" onclick="autoFillDemoData()" title="Pre-fill candidate profile data">
+            <i class="fa-solid fa-wand-magic-sparkles text-accent"></i> <span>Auto-Fill</span>
           </button>
         </div>
       </div>
@@ -197,8 +197,8 @@
         <div class="top-header-right">
           <!-- Live System Status Badges for all 4 Automated Engines -->
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-            <button class="btn btn-secondary" onclick="autoFillDemoData()" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; border-color: var(--border-orange); background: var(--bg-accent-soft); font-weight: 700; color: var(--brand-orange);" title="Pre-fill random Indian candidate profile into Onboarding Wizard">
-              <i class="fa-solid fa-wand-magic-sparkles text-accent"></i> Auto-Fill Indian DB
+            <button class="btn btn-secondary" id="headerAutofillBtn" onclick="autoFillDemoData()" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; border-color: var(--border-orange); background: var(--bg-accent-soft); font-weight: 700; color: var(--brand-orange);" title="Pre-fill candidate profile into Onboarding Wizard">
+              <i class="fa-solid fa-wand-magic-sparkles text-accent"></i> Auto-Fill
             </button>
 
             <!-- 1. ServiceNow Badge -->
@@ -363,8 +363,8 @@
               <span class="badge badge-verified" style="cursor: pointer; padding: 0.4rem 0.75rem; font-size: 0.78rem;" onclick="showServiceNowConfigModal()" title="ServiceNow Service Catalog Integration Active">
                 <i class="fa-solid fa-server"></i> <strong>ServiceNow:</strong> ven04528 (Online)
               </span>
-              <button type="button" class="btn btn-secondary" onclick="autoFillDemoData()" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;" title="Fetch random Indian candidate profile from autofill database">
-                <i class="fa-solid fa-database text-accent"></i> Auto-Fill Indian Profile
+              <button type="button" class="btn btn-secondary" onclick="autoFillDemoData()" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;" title="Fetch candidate profile data">
+                <i class="fa-solid fa-wand-magic-sparkles text-accent"></i> Auto-Fill
               </button>
               <div class="badge badge-pending" id="currentStepBadge">Step 1 of 2</div>
             </div>

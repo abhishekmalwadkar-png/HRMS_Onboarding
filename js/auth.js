@@ -117,25 +117,36 @@ function applyUserRole(user) {
     `;
   }
 
-  // Role based Nav Tabs Visibility
+  // Role based Nav Tabs & Actions Visibility
   const hrOnlyTabs = ['tabRecruitment', 'tabDashboard', 'tabApprovals', 'tabServices', 'tabExit', 'tabAnalytics'];
+  const sidebarAutofillBox = document.getElementById('sidebarAutofillBox');
+  const headerAutofillBtn = document.getElementById('headerAutofillBtn');
   
   if (user.role === 'hr') {
     hrOnlyTabs.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'flex';
     });
+    // Hide candidate autofill action button from sidebar & header in HR login
+    if (sidebarAutofillBox) sidebarAutofillBox.style.display = 'none';
+    if (headerAutofillBtn) headerAutofillBtn.style.display = 'none';
+
     // HR default view: Approvals or Directory
     switchView('approvals');
     loadApprovals();
   } else {
-    // Candidate view: Hide HR only tabs, show Onboarding
+    // Candidate view: Hide HR only tabs, show Onboarding and Autofill buttons
     hrOnlyTabs.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
     const wizardTab = document.getElementById('tabWizard');
     if (wizardTab) wizardTab.style.display = 'flex';
+    
+    // Show autofill action button for candidate onboarding
+    if (sidebarAutofillBox) sidebarAutofillBox.style.display = 'block';
+    if (headerAutofillBtn) headerAutofillBtn.style.display = 'inline-flex';
+
     switchView('wizard');
   }
 }
