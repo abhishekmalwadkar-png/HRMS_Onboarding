@@ -318,14 +318,21 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             # Parse candidate & match against all Job Descriptions
             candidate_data = resume_screener.parse_resume_details(raw_text, file_name)
+            matched_job_name = candidate_data.get('role') or candidate_data.get('appliedRole') or payload.get('jobName') or "Senior AI Engineer"
 
-            # Optional AutomationEdge T4 Resume Screening trigger
+            # Execute T4 Workflows: "HR Demo Recruitment Get JD" & "HR Demo Recruitment Match JD" with param job_name
             ae_screening_res = {}
             try:
-                ae_screening_res = ae_client.trigger_resume_screening(candidate_data)
-                candidate_data['aeScreeningRequestId'] = ae_screening_res.get('requestId')
+                ae_screening_res = ae_client.trigger_recruitment_screening_pipeline(
+                    job_name=matched_job_name,
+                    candidate_name=candidate_data.get('name')
+                )
+                candidate_data['t4RecruitmentPipeline'] = ae_screening_res
+                candidate_data['getJdResult'] = ae_screening_res.get('getJd')
+                candidate_data['matchJdResult'] = ae_screening_res.get('matchJd')
             except Exception as ae_err:
-                print(f"[AE Resume Screening Warning]: {ae_err}")
+                print(f"[AE T4 Recruitment Pipeline Error]: {ae_err}")
+                candidate_data['t4RecruitmentError'] = str(ae_err)
 
             # Store in DB recruitment pipeline
             rec_list = db.get('recruitment', [])
