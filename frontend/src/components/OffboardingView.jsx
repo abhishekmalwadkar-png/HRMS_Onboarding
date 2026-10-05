@@ -362,7 +362,7 @@ export default function OffboardingView() {
       <section className="view-section active">
         <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff' }}>
           <h2 style={{ margin: 0, color: '#0f172a' }}>
-            <i className="fa-solid fa-file-signature" style={{ color: '#0284c7' }}></i> Employee Resignation Submission
+            <i className="fa-solid fa-file-signature" style={{ color: '#c2410c' }}></i> Employee Resignation Submission
           </h2>
         </div>
 
@@ -471,7 +471,7 @@ export default function OffboardingView() {
                   className="btn btn-primary"
                   disabled={isSubmitting}
                   style={{
-                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    background: 'linear-gradient(135deg, #f87917 0%, #c2500a 100%)',
                     borderColor: 'transparent',
                     fontWeight: 700,
                     width: '100%',
@@ -499,7 +499,7 @@ export default function OffboardingView() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <i className="fa-solid fa-person-walking-dashed-line-arrow-right" style={{ color: '#0284c7' }}></i> Employee Offboarding & Exit Management
+              <i className="fa-solid fa-person-walking-dashed-line-arrow-right" style={{ color: '#c2410c' }}></i> Employee Offboarding & Exit Management
             </h2>
             <p style={{ color: 'var(--text-muted)', margin: '0.35rem 0 0 0', fontSize: '0.88rem' }}>
               Manage employee resignations, ServiceNow hardware recovery incidents, and execute multi-system deprovisioning workflows.
@@ -509,7 +509,7 @@ export default function OffboardingView() {
             className="btn btn-primary"
             onClick={() => setShowHRInitiateForm(!showHRInitiateForm)}
             style={{
-              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              background: 'linear-gradient(135deg, #f87917 0%, #c2500a 100%)',
               borderColor: 'transparent',
               fontWeight: 700,
               padding: '0.5rem 1.15rem',
@@ -589,7 +589,7 @@ export default function OffboardingView() {
               type="submit"
               className="btn btn-primary"
               disabled={isSubmitting}
-              style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 700 }}
+              style={{ background: 'var(--button-gradient)', borderColor: 'transparent', fontWeight: 700 }}
             >
               <i className={`fa-solid ${isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`}></i> Submit Resignation
             </button>
@@ -715,7 +715,7 @@ export default function OffboardingView() {
                     {/* View Offboarding Steps Button */}
                     <button
                       className="btn btn-secondary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', color: '#0284c7', borderColor: 'rgba(2, 132, 199, 0.3)' }}
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', color: '#c2410c', borderColor: 'rgba(248, 121, 23, 0.3)' }}
                       onClick={() => inspectOffboardingFlow(item)}
                       title="View sequential step execution flow window"
                     >
@@ -725,7 +725,7 @@ export default function OffboardingView() {
                     {/* Revoke Access Button */}
                     <button
                       className="btn btn-secondary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: item.accessRevoked ? '#f1f5f9' : '#0284c7', color: item.accessRevoked ? '#475569' : '#ffffff', borderColor: 'transparent', fontWeight: 600 }}
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: item.accessRevoked ? '#f1f5f9' : '#f87917', color: item.accessRevoked ? '#475569' : '#ffffff', borderColor: 'transparent', fontWeight: 600 }}
                       onClick={() => triggerAccessRevocation(item)}
                       disabled={isRevoking}
                       title="Run T4 Offboarding RPA Workflows (AD, O365, OrangeHRM) and show live step execution popup"
@@ -736,7 +736,7 @@ export default function OffboardingView() {
 
                     <button
                       className="btn btn-primary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: 'transparent' }}
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'linear-gradient(135deg, #f87917 0%, #c2500a 100%)', borderColor: 'transparent' }}
                       onClick={() => issueRelievingLetter(item.empName)}
                     >
                       <i className="fa-solid fa-file-export"></i> Issue Relieving Letter
@@ -783,7 +783,7 @@ export default function OffboardingView() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
               <div>
                 <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
-                  <i className="fa-solid fa-sitemap" style={{ color: '#0284c7' }}></i> Offboarding & Deprovisioning Execution Pipeline
+                  <i className="fa-solid fa-sitemap" style={{ color: '#c2410c' }}></i> Offboarding & Deprovisioning Execution Pipeline
                 </h3>
                 <p style={{ margin: '3px 0 0 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
                   Multi-Engine Orchestration Flow: Active Directory • Office 365 Entra ID • OrangeHRM PIM • ServiceNow ITSM
@@ -804,7 +804,7 @@ export default function OffboardingView() {
                 <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginLeft: '6px' }}>({activeFlowItem.department})</span>
               </div>
               <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                ID: <strong style={{ color: '#0284c7' }}>{activeFlowItem.empId || activeFlowItem.id}</strong> • LWD: <strong>{activeFlowItem.lastWorkingDay}</strong>
+                ID: <strong style={{ color: '#c2410c' }}>{activeFlowItem.empId || activeFlowItem.id}</strong> • LWD: <strong>{activeFlowItem.lastWorkingDay}</strong>
               </div>
             </div>
 
@@ -872,11 +872,11 @@ export default function OffboardingView() {
                     height: '28px',
                     borderRadius: '50%',
                     background: flowStepStatus.step2 === 'running' ? '#eff6ff' : '#f0fdf4',
-                    border: `2px solid ${flowStepStatus.step2 === 'running' ? '#0284c7' : '#16a34a'}`,
+                    border: `2px solid ${flowStepStatus.step2 === 'running' ? '#f87917' : '#16a34a'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: flowStepStatus.step2 === 'running' ? '#0284c7' : '#16a34a',
+                    color: flowStepStatus.step2 === 'running' ? '#f87917' : '#16a34a',
                     fontSize: '0.78rem',
                     zIndex: 2,
                   }}
@@ -886,7 +886,7 @@ export default function OffboardingView() {
 
                 <div style={{ background: 'var(--bg-primary)', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.75rem 1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#0369a1' }}>2. Active Directory (AD) Deprovisioning</strong>
+                    <strong style={{ fontSize: '0.88rem', color: '#c2500a' }}>2. Active Directory (AD) Deprovisioning</strong>
                     <span className={`badge ${flowStepStatus.step2 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
                       {flowStepStatus.step2 === 'running' ? 'RUNNING ON T4' : '✓ WORKFLOW COMPLETE'}
                     </span>
@@ -914,11 +914,11 @@ export default function OffboardingView() {
                     height: '28px',
                     borderRadius: '50%',
                     background: flowStepStatus.step3 === 'running' ? '#eff6ff' : '#f0fdf4',
-                    border: `2px solid ${flowStepStatus.step3 === 'running' ? '#0284c7' : '#16a34a'}`,
+                    border: `2px solid ${flowStepStatus.step3 === 'running' ? '#f87917' : '#16a34a'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: flowStepStatus.step3 === 'running' ? '#0284c7' : '#16a34a',
+                    color: flowStepStatus.step3 === 'running' ? '#f87917' : '#16a34a',
                     fontSize: '0.78rem',
                     zIndex: 2,
                   }}
@@ -928,7 +928,7 @@ export default function OffboardingView() {
 
                 <div style={{ background: 'var(--bg-primary)', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.75rem 1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#0369a1' }}>3. Office 365 & Entra ID Account Deletion</strong>
+                    <strong style={{ fontSize: '0.88rem', color: '#c2500a' }}>3. Office 365 & Entra ID Account Deletion</strong>
                     <span className={`badge ${flowStepStatus.step3 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
                       {flowStepStatus.step3 === 'running' ? 'RUNNING ON T4' : '✓ ENTRA ID REMOVED'}
                     </span>
@@ -955,11 +955,11 @@ export default function OffboardingView() {
                     height: '28px',
                     borderRadius: '50%',
                     background: flowStepStatus.step4 === 'running' ? '#eff6ff' : '#f0fdf4',
-                    border: `2px solid ${flowStepStatus.step4 === 'running' ? '#0284c7' : '#16a34a'}`,
+                    border: `2px solid ${flowStepStatus.step4 === 'running' ? '#f87917' : '#16a34a'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: flowStepStatus.step4 === 'running' ? '#0284c7' : '#16a34a',
+                    color: flowStepStatus.step4 === 'running' ? '#f87917' : '#16a34a',
                     fontSize: '0.78rem',
                     zIndex: 2,
                   }}
@@ -969,7 +969,7 @@ export default function OffboardingView() {
 
                 <div style={{ background: 'var(--bg-primary)', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.75rem 1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#0369a1' }}>4. OrangeHRM PIM Master Record Deletion</strong>
+                    <strong style={{ fontSize: '0.88rem', color: '#c2500a' }}>4. OrangeHRM PIM Master Record Deletion</strong>
                     <span className={`badge ${flowStepStatus.step4 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
                       {flowStepStatus.step4 === 'running' ? 'RUNNING ON T4' : '✓ PIM PROFILE REMOVED'}
                     </span>
@@ -1016,7 +1016,7 @@ export default function OffboardingView() {
                     </span>
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    <div>• <strong>Recipient:</strong> <strong style={{ color: '#0284c7' }}>abhishek.malwadkar@valuedx.com</strong></div>
+                    <div>• <strong>Recipient:</strong> <strong style={{ color: '#c2410c' }}>abhishek.malwadkar@valuedx.com</strong></div>
                     <div>• <strong>Method:</strong> Microsoft Graph API (Automated Multi-System Confirmation)</div>
                     <div style={{ color: '#15803d', fontSize: '0.74rem', marginTop: '2px', fontWeight: 600 }}>
                       ✓ Offboarding completion summary & system clearance notification delivered
@@ -1031,7 +1031,7 @@ export default function OffboardingView() {
               <button
                 className="btn btn-primary"
                 onClick={() => setShowFlowModal(false)}
-                style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: 'transparent', fontWeight: 700 }}
+                style={{ background: 'linear-gradient(135deg, #f87917 0%, #c2500a 100%)', borderColor: 'transparent', fontWeight: 700 }}
               >
                 <i className="fa-solid fa-check"></i> Close Pipeline View
               </button>

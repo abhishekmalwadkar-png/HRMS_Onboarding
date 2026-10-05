@@ -154,7 +154,7 @@ export default function DirectoryView({ employees }) {
                             height: '36px',
                             fontSize: '0.9rem',
                             fontWeight: 700,
-                            background: 'var(--accent-gradient)',
+                            background: 'var(--button-gradient)',
                             color: '#fff',
                             borderRadius: '50%',
                             display: 'flex',
@@ -254,7 +254,7 @@ export default function DirectoryView({ employees }) {
                     height: '30px',
                     borderRadius: 'var(--radius-xs)',
                     border: pageNum === validCurrentPage ? '1px solid transparent' : '1px solid var(--border-color)',
-                    background: pageNum === validCurrentPage ? 'var(--accent-gradient)' : 'var(--bg-card)',
+                    background: pageNum === validCurrentPage ? 'var(--button-gradient)' : 'var(--bg-card)',
                     color: pageNum === validCurrentPage ? '#fff' : 'var(--text-main)',
                     fontWeight: 700,
                     fontSize: '0.8rem',
@@ -263,7 +263,7 @@ export default function DirectoryView({ employees }) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'var(--transition-fast)',
-                    boxShadow: pageNum === validCurrentPage ? '0 2px 6px rgba(2, 132, 199, 0.25)' : 'none',
+                    boxShadow: pageNum === validCurrentPage ? '0 2px 6px rgba(248, 121, 23, 0.25)' : 'none',
                   }}
                 >
                   {pageNum}
@@ -302,7 +302,7 @@ export default function DirectoryView({ employees }) {
                     height: '44px',
                     fontSize: '1.15rem',
                     fontWeight: 800,
-                    background: 'var(--accent-gradient)',
+                    background: 'var(--button-gradient)',
                     color: '#fff',
                     borderRadius: '50%',
                     display: 'flex',
@@ -332,7 +332,7 @@ export default function DirectoryView({ employees }) {
                 <div style={{ background: 'var(--bg-card)', padding: '1.15rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.75rem' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                      <strong style={{ color: '#0284c7', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <strong style={{ color: '#c2410c', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <i className="fa-solid fa-server"></i> 1. ServiceNow ITSM
                       </strong>
                       <span className={`badge ${getStatusBadgeClass(selectedCandidate.status)}`} style={{ fontSize: '0.7rem' }}>
@@ -352,20 +352,20 @@ export default function DirectoryView({ employees }) {
                     target="_blank"
                     rel="noreferrer"
                     className="btn btn-secondary"
-                    style={{ fontSize: '0.78rem', padding: '0.35rem 0.65rem', borderColor: 'var(--border-orange)', color: 'var(--brand-orange)', background: '#ffffff', fontWeight: 700, textDecoration: 'none', width: 'fit-content' }}
+                    style={{ fontSize: '0.78rem', padding: '0.35rem 0.65rem', borderColor: 'var(--border-orange)', color: 'var(--accent-text)', background: '#ffffff', fontWeight: 700, textDecoration: 'none', width: 'fit-content' }}
                   >
                     <i className="fa-solid fa-ticket"></i> Open ServiceNow REQ
                   </a>
                 </div>
 
                 {/* 2. AutomationEdge T4 Active Directory Card */}
-                <div style={{ background: '#f0f9ff', padding: '1.15rem', borderRadius: 'var(--radius-md)', border: '1px solid #bae6fd', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.75rem' }}>
+                <div style={{ background: '#fff7ed', padding: '1.15rem', borderRadius: 'var(--radius-md)', border: '1px solid #fed7aa', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.75rem' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
                       <strong style={{ color: '#c2410c', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <i className="fa-solid fa-robot"></i> 2. T4 Active Directory
                       </strong>
-                      <span className="badge" style={{ background: '#e0f2fe', color: '#c2410c', fontSize: '0.7rem', border: '1px solid #bae6fd' }}>
+                      <span className="badge" style={{ background: '#ffedd5', color: '#c2410c', fontSize: '0.7rem', border: '1px solid #fed7aa' }}>
                         {selectedCandidate.aeT4Status || (selectedCandidate.aeT4RequestId ? 'Complete' : 'Triggered on Approval')}
                       </span>
                     </div>
@@ -380,7 +380,7 @@ export default function DirectoryView({ employees }) {
                     target="_blank"
                     rel="noreferrer"
                     className="btn btn-secondary"
-                    style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: '#bae6fd', color: '#c2410c', background: '#ffffff', fontWeight: 700, textDecoration: 'none', width: 'fit-content' }}
+                    style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: '#fed7aa', color: '#c2410c', background: '#ffffff', fontWeight: 700, textDecoration: 'none', width: 'fit-content' }}
                   >
                     <i className="fa-solid fa-arrow-up-right-from-square"></i> Open T4 Workflow ({selectedCandidate.aeT4RequestId ? '#' + selectedCandidate.aeT4RequestId : 'Portal'})
                   </a>
@@ -413,13 +413,13 @@ export default function DirectoryView({ employees }) {
                 </div>
 
                 {/* 4. OrangeHRM Enterprise Profile Card */}
-                <div style={{ background: '#f0f9ff', padding: '1.15rem', borderRadius: 'var(--radius-md)', border: '1px solid #93c5fd', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.75rem' }}>
+                <div style={{ background: '#fff7ed', padding: '1.15rem', borderRadius: 'var(--radius-md)', border: '1px solid #93c5fd', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.75rem' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                      <strong style={{ color: '#0284c7', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <strong style={{ color: '#c2410c', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <i className="fa-solid fa-user-check"></i> 4. OrangeHRM Profile
                       </strong>
-                      <span className="badge" style={{ background: '#e0f2fe', color: '#c2410c', fontSize: '0.7rem', border: '1px solid #93c5fd' }}>
+                      <span className="badge" style={{ background: '#ffedd5', color: '#c2410c', fontSize: '0.7rem', border: '1px solid #93c5fd' }}>
                         {selectedCandidate.orangeHrmStatus || (selectedCandidate.orangeHrmEmpNumber ? 'Profile Active' : 'Created on Approval')}
                       </span>
                     </div>
@@ -434,7 +434,7 @@ export default function DirectoryView({ employees }) {
                     target="_blank"
                     rel="noreferrer"
                     className="btn btn-secondary"
-                    style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: '#93c5fd', color: '#0284c7', background: '#ffffff', fontWeight: 700, textDecoration: 'none', width: 'fit-content' }}
+                    style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: '#93c5fd', color: '#c2410c', background: '#ffffff', fontWeight: 700, textDecoration: 'none', width: 'fit-content' }}
                   >
                     <i className="fa-solid fa-arrow-up-right-from-square"></i> Open OrangeHRM Profile
                   </a>

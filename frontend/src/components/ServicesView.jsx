@@ -72,7 +72,7 @@ export default function ServicesView() {
           <h3 style={{ marginBottom: '1rem' }}><i className="fa-solid fa-calendar-days text-accent"></i> Apply for Leave</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1.25rem' }}>
             <div style={{ background: 'var(--bg-primary)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--brand-orange)' }}>{leaveBalances.casual}</div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-text)' }}>{leaveBalances.casual}</div>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Casual Leaves</span>
             </div>
             <div style={{ background: 'var(--bg-primary)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
@@ -80,7 +80,7 @@ export default function ServicesView() {
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sick Leaves</span>
             </div>
             <div style={{ background: 'var(--bg-primary)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0284c7' }}>{leaveBalances.privilege}</div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#c2410c' }}>{leaveBalances.privilege}</div>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Privilege Leaves</span>
             </div>
           </div>
@@ -108,7 +108,7 @@ export default function ServicesView() {
               <label>Reason</label>
               <textarea className="form-control" rows="2" value={reason} onChange={(e) => setReason(e.target.value)} required></textarea>
             </div>
-            <button type="submit" className="btn btn-primary" style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 800 }}>
+            <button type="submit" className="btn btn-primary" style={{ background: 'var(--button-gradient)', borderColor: 'transparent', fontWeight: 800 }}>
               <i className="fa-solid fa-paper-plane"></i> Submit Leave Request
             </button>
           </form>
@@ -138,7 +138,7 @@ export default function ServicesView() {
                 key={m.id}
                 style={{
                   alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
-                  background: m.sender === 'user' ? 'var(--accent-gradient)' : 'var(--bg-card)',
+                  background: m.sender === 'user' ? 'var(--button-gradient)' : 'var(--bg-card)',
                   color: m.sender === 'user' ? '#fff' : 'var(--text-main)',
                   padding: '0.65rem 0.9rem',
                   borderRadius: '12px',

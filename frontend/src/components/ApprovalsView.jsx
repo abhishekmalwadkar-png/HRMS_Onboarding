@@ -1,21 +1,100 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '../context/ToastContext';
 import confetti from 'canvas-confetti';
+import { motion, AnimatePresence } from 'motion/react';
+
+// Flow steps in execution order: ServiceNow -> AD -> Office 365 -> OrangeHRM -> Laptop Incident
+const FLOW_STEPS = ['step1', 'step2', 'step3', 'step4', 'step5'];
+const STEP_ADVANCE_MS = 2500;
+
+const allSteps = (status) => Object.fromEntries(FLOW_STEPS.map((s) => [s, status]));
+
+// Maps a backend engine result ({ status: 'success' | 'warning' | 'error', message }) to a step status
+const engineStatus = (result) => {
+  if (!result) return 'error';
+  if (result.status === 'success' || result.status === 'Triggered') return 'completed';
+  if (result.status === 'warning') return 'warning';
+  return 'error';
+};
+
+const STEP_OPACITY = { idle: 0.45, processed: 0.8 };
+
+// One step row in the flow timeline; animates in and dims/undims as its status changes
+function FlowStep({ status, index, children }) {
+  return (
+    <motion.div
+      className={`flow-step is-${status}`}
+      style={{ position: 'relative', marginBottom: '0.55rem' }}
+      initial={{ opacity: 0, x: 14 }}
+      animate={{ opacity: STEP_OPACITY[status] ?? 1, x: 0 }}
+      transition={{ duration: 0.35, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// Shows the real step state; the success badge (children) only appears once the step has completed
+function StepBadge({ status, children }) {
+  // Re-keyed on status so each state change pops in instead of swapping instantly
+  return (
+    <motion.span
+      key={status}
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
+      style={{ display: 'inline-flex' }}
+    >
+      <StepBadgeContent status={status}>{children}</StepBadgeContent>
+    </motion.span>
+  );
+}
+
+function StepBadgeContent({ status, children }) {
+  if (status === 'running') {
+    return <span className="badge flow-badge flow-badge-running"><i className="fa-solid fa-spinner fa-spin"></i> RUNNING</span>;
+  }
+  if (status === 'processed') {
+    // Visually passed while the request is still in flight; the real result replaces this when it arrives
+    return <span className="badge flow-badge flow-badge-idle"><i className="fa-solid fa-hourglass-half"></i> AWAITING RESULT</span>;
+  }
+  if (status === 'idle') {
+    return <span className="badge flow-badge flow-badge-idle"><i className="fa-regular fa-clock"></i> WAITING</span>;
+  }
+  if (status === 'error') {
+    return <span className="badge flow-badge flow-badge-error"><i className="fa-solid fa-xmark"></i> FAILED</span>;
+  }
+  if (status === 'warning') {
+    return <span className="badge flow-badge flow-badge-warning"><i className="fa-solid fa-triangle-exclamation"></i> WARNING</span>;
+  }
+  return children;
+}
+
+function StepError({ message }) {
+  return (
+    <div className="flow-step-error">
+      <i className="fa-solid fa-circle-exclamation"></i>
+      <span>{message || 'This step did not complete. Check the server log for details.'}</span>
+    </div>
+  );
+}
 
 export default function ApprovalsView({ employees, onRefreshEmployees }) {
   const { showToast } = useToast();
   const [approvingId, setApprovingId] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
-  
+
   // Right-side line flow drawer state
   const [activeFlowCandidate, setActiveFlowCandidate] = useState(null);
-  const [flowStepStatus, setFlowStepStatus] = useState({
-    step1: 'idle', // 'idle' | 'running' | 'completed' | 'error'
-    step2: 'idle',
-    step3: 'idle',
-    step4: 'idle',
-  });
+  const [flowStepStatus, setFlowStepStatus] = useState(allSteps('idle')); // 'idle' | 'running' | 'completed' | 'warning' | 'error'
+  const [flowStepErrors, setFlowStepErrors] = useState({});
   const [flowData, setFlowData] = useState(null);
+  const stepTimerRef = useRef(null);
+
+  useEffect(() => () => clearInterval(stepTimerRef.current), []);
+
+  const flowFinished = Object.values(flowStepStatus).every((s) => s !== 'running' && s !== 'processed') && !approvingId;
+  const flowHasErrors = Object.keys(flowStepErrors).length > 0;
 
   // Draggable state for Flow card
   const [panelPos, setPanelPos] = useState({ x: null, y: null });
@@ -100,13 +179,19 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
   const handleApprove = async (cand) => {
     setApprovingId(cand.id);
     setActiveFlowCandidate(cand);
-    setFlowStepStatus({
-      step1: 'running',
-      step2: 'running',
-      step3: 'running',
-      step4: 'running',
-    });
+    setFlowStepStatus({ ...allSteps('idle'), step1: 'running' });
+    setFlowStepErrors({});
     setFlowData(null);
+
+    // The backend runs every step inside one request, so advance the visual cursor one step at a time
+    // while it works, holding on the last step until the real results arrive.
+    let cursor = 0;
+    clearInterval(stepTimerRef.current);
+    stepTimerRef.current = setInterval(() => {
+      if (cursor >= FLOW_STEPS.length - 1) return;
+      cursor += 1;
+      setFlowStepStatus(Object.fromEntries(FLOW_STEPS.map((s, i) => [s, i < cursor ? 'processed' : i === cursor ? 'running' : 'idle'])));
+    }, STEP_ADVANCE_MS);
 
     showToast(`⏳ Initiating Sequential Provisioning for ${cand.fullName}: 1st ServiceNow ➔ 2nd AD ➔ 3rd Office 365 ➔ 4th OrangeHRM...`, 'info');
 
@@ -127,40 +212,50 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
         }),
       });
 
+      clearInterval(stepTimerRef.current);
+
       if (res.ok) {
         const result = await res.json();
-        setFlowData(result);
-        setFlowStepStatus({
-          step1: 'completed',
-          step2: 'completed',
-          step3: 'completed',
-          step4: 'completed',
+        const laptopOk = (result.laptopProvisioning?.ticketNumber || '').startsWith('INC') || result.aeT4Laptop?.status === 'success';
+        const statuses = {
+          step1: result.status === 'success' ? 'completed' : 'error',
+          step2: engineStatus(result.aeT4Ad),
+          step3: engineStatus(result.office365),
+          step4: engineStatus(result.orangeHrm),
+          step5: laptopOk ? 'completed' : 'error',
+        };
+        const sources = { step1: result, step2: result.aeT4Ad, step3: result.office365, step4: result.orangeHrm, step5: result.aeT4Laptop };
+        const errors = {};
+        FLOW_STEPS.forEach((s) => {
+          if (statuses[s] !== 'completed') errors[s] = sources[s]?.message;
         });
 
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
-        showToast(`🎉 Verified ${cand.fullName}! T4 AD, O365, OrangeHRM & Laptop Ticket created. Offer Letter emailed!`, 'success');
+        setFlowData(result);
+        setFlowStepStatus(statuses);
+        setFlowStepErrors(errors);
+
+        const failedCount = Object.keys(errors).length;
+        if (failedCount === 0) {
+          confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 },
+          });
+          showToast(`Onboarding completed for ${cand.fullName}.`, 'success');
+        } else {
+          showToast(`${cand.fullName}: ${failedCount} step(s) need attention.`, 'error');
+        }
       } else {
-        setFlowStepStatus({
-          step1: 'completed',
-          step2: 'completed',
-          step3: 'completed',
-          step4: 'completed',
-        });
-        showToast(`✓ Onboarding approved for ${cand.fullName}! Offer Letter dispatched.`, 'success');
+        setFlowStepStatus({ ...allSteps('idle'), step1: 'error' });
+        setFlowStepErrors({ step1: `The server returned an error (HTTP ${res.status}). No systems were provisioned.` });
+        showToast(`Approval failed for ${cand.fullName}.`, 'error');
       }
     } catch (err) {
       console.error('Approval error:', err);
-      setFlowStepStatus({
-        step1: 'completed',
-        step2: 'completed',
-        step3: 'completed',
-        step4: 'completed',
-      });
-      showToast(`✓ Onboarding approved for ${cand.fullName}!`, 'success');
+      clearInterval(stepTimerRef.current);
+      setFlowStepStatus({ ...allSteps('idle'), step1: 'error' });
+      setFlowStepErrors({ step1: 'Could not reach the HRMS server. Check that "python server.py" is running.' });
+      showToast(`Approval failed for ${cand.fullName}.`, 'error');
     } finally {
       setApprovingId(null);
       if (onRefreshEmployees) onRefreshEmployees();
@@ -169,12 +264,8 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
 
   const inspectApprovalFlow = (cand) => {
     setActiveFlowCandidate(cand);
-    setFlowStepStatus({
-      step1: 'completed',
-      step2: 'completed',
-      step3: 'completed',
-      step4: 'completed',
-    });
+    setFlowStepStatus(allSteps('completed'));
+    setFlowStepErrors({});
     setFlowData({
       laptopProvisioning: {
         ticketNumber: cand.laptopTicket || 'ITSM-ASSET-0420',
@@ -255,7 +346,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
               style={{
                 marginBottom: '1.5rem',
                 border: '1px solid var(--border-orange)',
-                boxShadow: '0 8px 24px rgba(2, 132, 199, 0.08)',
+                boxShadow: '0 8px 24px rgba(248, 121, 23, 0.08)',
                 padding: '1.5rem',
               }}
             >
@@ -280,7 +371,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                       height: '48px',
                       fontSize: '1.2rem',
                       fontWeight: 800,
-                      background: 'var(--accent-gradient)',
+                      background: 'var(--button-gradient)',
                       color: '#fff',
                       borderRadius: '50%',
                       display: 'flex',
@@ -314,7 +405,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                       target="_blank"
                       rel="noreferrer"
                       className="btn btn-secondary"
-                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: 'var(--border-orange)', color: 'var(--brand-orange)', background: '#f0f9ff', fontWeight: 700, textDecoration: 'none', borderRadius: '6px' }}
+                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: 'var(--border-orange)', color: 'var(--accent-text)', background: '#fff7ed', fontWeight: 700, textDecoration: 'none', borderRadius: '6px' }}
                     >
                       <i className="fa-solid fa-ticket"></i> ServiceNow Request
                     </a>
@@ -323,7 +414,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                       target="_blank"
                       rel="noreferrer"
                       className="btn btn-secondary"
-                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: '#bae6fd', color: '#0284c7', background: '#f0f9ff', fontWeight: 700, textDecoration: 'none', borderRadius: '6px' }}
+                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: '#fed7aa', color: '#c2410c', background: '#fff7ed', fontWeight: 700, textDecoration: 'none', borderRadius: '6px' }}
                     >
                       <i className="fa-solid fa-box"></i> Catalog Item
                     </a>
@@ -335,7 +426,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
                 {/* Column 1: Candidate Info */}
                 <div style={{ background: 'var(--bg-accent-soft)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-orange)' }}>
-                  <h4 style={{ fontSize: '0.88rem', color: 'var(--brand-orange)', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <h4 style={{ fontSize: '0.88rem', color: 'var(--accent-text)', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     <i className="fa-solid fa-id-card"></i> Candidate Information
                   </h4>
                   <div style={{ fontSize: '0.86rem', lineHeight: 1.8, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
@@ -415,10 +506,10 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                     style={{
                       padding: '0.65rem 1.75rem',
                       fontSize: '0.92rem',
-                      background: 'var(--accent-gradient)',
+                      background: 'var(--button-gradient)',
                       borderColor: 'transparent',
                       fontWeight: 800,
-                      boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
+                      boxShadow: '0 4px 14px rgba(248, 121, 23, 0.3)',
                       borderRadius: '8px',
                     }}
                   >
@@ -495,7 +586,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                           <i className="fa-solid fa-check"></i> {item.serviceNowReq || 'REQ0010042'}
                         </span>
                         {item.serviceNowRitm && (
-                          <span style={{ fontSize: '0.7rem', color: '#0284c7', marginTop: '2px' }}>
+                          <span style={{ fontSize: '0.7rem', color: '#c2410c', marginTop: '2px' }}>
                             Item: <code>{item.serviceNowRitm}</code>
                           </span>
                         )}
@@ -507,7 +598,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                           <i className="fa-solid fa-check-double"></i> Verified
                         </span>
                         {item.orangeHrmEmpNumber && (
-                          <span className="badge badge-verified" style={{ fontSize: '0.72rem', borderColor: '#93c5fd', color: '#0284c7', background: '#f0f9ff' }}>
+                          <span className="badge badge-verified" style={{ fontSize: '0.72rem', borderColor: '#93c5fd', color: '#c2410c', background: '#fff7ed' }}>
                             <i className="fa-solid fa-user-check"></i> OrangeHRM #{item.orangeHrmEmpNumber}
                           </span>
                         )}
@@ -521,7 +612,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <i className="fa-solid fa-laptop text-accent"></i>
-                        <span style={{ color: 'var(--brand-orange)', fontWeight: 700, fontSize: '0.85rem' }}>
+                        <span style={{ color: 'var(--accent-text)', fontWeight: 700, fontSize: '0.85rem' }}>
                           {item.laptopTicket || 'INC0040420'}
                         </span>
                       </div>
@@ -531,7 +622,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                       <button
                         className="btn btn-secondary"
                         onClick={() => inspectApprovalFlow(item)}
-                        style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', color: 'var(--brand-orange)', borderColor: 'var(--border-orange)' }}
+                        style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', color: 'var(--accent-text)', borderColor: 'var(--border-orange)' }}
                         title="View Live Execution Line Flow"
                       >
                         <i className="fa-solid fa-timeline"></i> View Flow
@@ -591,7 +682,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                     height: '30px',
                     borderRadius: 'var(--radius-xs)',
                     border: pageNum === validCurrentPage ? '1px solid transparent' : '1px solid var(--border-color)',
-                    background: pageNum === validCurrentPage ? 'var(--accent-gradient)' : 'var(--bg-card)',
+                    background: pageNum === validCurrentPage ? 'var(--button-gradient)' : 'var(--bg-card)',
                     color: pageNum === validCurrentPage ? '#fff' : 'var(--text-main)',
                     fontWeight: 700,
                     fontSize: '0.8rem',
@@ -600,7 +691,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'var(--transition-fast)',
-                    boxShadow: pageNum === validCurrentPage ? '0 2px 6px rgba(2, 132, 199, 0.25)' : 'none',
+                    boxShadow: pageNum === validCurrentPage ? '0 2px 6px rgba(248, 121, 23, 0.25)' : 'none',
                   }}
                 >
                   {pageNum}
@@ -632,8 +723,13 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
       {/* ========================================================================= */}
       {/* RIGHT-SIDE LINE FLOW CARD (Shows triggered workflows & changes) */}
       {/* ========================================================================= */}
+      <AnimatePresence>
       {activeFlowCandidate && (
-        <div
+        <motion.div
+          key="flow-panel"
+          initial={{ opacity: 0, y: 16, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] } }}
+          exit={{ opacity: 0, y: 10, scale: 0.98, transition: { duration: 0.18, ease: 'easeIn' } }}
           style={{
             position: 'fixed',
             left: panelPos.x !== null ? `${panelPos.x}px` : 'auto',
@@ -673,7 +769,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
             title="Click and drag to move panel anywhere on screen"
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <div style={{ color: 'var(--brand-orange)', fontSize: '0.9rem', opacity: 0.8, display: 'flex', alignItems: 'center' }}>
+              <div style={{ color: 'var(--accent-text)', fontSize: '0.9rem', opacity: 0.8, display: 'flex', alignItems: 'center' }}>
                 <i className="fa-solid fa-grip-vertical"></i>
               </div>
               <div>
@@ -721,7 +817,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
             {/* Vertical Line Timeline Container */}
             <div style={{ position: 'relative', paddingLeft: '2.25rem' }}>
               {/* Connected Flow Line: Animates while running, stops when completed */}
-              <div className={`animated-flow-line ${approvingId !== activeFlowCandidate?.id && !Object.values(flowStepStatus).some(s => s === 'running') ? 'completed-static' : ''}`}>
+              <div className={`animated-flow-line ${approvingId !== activeFlowCandidate?.id && !Object.values(flowStepStatus).some(s => s === 'running') ? 'completed-static' : ''} ${flowHasErrors ? 'has-errors' : ''}`}>
                 <div className="flow-line-base"></div>
                 {(approvingId === activeFlowCandidate?.id || Object.values(flowStepStatus).some(s => s === 'running')) && (
                   <div className="flow-stream-pulse"></div>
@@ -729,7 +825,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
               </div>
 
               {/* STEP 1: ServiceNow Service Catalog Approval */}
-              <div style={{ position: 'relative', marginBottom: '0.55rem' }}>
+              <FlowStep status={flowStepStatus.step1} index={0}>
                 {/* Node Icon */}
                 <div
                   style={{
@@ -763,23 +859,29 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#0284c7' }}>1. ServiceNow Request</strong>
-                    <span className="badge badge-verified" style={{ fontSize: '0.62rem', padding: '0.15rem 0.4rem' }}>
-                      <i className="fa-solid fa-check"></i> APPROVED
-                    </span>
+                    <strong style={{ fontSize: '0.82rem', color: '#c2410c' }}>1. ServiceNow Request</strong>
+                    <StepBadge status={flowStepStatus.step1}>
+                      <span className="badge badge-verified" style={{ fontSize: '0.62rem', padding: '0.15rem 0.4rem' }}>
+                        <i className="fa-solid fa-check"></i> APPROVED
+                      </span>
+                    </StepBadge>
                   </div>
+                  {flowStepStatus.step1 === 'error' ? <StepError message={flowStepErrors.step1} /> : (
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     <div>• <strong>Request:</strong> <code>{activeFlowCandidate.serviceNowReq || 'REQ0010042'}</code> marked <strong>Approved</strong></div>
                     <div>• <strong>Catalog Item:</strong> <span>Employee Onboarding Request</span></div>
-                    <div style={{ color: '#15803d', fontSize: '0.68rem', marginTop: '1px', fontWeight: 600 }}>
-                      ✓ HR Verification Approved in ServiceNow Service Catalog
-                    </div>
+                    {flowStepStatus.step1 === 'completed' && (
+                      <div style={{ color: '#15803d', fontSize: '0.68rem', marginTop: '1px', fontWeight: 600 }}>
+                        ✓ HR Verification Approved in ServiceNow Service Catalog
+                      </div>
+                    )}
                   </div>
+                  )}
                 </div>
-              </div>
+              </FlowStep>
 
               {/* STEP 2: Active Directory (AutomationEdge T4) */}
-              <div style={{ position: 'relative', marginBottom: '0.55rem' }}>
+              <FlowStep status={flowStepStatus.step2} index={1}>
                 {/* Node Icon */}
                 <div
                   style={{
@@ -789,12 +891,12 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                     width: '28px',
                     height: '28px',
                     borderRadius: '50%',
-                    background: '#f0f9ff',
-                    border: '2px solid #0284c7',
+                    background: '#fff7ed',
+                    border: '2px solid #f87917',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#0284c7',
+                    color: '#c2410c',
                     boxShadow: '0 2px 5px rgba(0,0,0,0.06)',
                     fontSize: '0.78rem',
                     zIndex: 2,
@@ -814,23 +916,29 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
                     <strong style={{ fontSize: '0.82rem', color: '#c2410c' }}>2. Active Directory (AD)</strong>
-                    <span className="badge" style={{ background: '#e0f2fe', color: '#c2410c', fontSize: '0.62rem', padding: '0.15rem 0.4rem', border: '1px solid #bae6fd' }}>
-                      <i className="fa-solid fa-circle-check"></i> WORKFLOW COMPLETE
-                    </span>
+                    <StepBadge status={flowStepStatus.step2}>
+                      <span className="badge" style={{ background: '#ffedd5', color: '#c2410c', fontSize: '0.62rem', padding: '0.15rem 0.4rem', border: '1px solid #fed7aa' }}>
+                        <i className="fa-solid fa-circle-check"></i> WORKFLOW COMPLETE
+                      </span>
+                    </StepBadge>
                   </div>
+                  {flowStepStatus.step2 === 'error' ? <StepError message={flowStepErrors.step2} /> : (
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     <div>• <strong>T4 Workflow:</strong> <code>{flowData?.aeT4Ad?.workflowName || activeFlowCandidate.aeT4Workflow || 'AD-Create User and Assin Role'}</code></div>
                     <div>• <strong>Automation Request:</strong> <strong>#{flowData?.aeT4Ad?.automationRequestId || activeFlowCandidate.aeT4RequestId || '3294476'}</strong></div>
                     <div>• <strong>RPA Agent:</strong> <code>{flowData?.aeT4Ad?.agentName || activeFlowCandidate.aeT4Agent || 'mahesh@mspevent-win-1'}</code></div>
-                    <div style={{ color: '#15803d', fontSize: '0.68rem', marginTop: '1px', fontWeight: 600 }}>
-                      ✓ Domain User & Role assigned in Active Directory
-                    </div>
+                    {flowStepStatus.step2 === 'completed' && (
+                      <div style={{ color: '#15803d', fontSize: '0.68rem', marginTop: '1px', fontWeight: 600 }}>
+                        ✓ Domain User & Role assigned in Active Directory
+                      </div>
+                    )}
                   </div>
+                  )}
                 </div>
-              </div>
+              </FlowStep>
 
               {/* STEP 3: Microsoft 365 / Entra ID */}
-              <div style={{ position: 'relative', marginBottom: '0.55rem' }}>
+              <FlowStep status={flowStepStatus.step3} index={2}>
                 {/* Node Icon */}
                 <div
                   style={{
@@ -865,20 +973,25 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
                     <strong style={{ fontSize: '0.82rem', color: '#1d4ed8' }}>3. Microsoft 365 Account</strong>
-                    <span className="badge" style={{ background: '#dbeafe', color: '#1e40af', fontSize: '0.62rem', padding: '0.15rem 0.4rem', border: '1px solid #93c5fd' }}>
-                      <i className="fa-solid fa-circle-check"></i> ENTRA ID ACTIVE
-                    </span>
+                    <StepBadge status={flowStepStatus.step3}>
+                      <span className="badge" style={{ background: '#dbeafe', color: '#1e40af', fontSize: '0.62rem', padding: '0.15rem 0.4rem', border: '1px solid #93c5fd' }}>
+                        <i className="fa-solid fa-circle-check"></i> ENTRA ID ACTIVE
+                      </span>
+                    </StepBadge>
                   </div>
+                  {flowStepStatus.step3 === 'error' ? <StepError message={flowStepErrors.step3} /> : (
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     <div>• <strong>Generated Work Email:</strong> <strong style={{ color: '#1d4ed8' }}>{flowData?.office365?.userPrincipalName || activeFlowCandidate.o365Email || `${activeFlowCandidate.fullName ? activeFlowCandidate.fullName.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user'}@automationedge.ai`}</strong></div>
                     <div>• <strong>Tenant Domain:</strong> <code>automationedge.ai</code></div>
-                    <div>• <strong>Status:</strong> Cloud Mailbox & Teams Provisioned</div>
+                    {flowStepStatus.step3 === 'completed' && <div>• <strong>Status:</strong> Cloud Mailbox & Teams Provisioned</div>}
+                    {flowStepStatus.step3 === 'warning' && <StepError message={flowStepErrors.step3} />}
                   </div>
+                  )}
                 </div>
-              </div>
+              </FlowStep>
 
               {/* STEP 4: OrangeHRM PIM */}
-              <div style={{ position: 'relative', marginBottom: '0.55rem' }}>
+              <FlowStep status={flowStepStatus.step4} index={3}>
                 {/* Node Icon */}
                 <div
                   style={{
@@ -913,22 +1026,29 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
                     <strong style={{ fontSize: '0.82rem', color: '#059669' }}>4. OrangeHRM Profile</strong>
-                    <span className="badge badge-verified" style={{ fontSize: '0.62rem', padding: '0.15rem 0.4rem', borderColor: '#a7f3d0', color: '#059669', background: '#ecfdf5' }}>
-                      <i className="fa-solid fa-check"></i> PIM CREATED
-                    </span>
+                    <StepBadge status={flowStepStatus.step4}>
+                      <span className="badge badge-verified" style={{ fontSize: '0.62rem', padding: '0.15rem 0.4rem', borderColor: '#a7f3d0', color: '#059669', background: '#ecfdf5' }}>
+                        <i className="fa-solid fa-check"></i> PIM CREATED
+                      </span>
+                    </StepBadge>
                   </div>
+                  {flowStepStatus.step4 === 'error' ? <StepError message={flowStepErrors.step4} /> : (
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     <div>• <strong>PIM Employee Number:</strong> <strong>#{flowData?.orangeHrm?.empNumber || activeFlowCandidate.orangeHrmEmpNumber || '17'}</strong></div>
                     <div>• <strong>Synced Email:</strong> <span>{flowData?.office365?.userPrincipalName || activeFlowCandidate.o365Email || `${activeFlowCandidate.fullName ? activeFlowCandidate.fullName.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user'}@automationedge.ai`}</span></div>
-                    <div style={{ color: '#059669', fontSize: '0.68rem', marginTop: '1px', fontWeight: 600 }}>
-                      ✓ Profile created & linked with Microsoft 365 workEmail
-                    </div>
+                    {flowStepStatus.step4 === 'completed' && (
+                      <div style={{ color: '#059669', fontSize: '0.68rem', marginTop: '1px', fontWeight: 600 }}>
+                        ✓ Profile created & linked with Microsoft 365 workEmail
+                      </div>
+                    )}
+                    {flowStepStatus.step4 === 'warning' && <StepError message={flowStepErrors.step4} />}
                   </div>
+                  )}
                 </div>
-              </div>
+              </FlowStep>
 
               {/* STEP 5: ServiceNow ITSM Hardware Incident (Triggered AFTER OrangeHRM) */}
-              <div style={{ position: 'relative', marginBottom: '0.55rem' }}>
+              <FlowStep status={flowStepStatus.step5} index={4}>
                 {/* Node Icon */}
                 <div
                   style={{
@@ -939,11 +1059,11 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                     height: '28px',
                     borderRadius: '50%',
                     background: '#ecfdf5',
-                    border: '2px solid #0284c7',
+                    border: '2px solid #f87917',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#0284c7',
+                    color: '#c2410c',
                     boxShadow: '0 2px 5px rgba(0,0,0,0.06)',
                     fontSize: '0.78rem',
                     zIndex: 2,
@@ -956,17 +1076,20 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                 <div
                   style={{
                     background: 'var(--bg-primary)',
-                    border: '1px solid #bae6fd',
+                    border: '1px solid #fed7aa',
                     borderRadius: 'var(--radius-sm, 6px)',
                     padding: '0.5rem 0.75rem',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#0284c7' }}>5. ServiceNow Laptop Incident</strong>
-                    <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: '0.62rem', padding: '0.15rem 0.4rem', border: '1px solid #bae6fd' }}>
-                      <i className="fa-solid fa-box"></i> CATEGORY: HARDWARE
-                    </span>
+                    <strong style={{ fontSize: '0.82rem', color: '#c2410c' }}>5. ServiceNow Laptop Incident</strong>
+                    <StepBadge status={flowStepStatus.step5}>
+                      <span className="badge" style={{ background: '#ffedd5', color: '#c2500a', fontSize: '0.62rem', padding: '0.15rem 0.4rem', border: '1px solid #fed7aa' }}>
+                        <i className="fa-solid fa-box"></i> CATEGORY: HARDWARE
+                      </span>
+                    </StepBadge>
                   </div>
+                  {flowStepStatus.step5 === 'error' ? <StepError message={flowStepErrors.step5} /> : (
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     <div>• <strong>Laptop Incident Ticket:</strong> <strong style={{ color: '#059669' }}>{flowData?.laptopProvisioning?.ticketNumber || activeFlowCandidate.laptopTicket || 'INC0040420'}</strong></div>
                     <div>• <strong>Category:</strong> <span className="badge badge-verified" style={{ fontSize: '0.6rem', padding: '0.1rem 0.3rem' }}>Hardware</span></div>
@@ -975,10 +1098,23 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                       <i className="fa-solid fa-truck-fast"></i> Dispatched to IT Desk with OrangeHRM Employee #{flowData?.orangeHrm?.empNumber || activeFlowCandidate.orangeHrmEmpNumber || '17'}
                     </div>
                   </div>
+                  )}
                 </div>
-              </div>
+              </FlowStep>
+
+              {/* FAILURE END NODE: shown when the run finished but one or more steps did not complete */}
+              {flowFinished && flowHasErrors && (
+                <div className="flow-summary flow-summary-error">
+                  <i className="fa-solid fa-triangle-exclamation"></i>
+                  <div>
+                    <strong>Finished with {Object.keys(flowStepErrors).length} step(s) needing attention</strong>
+                    <div>Fix the failed system and approve again, or complete it manually.</div>
+                  </div>
+                </div>
+              )}
 
               {/* COMPLETION END NODE: Green Tick Mark Milestone */}
+              {flowFinished && !flowHasErrors && (
               <div style={{ position: 'relative' }}>
                 {/* Node Icon - Green Tick Mark */}
                 <div
@@ -1045,6 +1181,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                   </span>
                 </div>
               </div>
+              )}
 
             </div>
           </div>
@@ -1075,7 +1212,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
               style={{
                 padding: '0.4rem 0.85rem',
                 fontSize: '0.8rem',
-                background: 'var(--accent-gradient)',
+                background: 'var(--button-gradient)',
                 borderColor: 'transparent',
                 fontWeight: 700,
                 textDecoration: 'none',
@@ -1084,8 +1221,9 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
               <i className="fa-solid fa-arrow-up-right-from-square"></i> Open OrangeHRM
             </a>
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </section>
   );
 }

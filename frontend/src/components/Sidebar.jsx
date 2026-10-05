@@ -1,12 +1,27 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
-export default function Sidebar({ currentView, setCurrentView, isCollapsed, toggleCollapse }) {
+// hrOnly items are hidden for non-HR roles (App.jsx also refuses to render those views)
+const NAV_ITEMS = [
+  { view: 'wizard', icon: 'fa-wand-magic-sparkles', label: 'Onboarding' },
+  { view: 'approvals', icon: 'fa-clipboard-check', label: 'Approvals', hrOnly: true },
+  { view: 'recruitment', icon: 'fa-user-plus', label: 'Recruitment', hrOnly: true },
+  { view: 'dashboard', icon: 'fa-users-gear', label: 'Directory', hrOnly: true },
+  { view: 'services', icon: 'fa-headset', label: 'Services & AI', hrOnly: true },
+  { view: 'exit', icon: 'fa-person-walking-arrow-right', label: 'Offboarding' },
+  { view: 'analytics', icon: 'fa-chart-pie', label: 'HR Analytics', hrOnly: true },
+];
+
+export default function Sidebar({ currentView, setCurrentView, isCollapsed, isMobileOpen, toggleCollapse }) {
   const { currentUser, logout, theme, toggleTheme } = useAuth();
   const { showToast } = useToast();
 
   const isHR = currentUser?.role === 'hr';
+  const displayName = currentUser?.name?.split(' (')[0] || 'User';
+  const roleLabel = currentUser?.badge || (isHR ? 'HR Administrator' : 'Employee');
+  const avatar = currentUser?.avatar || displayName.charAt(0).toUpperCase();
 
   const handleLogout = () => {
     logout();
@@ -14,7 +29,11 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, togg
   };
 
   return (
-    <aside className={`sidebar navbar ${isCollapsed ? 'collapsed' : ''}`} id="appSidebar">
+    <aside
+      className={`sidebar navbar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
+      id="appSidebar"
+      aria-label="Main navigation"
+    >
       <div className="sidebar-top">
         <div className="brand">
           <div className="brand-icon">
@@ -28,6 +47,7 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, togg
             className="sidebar-close-btn"
             onClick={toggleCollapse}
             title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <i className={`fa-solid ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'}`}></i>
           </button>
@@ -36,61 +56,24 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, togg
         <div className="sidebar-section-title">Main Navigation</div>
 
         <nav className="sidebar-nav">
-          <button
-            className={`nav-tab-btn ${currentView === 'wizard' ? 'active' : ''}`}
-            onClick={() => setCurrentView('wizard')}
-          >
-            <i className="fa-solid fa-wand-magic-sparkles"></i>
-            <span className="nav-label">Onboarding</span>
-          </button>
-
-          <button
-            className={`nav-tab-btn ${currentView === 'approvals' ? 'active' : ''}`}
-            onClick={() => setCurrentView('approvals')}
-          >
-            <i className="fa-solid fa-clipboard-check"></i>
-            <span className="nav-label">Approvals</span>
-          </button>
-
-          <button
-            className={`nav-tab-btn ${currentView === 'recruitment' ? 'active' : ''}`}
-            onClick={() => setCurrentView('recruitment')}
-          >
-            <i className="fa-solid fa-user-plus"></i>
-            <span className="nav-label">Recruitment</span>
-          </button>
-
-          <button
-            className={`nav-tab-btn ${currentView === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setCurrentView('dashboard')}
-          >
-            <i className="fa-solid fa-users-gear"></i>
-            <span className="nav-label">Directory</span>
-          </button>
-
-          <button
-            className={`nav-tab-btn ${currentView === 'services' ? 'active' : ''}`}
-            onClick={() => setCurrentView('services')}
-          >
-            <i className="fa-solid fa-headset"></i>
-            <span className="nav-label">Services & AI</span>
-          </button>
-
-          <button
-            className={`nav-tab-btn ${currentView === 'exit' ? 'active' : ''}`}
-            onClick={() => setCurrentView('exit')}
-          >
-            <i className="fa-solid fa-person-walking-arrow-right"></i>
-            <span className="nav-label">Offboarding</span>
-          </button>
-
-          <button
-            className={`nav-tab-btn ${currentView === 'analytics' ? 'active' : ''}`}
-            onClick={() => setCurrentView('analytics')}
-          >
-            <i className="fa-solid fa-chart-pie"></i>
-            <span className="nav-label">HR Analytics</span>
-          </button>
+          {NAV_ITEMS.filter((item) => isHR || !item.hrOnly).map((item) => (
+            <button
+              key={item.view}
+              className={`nav-tab-btn ${currentView === item.view ? 'active' : ''}`}
+              onClick={() => setCurrentView(item.view)}
+              aria-current={currentView === item.view ? 'page' : undefined}
+            >
+              {currentView === item.view && (
+                <motion.span
+                  layoutId="nav-active-pill"
+                  className="nav-active-pill"
+                  transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+                />
+              )}
+              <i className={`fa-solid ${item.icon}`}></i>
+              <span className="nav-label">{item.label}</span>
+            </button>
+          ))}
         </nav>
       </div>
 
@@ -101,69 +84,22 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, togg
             className="theme-toggle-btn"
             onClick={toggleTheme}
             title="Toggle Dark/Light Mode"
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'}`}></i>
           </button>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>Theme Mode</span>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+            {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+          </span>
         </div>
 
         <div className="sidebar-user-card">
-          <div
-            className="avatar"
-            style={{
-              width: '36px',
-              height: '36px',
-              fontSize: '0.95rem',
-              fontWeight: 700,
-              background: 'var(--accent-gradient)',
-              color: '#fff',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              boxShadow: '0 2px 6px rgba(2, 132, 199, 0.25)',
-            }}
-          >
-            {currentUser?.avatar || 'P'}
+          <div className="user-avatar" aria-hidden="true">{avatar}</div>
+          <div className="user-meta">
+            <div className="user-name" title={displayName}>{displayName}</div>
+            <span className="badge badge-verified user-role">{roleLabel}</span>
           </div>
-          <div className="user-meta" style={{ flex: 1, minWidth: 0, lineHeight: 1.2 }}>
-            <div
-              style={{
-                fontWeight: 700,
-                fontSize: '0.82rem',
-                color: 'var(--text-main)',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {currentUser?.name?.split(' (')[0] || 'Pooja Deshmukh'}
-            </div>
-            <span
-              className="badge badge-verified"
-              style={{ fontSize: '0.62rem', padding: '1px 6px', marginTop: '2px' }}
-            >
-              HR Administrator
-            </span>
-          </div>
-          <button
-            className="icon-btn"
-            onClick={handleLogout}
-            style={{
-              padding: '0.45rem',
-              fontSize: '0.85rem',
-              borderRadius: '6px',
-              color: 'var(--accent-rose)',
-              background: 'rgba(225, 29, 72, 0.08)',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            title="Logout"
-          >
+          <button className="logout-btn" onClick={handleLogout} title="Logout" aria-label="Log out">
             <i className="fa-solid fa-arrow-right-from-bracket"></i>
           </button>
         </div>

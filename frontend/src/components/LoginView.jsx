@@ -61,10 +61,13 @@ export default function LoginView() {
             <button
               type="submit"
               className="btn btn-primary"
-              style={{ width: '100%', padding: '0.85rem', fontSize: '1rem', background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 800 }}
+              style={{ width: '100%', padding: '0.85rem', fontSize: '1rem', background: 'var(--button-gradient)', borderColor: 'transparent', fontWeight: 800 }}
             >
               <i className="fa-solid fa-arrow-right-to-bracket"></i> Login to HR Dashboard
             </button>
+            <p style={{ textAlign: 'center', marginTop: '0.85rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              <i className="fa-solid fa-circle-info"></i> Demo environment: credentials are pre-filled.
+            </p>
           </form>
         </div>
       </div>

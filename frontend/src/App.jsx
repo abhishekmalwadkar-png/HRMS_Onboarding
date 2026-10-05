@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './context/AuthContext';
 import { useToast } from './context/ToastContext';
 import Sidebar from './components/Sidebar';
@@ -22,7 +23,12 @@ export default function App() {
     return localStorage.getItem('mangohrms_sidebar_collapsed') === 'true';
   });
 
+  // Below this width the sidebar is an overlay opened from the header menu button (matches index.css)
+  const MOBILE_BREAKPOINT = 992;
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+
   const [employees, setEmployees] = useState([]);
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(true);
 
   // Fetch employee records from Python backend
   const fetchEmployees = useCallback(async () => {
@@ -34,6 +40,8 @@ export default function App() {
       }
     } catch (err) {
       console.warn('Failed to load employee records:', err);
+    } finally {
+      setIsLoadingEmployees(false);
     }
   }, []);
 
@@ -44,7 +52,16 @@ export default function App() {
     }
   }, [currentUser, fetchEmployees]);
 
+  const navigateTo = (view) => {
+    setCurrentView(view);
+    setIsMobileNavOpen(false);
+  };
+
   const toggleSidebar = () => {
+    if (window.innerWidth <= MOBILE_BREAKPOINT) {
+      setIsMobileNavOpen((prev) => !prev);
+      return;
+    }
     setIsSidebarCollapsed((prev) => {
       const next = !prev;
       localStorage.setItem('mangohrms_sidebar_collapsed', next ? 'true' : 'false');
@@ -70,10 +87,24 @@ export default function App() {
       {/* Sidebar Navigation */}
       <Sidebar
         currentView={currentView}
-        setCurrentView={setCurrentView}
+        setCurrentView={navigateTo}
         isCollapsed={isSidebarCollapsed}
+        isMobileOpen={isMobileNavOpen}
         toggleCollapse={toggleSidebar}
       />
+      <AnimatePresence>
+        {isMobileNavOpen && (
+          <motion.button
+            className="sidebar-backdrop"
+            onClick={() => setIsMobileNavOpen(false)}
+            aria-label="Close navigation menu"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Main Content Area */}
       <div className="main-layout">
@@ -83,7 +114,14 @@ export default function App() {
           onAutoFill={handleCandidateAutofill}
         />
 
-        <div className="app-container">
+        <AnimatePresence mode="wait">
+        <motion.div
+          key={currentView}
+          className="app-container"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0, transition: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }}
+          exit={{ opacity: 0, y: -6, transition: { duration: 0.15, ease: 'easeIn' } }}
+        >
           {currentView === 'approvals' && isHR && (
             <ApprovalsView
               employees={employees}
@@ -118,9 +156,11 @@ export default function App() {
           {currentView === 'analytics' && isHR && (
             <AnalyticsView
               employees={employees}
+              isLoading={isLoadingEmployees}
             />
           )}
-        </div>
+        </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

@@ -23,6 +23,7 @@ export default function Header({ currentView, toggleSidebar, onAutoFill }) {
           onClick={toggleSidebar}
           id="sidebarToggle"
           title="Toggle Sidebar"
+          aria-label="Toggle navigation menu"
         >
           <i className="fa-solid fa-bars"></i>
         </button>
@@ -46,7 +47,7 @@ export default function Header({ currentView, toggleSidebar, onAutoFill }) {
               borderColor: 'var(--border-orange)',
               background: 'var(--bg-accent-soft)',
               fontWeight: 700,
-              color: 'var(--brand-orange)',
+              color: 'var(--accent-text)',
             }}
             title="Pre-fill candidate profile data into Onboarding Wizard"
           >

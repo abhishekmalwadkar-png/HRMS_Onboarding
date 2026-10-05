@@ -225,7 +225,7 @@ export default function RecruitmentView() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.6rem', margin: 0 }}>
-              <i className="fa-solid fa-user-plus" style={{ color: '#0284c7' }}></i> Candidate Recruitment & AI Screening
+              <i className="fa-solid fa-user-plus" style={{ color: '#c2410c' }}></i> Candidate Recruitment & AI Screening
             </h2>
             <p style={{ color: 'var(--text-muted)', margin: '0.35rem 0 0 0', fontSize: '0.88rem' }}>
               Upload resumes, run intelligent job description matching, and schedule Google Meet interviews with automated email dispatch.
@@ -257,12 +257,12 @@ export default function RecruitmentView() {
                 setShowScreenModal(true);
               }}
               style={{
-                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                background: 'linear-gradient(135deg, #f87917 0%, #c2500a 100%)',
                 borderColor: 'transparent',
                 fontWeight: 700,
                 padding: '0.5rem 1.15rem',
                 fontSize: '0.88rem',
-                boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
+                boxShadow: '0 4px 12px rgba(248, 121, 23, 0.25)',
               }}
             >
               <i className="fa-solid fa-file-arrow-up"></i> Upload & Screen Resume
@@ -278,7 +278,7 @@ export default function RecruitmentView() {
         <div className="glass-card" style={{ background: '#ffffff' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <i className="fa-solid fa-briefcase" style={{ color: '#0284c7' }}></i> Open Job Requisitions ({jobPostings.length})
+              <i className="fa-solid fa-briefcase" style={{ color: '#c2410c' }}></i> Open Job Requisitions ({jobPostings.length})
             </h3>
             <span className="badge badge-verified" style={{ fontSize: '0.72rem', fontWeight: 700 }}>
               Hiring Active
@@ -302,7 +302,7 @@ export default function RecruitmentView() {
                     <strong style={{ fontSize: '0.95rem', color: '#0f172a' }}>{job.title}</strong>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                       <i className="fa-solid fa-building" style={{ fontSize: '0.75rem', marginRight: '4px' }}></i>
-                      {job.dept} • <span style={{ color: '#0284c7', fontWeight: 600 }}>{job.applicants} Applicants</span>
+                      {job.dept} • <span style={{ color: '#c2410c', fontWeight: 600 }}>{job.applicants} Applicants</span>
                     </div>
                   </div>
                   <span className="badge badge-verified" style={{ fontSize: '0.7rem' }}>
@@ -337,7 +337,7 @@ export default function RecruitmentView() {
         <div className="glass-card" style={{ background: '#ffffff' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <i className="fa-solid fa-users-viewfinder" style={{ color: '#0284c7' }}></i> Candidate Evaluation & Stages ({candidates.length})
+              <i className="fa-solid fa-users-viewfinder" style={{ color: '#c2410c' }}></i> Candidate Evaluation & Stages ({candidates.length})
             </h3>
             <button
               className="btn btn-secondary"
@@ -353,7 +353,7 @@ export default function RecruitmentView() {
 
           {candidates.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem 1.5rem', color: 'var(--text-muted)' }}>
-              <i className="fa-solid fa-file-magnifying-glass" style={{ fontSize: '2.5rem', color: '#0284c7', opacity: 0.6, marginBottom: '1rem', display: 'block' }}></i>
+              <i className="fa-solid fa-file-magnifying-glass" style={{ fontSize: '2.5rem', color: '#c2410c', opacity: 0.6, marginBottom: '1rem', display: 'block' }}></i>
               <h4 style={{ color: '#0f172a', marginBottom: '0.3rem' }}>No Screened Candidates Yet</h4>
               <p style={{ fontSize: '0.85rem', marginBottom: '1.2rem' }}>
                 Upload candidate resumes to extract skills and match against open job descriptions.
@@ -361,7 +361,7 @@ export default function RecruitmentView() {
               <button
                 className="btn btn-primary"
                 onClick={() => setShowScreenModal(true)}
-                style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontSize: '0.82rem' }}
+                style={{ background: 'var(--button-gradient)', borderColor: 'transparent', fontSize: '0.82rem' }}
               >
                 <i className="fa-solid fa-file-arrow-up"></i> Upload Resume Now
               </button>
@@ -380,8 +380,8 @@ export default function RecruitmentView() {
                       background: 'var(--bg-primary)',
                       padding: '1.1rem',
                       borderRadius: '10px',
-                      border: `1px solid ${isScheduled ? 'rgba(2, 132, 199, 0.4)' : 'var(--border-color)'}`,
-                      boxShadow: isScheduled ? '0 2px 8px rgba(2, 132, 199, 0.08)' : 'none',
+                      border: `1px solid ${isScheduled ? 'rgba(248, 121, 23, 0.4)' : 'var(--border-color)'}`,
+                      boxShadow: isScheduled ? '0 2px 8px rgba(248, 121, 23, 0.08)' : 'none',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -395,7 +395,7 @@ export default function RecruitmentView() {
                           )}
                         </div>
                         <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          Target: <strong style={{ color: '#0284c7' }}>{cand.role || cand.appliedRole}</strong>
+                          Target: <strong style={{ color: '#c2410c' }}>{cand.role || cand.appliedRole}</strong>
                           {cand.email && <span style={{ marginLeft: '8px', color: '#64748b' }}>• {cand.email}</span>}
                         </div>
                       </div>
@@ -446,8 +446,8 @@ export default function RecruitmentView() {
                     {cand.meetingLink && (
                       <div
                         style={{
-                          background: 'rgba(2, 132, 199, 0.08)',
-                          border: '1px solid rgba(2, 132, 199, 0.25)',
+                          background: 'rgba(248, 121, 23, 0.08)',
+                          border: '1px solid rgba(248, 121, 23, 0.25)',
                           borderRadius: '6px',
                           padding: '0.45rem 0.75rem',
                           margin: '0.6rem 0',
@@ -458,7 +458,7 @@ export default function RecruitmentView() {
                           gap: '0.4rem',
                         }}
                       >
-                        <div style={{ fontSize: '0.78rem', color: '#0284c7', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <div style={{ fontSize: '0.78rem', color: '#c2410c', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                           <i className="fa-solid fa-video"></i>
                           <span>Google Meet: <strong>{cand.meetingLink}</strong></span>
                         </div>
@@ -471,7 +471,7 @@ export default function RecruitmentView() {
                             padding: '0.2rem 0.6rem',
                             fontSize: '0.72rem',
                             textDecoration: 'none',
-                            background: '#0284c7',
+                            background: '#f87917',
                             color: '#ffffff',
                             borderColor: 'transparent',
                             fontWeight: 600,
@@ -489,7 +489,7 @@ export default function RecruitmentView() {
                         style={{
                           padding: '0.35rem 0.85rem',
                           fontSize: '0.78rem',
-                          background: isScheduled ? '#059669' : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                          background: isScheduled ? '#059669' : 'linear-gradient(135deg, #f87917 0%, #c2500a 100%)',
                           borderColor: 'transparent',
                           fontWeight: 700,
                         }}
@@ -539,7 +539,7 @@ export default function RecruitmentView() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
               <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <i className="fa-solid fa-robot" style={{ color: '#0284c7' }}></i> AI Resume Screening & Match Engine
+                <i className="fa-solid fa-robot" style={{ color: '#c2410c' }}></i> AI Resume Screening & Match Engine
               </h3>
               <button
                 onClick={() => setShowScreenModal(false)}
@@ -559,7 +559,7 @@ export default function RecruitmentView() {
                 <div
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    border: '2px dashed #0284c7',
+                    border: '2px dashed #f87917',
                     borderRadius: '10px',
                     padding: '1.75rem 1rem',
                     textAlign: 'center',
@@ -576,7 +576,7 @@ export default function RecruitmentView() {
                     accept=".pdf,.docx,.txt"
                     style={{ display: 'none' }}
                   />
-                  <i className="fa-solid fa-cloud-arrow-up" style={{ fontSize: '2.2rem', color: '#0284c7', marginBottom: '0.5rem', display: 'block' }}></i>
+                  <i className="fa-solid fa-cloud-arrow-up" style={{ fontSize: '2.2rem', color: '#c2410c', marginBottom: '0.5rem', display: 'block' }}></i>
                   <strong style={{ color: '#0f172a', fontSize: '0.92rem' }}>
                     {selectedFile ? `Selected: ${selectedFile.name}` : 'Click to Browse or Drag & Drop Resume'}
                   </strong>
@@ -598,7 +598,7 @@ export default function RecruitmentView() {
                       onClick={() => handleRunScreening('ai-engineer')}
                       style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', textAlign: 'left' }}
                     >
-                      <strong style={{ display: 'block', color: '#0284c7' }}>Vikram Adve</strong>
+                      <strong style={{ display: 'block', color: '#c2410c' }}>Vikram Adve</strong>
                       <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Senior AI / LLMs (5.5 yrs)</span>
                     </button>
                     <button
@@ -608,7 +608,7 @@ export default function RecruitmentView() {
                       onClick={() => handleRunScreening('servicenow-architect')}
                       style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', textAlign: 'left' }}
                     >
-                      <strong style={{ display: 'block', color: '#0284c7' }}>Sameer Kulkarni</strong>
+                      <strong style={{ display: 'block', color: '#c2410c' }}>Sameer Kulkarni</strong>
                       <span style={{ fontSize: '0.72rem', color: '#64748b' }}>ServiceNow Architect (6 yrs)</span>
                     </button>
                     <button
@@ -618,7 +618,7 @@ export default function RecruitmentView() {
                       onClick={() => handleRunScreening('product-manager')}
                       style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', textAlign: 'left' }}
                     >
-                      <strong style={{ display: 'block', color: '#0284c7' }}>Ananya Sen</strong>
+                      <strong style={{ display: 'block', color: '#c2410c' }}>Ananya Sen</strong>
                       <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Lead Product Manager (6+ yrs)</span>
                     </button>
                   </div>
@@ -661,7 +661,7 @@ export default function RecruitmentView() {
                     className="btn btn-primary"
                     disabled={isScreening || (!selectedFile && !rawText.trim())}
                     onClick={() => handleRunScreening(null)}
-                    style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 700 }}
+                    style={{ background: 'var(--button-gradient)', borderColor: 'transparent', fontWeight: 700 }}
                   >
                     <i className={`fa-solid ${isScreening ? 'fa-spinner fa-spin' : 'fa-robot'}`}></i>{' '}
                     {isScreening ? 'Screening Resume...' : 'Start AI Screening'}
@@ -713,7 +713,7 @@ export default function RecruitmentView() {
 
                   <div style={{ background: '#ffffff', borderRadius: '8px', padding: '0.85rem 1rem', border: '1px solid #bbf7d0', fontSize: '0.82rem', color: '#334155' }}>
                     <div style={{ marginBottom: '0.4rem' }}>
-                      <strong>Best Matched Role:</strong> <span style={{ color: '#0284c7', fontWeight: 700 }}>{lastScreenedResult.role}</span> ({lastScreenedResult.department})
+                      <strong>Best Matched Role:</strong> <span style={{ color: '#c2410c', fontWeight: 700 }}>{lastScreenedResult.role}</span> ({lastScreenedResult.department})
                     </div>
                     <div>
                       <strong>Extracted Key Skills:</strong>{' '}
@@ -736,7 +736,7 @@ export default function RecruitmentView() {
                   </button>
                   <button
                     className="btn btn-primary"
-                    style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: 'transparent', fontWeight: 700 }}
+                    style={{ background: 'linear-gradient(135deg, #f87917 0%, #c2500a 100%)', borderColor: 'transparent', fontWeight: 700 }}
                     onClick={() => {
                       setShowScreenModal(false);
                       setLastScreenedResult(null);
@@ -784,7 +784,7 @@ export default function RecruitmentView() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
               <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <i className="fa-solid fa-video" style={{ color: '#0284c7' }}></i> Schedule Google Meet Interview
+                <i className="fa-solid fa-video" style={{ color: '#c2410c' }}></i> Schedule Google Meet Interview
               </h3>
               <button
                 onClick={() => setShowInterviewModal(false)}
@@ -873,13 +873,13 @@ export default function RecruitmentView() {
               {/* Google Meet Link Display */}
               <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0284c7' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#c2410c' }}>
                     <i className="fa-solid fa-video"></i> Google Meet Conference Link:
                   </label>
                   <button
                     type="button"
                     onClick={() => setMeetLink(generateRandomMeetCode())}
-                    style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
+                    style={{ background: 'none', border: 'none', color: '#c2410c', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
                   >
                     <i className="fa-solid fa-arrows-rotate"></i> Regenerate
                   </button>
@@ -890,15 +890,15 @@ export default function RecruitmentView() {
                   value={meetLink}
                   onChange={(e) => setMeetLink(e.target.value)}
                   required
-                  style={{ fontWeight: 600, color: '#0284c7' }}
+                  style={{ fontWeight: 600, color: '#c2410c' }}
                 />
               </div>
 
               {/* Email Notification Note */}
-              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '0.75rem 0.9rem', marginBottom: '1.25rem', fontSize: '0.8rem', color: '#0369a1' }}>
+              <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '0.75rem 0.9rem', marginBottom: '1.25rem', fontSize: '0.8rem', color: '#c2500a' }}>
                 <i className="fa-solid fa-paper-plane" style={{ marginRight: '6px' }}></i>
                 Interview invitation with the Google Meet conference bridge will be emailed directly to:
-                <strong style={{ display: 'block', marginTop: '2px', color: '#0284c7' }}>abhishek.malwadkar@valuedx.com</strong>
+                <strong style={{ display: 'block', marginTop: '2px', color: '#c2410c' }}>abhishek.malwadkar@valuedx.com</strong>
               </div>
 
               {/* Submit Buttons */}
@@ -916,7 +916,7 @@ export default function RecruitmentView() {
                   className="btn btn-primary"
                   disabled={isScheduling}
                   style={{
-                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    background: 'linear-gradient(135deg, #f87917 0%, #c2500a 100%)',
                     borderColor: 'transparent',
                     fontWeight: 700,
                   }}

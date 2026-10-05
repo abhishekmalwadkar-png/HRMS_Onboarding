@@ -65,11 +65,11 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.font = "italic bold 32px 'Caveat', cursive, 'Brush Script MT', sans-serif";
-      ctx.fillStyle = '#0284c7';
+      ctx.fillStyle = '#f87917';
       ctx.fillText(formData.fullName || 'Aarav Sharma', 40, canvas.height / 2 + 10);
 
       ctx.beginPath();
-      ctx.strokeStyle = '#0284c7';
+      ctx.strokeStyle = '#f87917';
       ctx.lineWidth = 2.5;
       ctx.moveTo(35, canvas.height / 2 + 25);
       ctx.quadraticCurveTo(canvas.width / 2, canvas.height / 2 + 40, canvas.width - 60, canvas.height / 2 + 20);
@@ -355,7 +355,7 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              color: 'var(--brand-orange)',
+                              color: 'var(--accent-text)',
                               fontSize: '0.95rem',
                             }}
                           >
@@ -389,7 +389,7 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: '0', flex: '1 1 auto' }}>
-                          <i className="fa-solid fa-file-pdf" style={{ color: 'var(--brand-orange)', fontSize: '1rem' }}></i>
+                          <i className="fa-solid fa-file-pdf" style={{ color: 'var(--accent-text)', fontSize: '1rem' }}></i>
                           <div style={{ minWidth: '0' }}>
                             <span
                               style={{
@@ -427,7 +427,7 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
                             cursor: 'pointer',
                           }}
                         >
-                          <i className="fa-solid fa-cloud-arrow-up" style={{ color: 'var(--brand-orange)' }}></i>
+                          <i className="fa-solid fa-cloud-arrow-up" style={{ color: 'var(--accent-text)' }}></i>
                           <span>{isUploaded ? 'Change' : 'Upload'}</span>
                           <input
                             type="file"
@@ -486,7 +486,7 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
                   type="submit"
                   className="btn btn-primary"
                   disabled={isSubmitting}
-                  style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 800 }}
+                  style={{ background: 'var(--button-gradient)', borderColor: 'transparent', fontWeight: 800 }}
                 >
                   {isSubmitting ? (
                     <>

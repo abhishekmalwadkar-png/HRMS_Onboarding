@@ -16,6 +16,56 @@ import resume_screener
 PORT = int(os.environ.get('PORT', 8081))
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'employees.json')
 AUTOFILL_FILE = os.path.join(os.path.dirname(__file__), 'autofill.json')
+HEALTH_CHECK_TIMEOUT = 15
+
+
+def _check_servicenow():
+    import urllib.request
+    if not sn_client.is_configured():
+        return False, "Not configured"
+    url = f"{sn_client.instance_url}/api/now/table/sys_user?sysparm_limit=1&sysparm_fields=sys_id"
+    req = urllib.request.Request(url, headers=sn_client._get_headers())
+    with urllib.request.urlopen(req, timeout=10, context=sn_client.ctx):
+        return True, "Connected"
+
+
+def _check_automationedge():
+    return (True, "Authenticated") if ae_client.authenticate() else (False, "Authentication failed")
+
+
+def _check_office365():
+    return (True, "Token acquired") if office365_client.get_access_token() else (False, "Token request failed")
+
+
+def _check_orangehrm():
+    orangehrm_client._get_authenticated_session()
+    return True, "Reachable"
+
+
+def check_integrations_health():
+    """Runs a live connectivity check against each integrated system in parallel."""
+    checks = {
+        "servicenow": _check_servicenow,
+        "automationedge": _check_automationedge,
+        "office365": _check_office365,
+        "orangehrm": _check_orangehrm,
+    }
+    results = {name: {"ok": False, "message": "Timed out"} for name in checks}
+
+    def run(name, fn):
+        try:
+            ok, message = fn()
+            results[name] = {"ok": ok, "message": message}
+        except Exception as e:
+            results[name] = {"ok": False, "message": str(e)[:200]}
+
+    threads = [threading.Thread(target=run, args=(n, f), daemon=True) for n, f in checks.items()]
+    for t in threads:
+        t.start()
+    deadline = time.time() + HEALTH_CHECK_TIMEOUT
+    for t in threads:
+        t.join(max(0, deadline - time.time()))
+    return dict(results)
 
 class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
 
@@ -94,6 +144,8 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps(ae_client.get_config_summary()).encode('utf-8'))
             elif self.path.startswith('/api/servicenow/config'):
                 self.wfile.write(json.dumps(sn_client.get_config_summary()).encode('utf-8'))
+            elif self.path.startswith('/api/integrations/health'):
+                self.wfile.write(json.dumps(check_integrations_health()).encode('utf-8'))
             elif self.path.startswith('/api/autofill'):
                 autofill_data = self.read_autofill_db()
                 profiles = autofill_data.get('autofillProfiles', [])

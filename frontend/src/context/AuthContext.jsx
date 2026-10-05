@@ -32,7 +32,10 @@ export function AuthProvider({ children }) {
   });
 
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('mangohrms_theme') || 'light';
+    const saved = localStorage.getItem('mangohrms_theme');
+    if (saved) return saved;
+    // First visit: follow the operating system's light/dark preference
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
   useEffect(() => {
