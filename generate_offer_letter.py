@@ -50,10 +50,28 @@ def generate_offer_letter_pdf(candidate_data):
     role = candidate_data.get('appliedRole', 'Senior Cloud AI Architect')
     department = candidate_data.get('department', 'Engineering')
     manager = candidate_data.get('manager', 'David Miller (VP of Technology)')
-    annual_ctc = candidate_data.get('annualCtc', '$165,000 USD / ₹32,00,000 INR')
-    base_salary = candidate_data.get('baseSalary', '$140,000 USD')
-    perf_bonus = candidate_data.get('perfBonus', '$25,000 USD Annual Target')
-    joining_date = candidate_data.get('joiningDate', 'November 1, 2026')
+    # Parse and normalize compensation in Indian Currency (INR / ₹)
+    raw_salary = str(candidate_data.get('annualCtc') or candidate_data.get('salary') or "").strip()
+    
+    if raw_salary and ("₹" in raw_salary or "INR" in raw_salary or "LPA" in raw_salary):
+        annual_ctc = raw_salary
+        base_salary = candidate_data.get('baseSalary', '₹28,00,000 INR per annum')
+        perf_bonus = candidate_data.get('perfBonus', '₹4,00,000 INR Annual Target')
+    elif raw_salary and "$" in raw_salary:
+        annual_ctc = f"₹32,00,000 INR per annum ({raw_salary})"
+        base_salary = candidate_data.get('baseSalary', '₹28,00,000 INR per annum')
+        perf_bonus = candidate_data.get('perfBonus', '₹4,00,000 INR Annual Target')
+    elif raw_salary and raw_salary.replace(',', '').replace('.', '').isdigit():
+        val = int(raw_salary.replace(',', '').replace('.', ''))
+        annual_ctc = f"₹{val:,} INR per annum"
+        base_salary = candidate_data.get('baseSalary', f"₹{int(val*0.85):,} INR per annum")
+        perf_bonus = candidate_data.get('perfBonus', f"₹{int(val*0.15):,} INR Annual Target")
+    else:
+        annual_ctc = '₹32,00,000 INR per annum (₹32.0 LPA / $165,000 USD)'
+        base_salary = candidate_data.get('baseSalary', '₹28,00,000 INR per annum (₹2,33,333 / month)')
+        perf_bonus = candidate_data.get('perfBonus', '₹4,00,000 INR Annual Target Evaluation')
+
+    joining_date = candidate_data.get('joiningDate') or candidate_data.get('startDate') or 'October 15, 2026'
     work_location = candidate_data.get('workLocation', 'Hybrid HQ / Remote')
     offer_ref = candidate_data.get('offerRef', f"MNG-OFR-{int(time.time()) % 100000}")
     
@@ -182,14 +200,14 @@ def generate_offer_letter_pdf(candidate_data):
     story.append(role_table)
     story.append(Spacer(1, 8))
 
-    # 5. Compensation & Benefits Breakdown Table
-    story.append(Paragraph("2. Total Compensation Structure", heading_style))
+    # 5. Compensation & Benefits Breakdown Table (Indian Currency INR)
+    story.append(Paragraph("2. Total Compensation Structure (INR)", heading_style))
     comp_data = [
-        [Paragraph("<b>Component</b>", bold_body_style), Paragraph("<b>Annual Value</b>", bold_body_style), Paragraph("<b>Details & Frequency</b>", bold_body_style)],
-        [Paragraph("Base Salary", body_style), Paragraph(f"<b>{base_salary}</b>", body_style), Paragraph("Semi-monthly direct deposit", body_style)],
-        [Paragraph("Target Performance Bonus", body_style), Paragraph(f"<b>{perf_bonus}</b>", body_style), Paragraph("Annual milestone evaluation", body_style)],
-        [Paragraph("Health & Wellness Coverage", body_style), Paragraph("100% Employer Paid", body_style), Paragraph("Platinum PPO Health, Dental & Vision", body_style)],
-        [Paragraph("401(k) / Provident Fund", body_style), Paragraph("Up to 6% Match", body_style), Paragraph("Immediate vesting from Day 1", body_style)],
+        [Paragraph("<b>Component</b>", bold_body_style), Paragraph("<b>Annual Value (INR)</b>", bold_body_style), Paragraph("<b>Details & Frequency</b>", bold_body_style)],
+        [Paragraph("Base Salary", body_style), Paragraph(f"<b>{base_salary}</b>", body_style), Paragraph("Monthly direct bank transfer", body_style)],
+        [Paragraph("Target Performance Bonus", body_style), Paragraph(f"<b>{perf_bonus}</b>", body_style), Paragraph("Annual milestone & KPI evaluation", body_style)],
+        [Paragraph("Health & Wellness Coverage", body_style), Paragraph("100% Employer Paid", body_style), Paragraph("₹5,00,000 Family Floater (Health, Dental & Vision)", body_style)],
+        [Paragraph("Provident Fund (PF) & Gratuity", body_style), Paragraph("12% Statutory Match", body_style), Paragraph("Immediate statutory vesting from Day 1", body_style)],
         [Paragraph("<b>Total Annual CTC (Cost to Co.)</b>", bold_body_style), Paragraph(f"<b><font color='#ea580c'>{annual_ctc}</font></b>", bold_body_style), Paragraph("<b>Comprehensive Total Package</b>", bold_body_style)]
     ]
     comp_table = Table(comp_data, colWidths=[150, 150, 220])
