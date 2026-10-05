@@ -248,6 +248,8 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         elif self.path == '/api/exit':
             emp_name = payload.get('empName') or payload.get('name') or payload.get('employeeName') or payload.get('email')
+            if not payload.get('id'):
+                payload['id'] = f"EXIT-{int(time.time()) % 900 + 100}"
             
             # 1. Create ServiceNow Offboarding Request & Laptop Recovery Incident assigned to a random user
             sn_offboarding_res = sn_client.create_offboarding_request(payload)
