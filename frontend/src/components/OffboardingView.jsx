@@ -308,14 +308,38 @@ export default function OffboardingView() {
     setActiveFlowItem(item);
     setShowFlowModal(true);
 
-    // Initial state: Step 1 active
+    // Initial state: Step 1 completed (hardware clear), Step 2 running (T4 AD Removal)
     setFlowStepStatus({
-      step1: 'completed', // ServiceNow IT Laptop Recovery already acknowledged
+      step1: 'completed',
       step2: 'running',
       step3: 'pending',
       step4: 'pending',
       step5: 'pending',
     });
+
+    const timer1 = setTimeout(() => {
+      setFlowStepStatus((prev) => ({
+        ...prev,
+        step2: 'completed',
+        step3: 'running',
+      }));
+    }, 4500);
+
+    const timer2 = setTimeout(() => {
+      setFlowStepStatus((prev) => ({
+        ...prev,
+        step3: 'completed',
+        step4: 'running',
+      }));
+    }, 9000);
+
+    const timer3 = setTimeout(() => {
+      setFlowStepStatus((prev) => ({
+        ...prev,
+        step4: 'completed',
+        step5: 'running',
+      }));
+    }, 13500);
 
     try {
       const res = await fetch('/api/exit/revoke', {
@@ -330,6 +354,10 @@ export default function OffboardingView() {
         }),
       });
       const data = await res.json();
+
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
 
       setFlowData({
         adRemoval: data?.aeWorkflows?.adRemoval || {
@@ -385,6 +413,9 @@ export default function OffboardingView() {
       showToast(`🔒 Executed T4 Offboarding Pipeline & sent clearance email for ${empName}!`, 'success');
     } catch (e) {
       console.error('Offboarding revocation error:', e);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
       setFlowStepStatus({
         step1: 'completed',
         step2: 'completed',
@@ -993,25 +1024,35 @@ export default function OffboardingView() {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: flowStepStatus.step2 === 'running' ? '#eff6ff' : '#f0fdf4',
-                    border: `2px solid ${flowStepStatus.step2 === 'running' ? '#0284c7' : '#16a34a'}`,
+                    background: flowStepStatus.step2 === 'running' ? '#eff6ff' : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete' ? '#f0fdf4' : '#f8fafc'),
+                    border: `2px solid ${flowStepStatus.step2 === 'running' ? '#0284c7' : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete' ? '#16a34a' : '#cbd5e1')}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: flowStepStatus.step2 === 'running' ? '#0284c7' : '#16a34a',
+                    color: flowStepStatus.step2 === 'running' ? '#0284c7' : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete' ? '#16a34a' : '#94a3b8'),
                     fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
-                  <i className={`fa-solid ${flowStepStatus.step2 === 'running' ? 'fa-spinner fa-spin' : 'fa-robot'}`}></i>
+                  <i className={`fa-solid ${flowStepStatus.step2 === 'running' ? 'fa-spinner fa-spin' : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete' ? 'fa-circle-check' : 'fa-robot')}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bfdbfe', borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step2 === 'running' ? '#bfdbfe' : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#0369a1' }}>2. Active Directory (AD) Deprovisioning</strong>
-                    <span className={`badge ${flowStepStatus.step2 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
-                      {flowStepStatus.step2 === 'running' ? 'RUNNING ON T4' : '✓ WORKFLOW COMPLETE'}
-                    </span>
+                    <strong style={{ fontSize: '0.82rem', color: flowStepStatus.step2 === 'running' ? '#0284c7' : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete' ? '#15803d' : '#475569') }}>2. Active Directory (AD) Deprovisioning</strong>
+                    {flowStepStatus.step2 === 'running' ? (
+                      <span className="badge badge-pending" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-spinner fa-spin"></i> RUNNING ON T4
+                      </span>
+                    ) : (flowStepStatus.step2 === 'completed' || flowStepStatus.step2 === 'complete') ? (
+                      <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-check"></i> AD USER REMOVED
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: '0.64rem', padding: '1px 6px', border: '1px solid #e2e8f0' }}>
+                        QUEUED
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     <div>• <strong>Workflow:</strong> <code>{flowData?.adRemoval?.workflowName || 'HR Demo OffboardingRemoveADUser'}</code> &nbsp;•&nbsp; <strong>Param:</strong> <code>ADUserName: "{(activeFlowItem.empName || 'Employee').replace(' ', '.')}"</code></div>
@@ -1030,25 +1071,35 @@ export default function OffboardingView() {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: flowStepStatus.step3 === 'running' ? '#eff6ff' : '#f0fdf4',
-                    border: `2px solid ${flowStepStatus.step3 === 'running' ? '#0284c7' : '#16a34a'}`,
+                    background: flowStepStatus.step3 === 'running' ? '#eff6ff' : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete' ? '#f0fdf4' : '#f8fafc'),
+                    border: `2px solid ${flowStepStatus.step3 === 'running' ? '#0284c7' : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete' ? '#16a34a' : '#cbd5e1')}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: flowStepStatus.step3 === 'running' ? '#0284c7' : '#16a34a',
+                    color: flowStepStatus.step3 === 'running' ? '#0284c7' : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete' ? '#16a34a' : '#94a3b8'),
                     fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
-                  <i className={`fa-solid ${flowStepStatus.step3 === 'running' ? 'fa-spinner fa-spin' : 'fa-envelope-circle-check'}`}></i>
+                  <i className={`fa-solid ${flowStepStatus.step3 === 'running' ? 'fa-spinner fa-spin' : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete' ? 'fa-circle-check' : 'fa-envelope-circle-check')}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bfdbfe', borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step3 === 'running' ? '#bfdbfe' : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#0369a1' }}>3. Office 365 & Entra ID Account Deletion</strong>
-                    <span className={`badge ${flowStepStatus.step3 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
-                      {flowStepStatus.step3 === 'running' ? 'RUNNING ON T4' : '✓ ENTRA ID REMOVED'}
-                    </span>
+                    <strong style={{ fontSize: '0.82rem', color: flowStepStatus.step3 === 'running' ? '#0284c7' : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete' ? '#15803d' : '#475569') }}>3. Office 365 & Entra ID Account Deletion</strong>
+                    {flowStepStatus.step3 === 'running' ? (
+                      <span className="badge badge-pending" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-spinner fa-spin"></i> RUNNING ON T4
+                      </span>
+                    ) : (flowStepStatus.step3 === 'completed' || flowStepStatus.step3 === 'complete') ? (
+                      <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-check"></i> ENTRA ID REMOVED
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: '0.64rem', padding: '1px 6px', border: '1px solid #e2e8f0' }}>
+                        QUEUED
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     <div>• <strong>Workflow:</strong> <code>{flowData?.o365Delete?.workflowName || 'HR DEMO offboarding Delete O365 user'}</code> &nbsp;•&nbsp; <strong>Req:</strong> #{flowData?.o365Delete?.automationRequestId || '3295925'}</div>
@@ -1067,25 +1118,35 @@ export default function OffboardingView() {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: flowStepStatus.step4 === 'running' ? '#eff6ff' : '#f0fdf4',
-                    border: `2px solid ${flowStepStatus.step4 === 'running' ? '#0284c7' : '#16a34a'}`,
+                    background: flowStepStatus.step4 === 'running' ? '#eff6ff' : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete' ? '#f0fdf4' : '#f8fafc'),
+                    border: `2px solid ${flowStepStatus.step4 === 'running' ? '#0284c7' : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete' ? '#16a34a' : '#cbd5e1')}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: flowStepStatus.step4 === 'running' ? '#0284c7' : '#16a34a',
+                    color: flowStepStatus.step4 === 'running' ? '#0284c7' : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete' ? '#16a34a' : '#94a3b8'),
                     fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
-                  <i className={`fa-solid ${flowStepStatus.step4 === 'running' ? 'fa-spinner fa-spin' : 'fa-user-xmark'}`}></i>
+                  <i className={`fa-solid ${flowStepStatus.step4 === 'running' ? 'fa-spinner fa-spin' : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete' ? 'fa-circle-check' : 'fa-user-xmark')}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bfdbfe', borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step4 === 'running' ? '#bfdbfe' : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#0369a1' }}>4. OrangeHRM PIM Master Record Deletion</strong>
-                    <span className={`badge ${flowStepStatus.step4 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
-                      {flowStepStatus.step4 === 'running' ? 'RUNNING ON T4' : '✓ PIM PROFILE REMOVED'}
-                    </span>
+                    <strong style={{ fontSize: '0.82rem', color: flowStepStatus.step4 === 'running' ? '#0284c7' : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete' ? '#15803d' : '#475569') }}>4. OrangeHRM PIM Master Record Deletion</strong>
+                    {flowStepStatus.step4 === 'running' ? (
+                      <span className="badge badge-pending" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-spinner fa-spin"></i> RUNNING ON T4
+                      </span>
+                    ) : (flowStepStatus.step4 === 'completed' || flowStepStatus.step4 === 'complete') ? (
+                      <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-check"></i> PIM PROFILE REMOVED
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: '0.64rem', padding: '1px 6px', border: '1px solid #e2e8f0' }}>
+                        QUEUED
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     <div>• <strong>Workflow:</strong> <code>{flowData?.orangeHrmDelete?.workflowName || 'HR DEMO Offboarding Delete OrangeHRM User'}</code> &nbsp;•&nbsp; <strong>Req:</strong> #{flowData?.orangeHrmDelete?.automationRequestId || '3295926'}</div>
@@ -1104,25 +1165,35 @@ export default function OffboardingView() {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: '#f0fdf4',
-                    border: '2px solid #16a34a',
+                    background: flowStepStatus.step5 === 'running' ? '#eff6ff' : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete' ? '#f0fdf4' : '#f8fafc'),
+                    border: `2px solid ${flowStepStatus.step5 === 'running' ? '#0284c7' : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete' ? '#16a34a' : '#cbd5e1')}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#16a34a',
+                    color: flowStepStatus.step5 === 'running' ? '#0284c7' : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete' ? '#16a34a' : '#94a3b8'),
                     fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
-                  <i className="fa-solid fa-paper-plane"></i>
+                  <i className={`fa-solid ${flowStepStatus.step5 === 'running' ? 'fa-spinner fa-spin' : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete' ? 'fa-check' : 'fa-paper-plane')}`}></i>
                 </div>
 
-                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bbf7d0', borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step5 === 'running' ? '#bfdbfe' : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#15803d' }}>5. Clearance Email Notification Dispatched</strong>
-                    <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
-                      <i className="fa-solid fa-envelope"></i> EMAIL SENT
-                    </span>
+                    <strong style={{ fontSize: '0.82rem', color: flowStepStatus.step5 === 'running' ? '#0284c7' : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete' ? '#15803d' : '#475569') }}>5. Clearance Email Notification Dispatched</strong>
+                    {flowStepStatus.step5 === 'running' ? (
+                      <span className="badge badge-pending" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-spinner fa-spin"></i> DISPATCHING...
+                      </span>
+                    ) : (flowStepStatus.step5 === 'completed' || flowStepStatus.step5 === 'complete') ? (
+                      <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-envelope"></i> EMAIL SENT
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: '0.64rem', padding: '1px 6px', border: '1px solid #e2e8f0' }}>
+                        QUEUED
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     <div>• <strong>Notification:</strong> Clearance confirmation delivered via Microsoft Graph API</div>
