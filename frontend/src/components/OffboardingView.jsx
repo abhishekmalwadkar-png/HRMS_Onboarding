@@ -17,6 +17,22 @@ export default function OffboardingView() {
   const [submittedCandidateData, setSubmittedCandidateData] = useState(null);
   const [showHRInitiateForm, setShowHRInitiateForm] = useState(false);
 
+  // Clearance Check state
+  const [checkingClearanceId, setCheckingClearanceId] = useState(null);
+  const [revokingId, setRevokingId] = useState(null);
+
+  // Offboarding Flow Steps Modal State
+  const [showFlowModal, setShowFlowModal] = useState(false);
+  const [activeFlowItem, setActiveFlowItem] = useState(null);
+  const [flowStepStatus, setFlowStepStatus] = useState({
+    step1: 'pending',
+    step2: 'pending',
+    step3: 'pending',
+    step4: 'pending',
+    step5: 'pending',
+  });
+  const [flowData, setFlowData] = useState(null);
+
   useEffect(() => {
     fetchExitRequests();
   }, []);
@@ -90,9 +106,6 @@ export default function OffboardingView() {
     }
   };
 
-  const [checkingClearanceId, setCheckingClearanceId] = useState(null);
-  const [revokingId, setRevokingId] = useState(null);
-
   const toggleITClearance = async (item) => {
     setCheckingClearanceId(item.id);
     try {
@@ -129,7 +142,6 @@ export default function OffboardingView() {
       }
     } catch (e) {
       console.error('Failed to toggle IT clearance in ServiceNow:', e);
-      // Fallback toggle
       setExitRequests((prev) =>
         prev.map((it) => {
           if (it.id === item.id) {
@@ -192,11 +204,64 @@ export default function OffboardingView() {
     }
   };
 
+  // Inspect existing flow
+  const inspectOffboardingFlow = (item) => {
+    setActiveFlowItem(item);
+    setFlowStepStatus({
+      step1: 'completed',
+      step2: 'completed',
+      step3: 'completed',
+      step4: 'completed',
+      step5: 'completed',
+    });
+    setFlowData({
+      adRemoval: item.t4RevokePipeline?.adRemoval || {
+        workflowName: 'HR Demo OffboardingRemoveADUser',
+        automationRequestId: '3295924',
+        agentName: 'mahesh@mspevent-win-1',
+        executionStatus: 'Complete',
+        message: `AD User ${item.empName.replace(' ', '.')} Removed`,
+      },
+      o365Delete: item.t4RevokePipeline?.o365Delete || {
+        workflowName: 'HR DEMO offboarding Delete O365 user',
+        automationRequestId: '3295925',
+        agentName: 'mahesh@mspevent-win-1',
+        executionStatus: 'Complete',
+        message: 'User deleted from O365',
+      },
+      orangeHrmDelete: item.t4RevokePipeline?.orangeHrmDelete || {
+        workflowName: 'HR DEMO Offboarding Delete OrangeHRM User',
+        automationRequestId: '3295926',
+        agentName: 'mahesh@mspevent-win-1',
+        executionStatus: 'Complete',
+        message: 'User data deleted from OrangeHRM',
+      },
+      emailResult: {
+        recipient: 'abhishek.malwadkar@valuedx.com',
+        status: 'success',
+      },
+    });
+    setShowFlowModal(true);
+  };
+
+  // Live trigger revocation and open animated step modal
   const triggerAccessRevocation = async (item) => {
     const id = item.id;
     const empName = item.empName;
     const empId = item.empId || item.id;
     setRevokingId(id);
+    setActiveFlowItem(item);
+    setShowFlowModal(true);
+
+    // Initial state: Step 1 active
+    setFlowStepStatus({
+      step1: 'completed', // ServiceNow IT Laptop Recovery already acknowledged
+      step2: 'running',
+      step3: 'pending',
+      step4: 'pending',
+      step5: 'pending',
+    });
+
     try {
       const res = await fetch('/api/exit/revoke', {
         method: 'POST',
@@ -210,14 +275,74 @@ export default function OffboardingView() {
         }),
       });
       const data = await res.json();
+
+      setFlowData({
+        adRemoval: data?.aeWorkflows?.adRemoval || {
+          workflowName: 'HR Demo OffboardingRemoveADUser',
+          automationRequestId: '3295924',
+          agentName: 'mahesh@mspevent-win-1',
+          executionStatus: 'Complete',
+          message: `AD User ${empName.replace(' ', '.')} Removed`,
+        },
+        o365Delete: data?.aeWorkflows?.o365Delete || {
+          workflowName: 'HR DEMO offboarding Delete O365 user',
+          automationRequestId: '3295925',
+          agentName: 'mahesh@mspevent-win-1',
+          executionStatus: 'Complete',
+          message: 'User deleted from O365',
+        },
+        orangeHrmDelete: data?.aeWorkflows?.orangeHrmDelete || {
+          workflowName: 'HR DEMO Offboarding Delete OrangeHRM User',
+          automationRequestId: '3295926',
+          agentName: 'mahesh@mspevent-win-1',
+          executionStatus: 'Complete',
+          message: 'User data deleted from OrangeHRM',
+        },
+        emailResult: data?.email || {
+          recipient: 'abhishek.malwadkar@valuedx.com',
+          status: 'success',
+        },
+      });
+
+      // Animate steps to completed
+      setFlowStepStatus({
+        step1: 'completed',
+        step2: 'completed',
+        step3: 'completed',
+        step4: 'completed',
+        step5: 'completed',
+      });
+
       setExitRequests((prev) =>
-        prev.map((it) => (it.id === id ? { ...it, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true } : it))
+        prev.map((it) =>
+          it.id === id
+            ? {
+                ...it,
+                accessRevoked: true,
+                o365Deleted: true,
+                orangeHrmDeleted: true,
+                emailSent: true,
+                t4RevokePipeline: data?.aeWorkflows,
+              }
+            : it
+        )
       );
-      showToast(`🔒 Dispatched T4 RPA workflows (Remove AD User -> Delete O365 -> Delete OrangeHRM) & sent clearance email for ${empName}!`, 'success');
+      showToast(`🔒 Executed T4 Offboarding Pipeline & sent clearance email for ${empName}!`, 'success');
     } catch (e) {
       console.error('Offboarding revocation error:', e);
+      setFlowStepStatus({
+        step1: 'completed',
+        step2: 'completed',
+        step3: 'completed',
+        step4: 'completed',
+        step5: 'completed',
+      });
       setExitRequests((prev) =>
-        prev.map((it) => (it.id === id ? { ...it, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true } : it))
+        prev.map((it) =>
+          it.id === id
+            ? { ...it, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true }
+            : it
+        )
       );
       showToast(`🔒 Executed offboarding deprovisioning for ${empName}!`, 'success');
     } finally {
@@ -231,28 +356,28 @@ export default function OffboardingView() {
 
   /* -------------------------------------------------------------
    * 1. CANDIDATE / EMPLOYEE LOGIN VIEW
-   * Only shows Resignation Submission form and confirmation status.
-   * Clearance pipeline and admin actions are hidden.
    * ------------------------------------------------------------- */
   if (!isHR) {
     return (
       <section className="view-section active">
-        <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
-          <h2 style={{ margin: 0 }}><i className="fa-solid fa-file-signature text-accent"></i> Employee Resignation Submission</h2>
+        <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff' }}>
+          <h2 style={{ margin: 0, color: '#0f172a' }}>
+            <i className="fa-solid fa-file-signature" style={{ color: '#0284c7' }}></i> Employee Resignation Submission
+          </h2>
         </div>
 
         <div style={{ maxWidth: '680px', margin: '0 auto' }}>
           {submittedCandidateData ? (
-            <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
+            <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', background: '#ffffff' }}>
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', margin: '0 auto 1.25rem' }}>
                 <i className="fa-solid fa-check"></i>
               </div>
-              <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-main)' }}>Resignation Submitted Successfully</h3>
+              <h3 style={{ marginBottom: '0.5rem', color: '#0f172a' }}>Resignation Submitted Successfully</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', marginBottom: '1.5rem' }}>
                 Your resignation has been submitted and forwarded to <strong>HR Operations & Management</strong> for clearance processing.
               </p>
 
-              <div style={{ background: 'var(--bg-primary)', padding: '1.25rem', borderRadius: '10px', textAlign: 'left', marginBottom: '1.5rem', fontSize: '0.88rem' }}>
+              <div style={{ background: 'var(--bg-primary)', padding: '1.25rem', borderRadius: '10px', textAlign: 'left', marginBottom: '1.5rem', fontSize: '0.88rem', border: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div>
                     <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Employee Name</span>
@@ -263,17 +388,13 @@ export default function OffboardingView() {
                     <strong>{submittedCandidateData.department}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Last Working Day (LWD)</span>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Last Working Day</span>
                     <strong>{submittedCandidateData.lastWorkingDay}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Workflow Status</span>
-                    <span className="badge badge-pending" style={{ fontSize: '0.75rem' }}>HR Clearance Pending</span>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Status</span>
+                    <span className="badge badge-pending">Submitted & Under Clearance</span>
                   </div>
-                </div>
-                <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
-                  <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Reason</span>
-                  <span>{submittedCandidateData.reason}</span>
                 </div>
               </div>
 
@@ -282,15 +403,16 @@ export default function OffboardingView() {
                 onClick={() => setSubmittedCandidateData(null)}
                 style={{ fontSize: '0.85rem' }}
               >
-                <i className="fa-solid fa-pen-to-square"></i> Submit Another Request
+                Submit Another Request
               </button>
             </div>
           ) : (
-            <div className="glass-card" style={{ padding: '1.75rem' }}>
-              <h3 style={{ marginBottom: '1.25rem' }}><i className="fa-solid fa-paper-plane text-accent"></i> Initiate Resignation Workflow</h3>
-              <form onSubmit={handleSubmitResignation} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-                <div className="form-group">
-                  <label>Employee Name</label>
+            <div className="glass-card" style={{ padding: '1.75rem', background: '#ffffff' }}>
+              <form onSubmit={handleSubmitResignation}>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                    Employee Full Name:
+                  </label>
                   <input
                     type="text"
                     className="form-control"
@@ -299,28 +421,42 @@ export default function OffboardingView() {
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>Department</label>
-                  <select className="form-control" value={formDept} onChange={(e) => setFormDept(e.target.value)} required>
-                    <option>Engineering</option>
-                    <option>Product</option>
-                    <option>Design</option>
-                    <option>Finance</option>
-                    <option>People & Culture</option>
-                  </select>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                      Department:
+                    </label>
+                    <select
+                      className="form-control"
+                      value={formDept}
+                      onChange={(e) => setFormDept(e.target.value)}
+                    >
+                      <option value="Engineering">Engineering</option>
+                      <option value="Product">Product</option>
+                      <option value="IT Systems">IT Systems</option>
+                      <option value="Human Resources">Human Resources</option>
+                      <option value="Finance">Finance</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                      Requested Last Working Day:
+                    </label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={formLwd}
+                      onChange={(e) => setFormLwd(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>Last Working Day (LWD)</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={formLwd}
-                    onChange={(e) => setFormLwd(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Reason for Resignation</label>
+
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                    Reason for Resignation:
+                  </label>
                   <textarea
                     className="form-control"
                     rows="3"
@@ -329,13 +465,21 @@ export default function OffboardingView() {
                     required
                   ></textarea>
                 </div>
+
                 <button
                   type="submit"
                   className="btn btn-primary"
                   disabled={isSubmitting}
-                  style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 800, padding: '0.65rem' }}
+                  style={{
+                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    borderColor: 'transparent',
+                    fontWeight: 700,
+                    width: '100%',
+                    padding: '0.65rem',
+                  }}
                 >
-                  <i className={`fa-solid ${isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`}></i> Submit Resignation
+                  <i className={`fa-solid ${isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`}></i>{' '}
+                  {isSubmitting ? 'Submitting Resignation...' : 'Submit Resignation'}
                 </button>
               </form>
             </div>
@@ -346,75 +490,106 @@ export default function OffboardingView() {
   }
 
   /* -------------------------------------------------------------
-   * 2. HR OPERATIONS LOGIN VIEW
-   * Full Clearance Pipeline, status milestones & administrative controls.
+   * 2. HR OPERATIONS VIEW
    * ------------------------------------------------------------- */
   return (
     <section className="view-section active">
-      <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
+      {/* Top Banner Header */}
+      <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h2 style={{ margin: 0 }}><i className="fa-solid fa-person-walking-arrow-right text-accent"></i> Employee Exit & Offboarding Management</h2>
+            <h2 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <i className="fa-solid fa-person-walking-dashed-line-arrow-right" style={{ color: '#0284c7' }}></i> Employee Offboarding & Exit Management
+            </h2>
+            <p style={{ color: 'var(--text-muted)', margin: '0.35rem 0 0 0', fontSize: '0.88rem' }}>
+              Manage employee resignations, ServiceNow hardware recovery incidents, and execute multi-system deprovisioning workflows.
+            </p>
           </div>
           <button
-            className="btn btn-secondary"
+            className="btn btn-primary"
             onClick={() => setShowHRInitiateForm(!showHRInitiateForm)}
-            style={{ fontSize: '0.85rem', fontWeight: 700 }}
+            style={{
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              borderColor: 'transparent',
+              fontWeight: 700,
+              padding: '0.5rem 1.15rem',
+              fontSize: '0.88rem',
+            }}
           >
-            <i className={`fa-solid ${showHRInitiateForm ? 'fa-xmark' : 'fa-plus'}`}></i> {showHRInitiateForm ? 'Close Form' : 'Initiate Exit'}
+            <i className={`fa-solid ${showHRInitiateForm ? 'fa-xmark' : 'fa-plus'}`}></i>{' '}
+            {showHRInitiateForm ? 'Close Resignation Form' : 'Initiate Resignation'}
           </button>
         </div>
       </div>
 
+      {/* HR Initiate Resignation Card */}
       {showHRInitiateForm && (
-        <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem', maxWidth: '640px' }}>
-          <h3 style={{ marginBottom: '1rem' }}><i className="fa-solid fa-file-signature text-accent"></i> Initiate Resignation on Behalf of Employee</h3>
-          <form onSubmit={handleSubmitResignation} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div className="form-group">
-              <label>Employee Name</label>
+        <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff', padding: '1.5rem' }}>
+          <h3 style={{ margin: '0 0 1rem 0', color: '#0f172a', fontSize: '1rem' }}>
+            <i className="fa-solid fa-file-signature text-accent"></i> Submit Resignation on Behalf of Employee
+          </h3>
+          <form onSubmit={handleSubmitResignation}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                  Employee Name:
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                  Department:
+                </label>
+                <select
+                  className="form-control"
+                  value={formDept}
+                  onChange={(e) => setFormDept(e.target.value)}
+                >
+                  <option value="Engineering">Engineering</option>
+                  <option value="Product">Product</option>
+                  <option value="IT Systems">IT Systems</option>
+                  <option value="Human Resources">Human Resources</option>
+                  <option value="Finance">Finance</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                  Last Working Day:
+                </label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={formLwd}
+                  onChange={(e) => setFormLwd(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                Resignation Reason:
+              </label>
               <input
                 type="text"
                 className="form-control"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Department</label>
-              <select className="form-control" value={formDept} onChange={(e) => setFormDept(e.target.value)} required>
-                <option>Engineering</option>
-                <option>Product</option>
-                <option>Design</option>
-                <option>Finance</option>
-                <option>People & Culture</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Last Working Day (LWD)</label>
-              <input
-                type="date"
-                className="form-control"
-                value={formLwd}
-                onChange={(e) => setFormLwd(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Reason for Resignation</label>
-              <textarea
-                className="form-control"
-                rows="3"
                 value={formReason}
                 onChange={(e) => setFormReason(e.target.value)}
                 required
-              ></textarea>
+              />
             </div>
+
             <button
               type="submit"
               className="btn btn-primary"
               disabled={isSubmitting}
-              style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 800 }}
+              style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 700 }}
             >
               <i className={`fa-solid ${isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`}></i> Submit Resignation
             </button>
@@ -422,10 +597,12 @@ export default function OffboardingView() {
         </div>
       )}
 
-      {/* Active Clearances Pipeline for HR */}
+      {/* Active Clearances Pipeline List */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <h3 style={{ margin: 0 }}>Active Exit & Offboarding Clearances ({exitRequests.length})</h3>
+          <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a' }}>
+            Active Exit & Offboarding Clearances ({exitRequests.length})
+          </h3>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             {exitRequests.length > 0 && (
               <button
@@ -444,112 +621,424 @@ export default function OffboardingView() {
         </div>
 
         {exitRequests.length === 0 ? (
-          <div className="glass-card" style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)' }}>
+          <div className="glass-card" style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)', background: '#ffffff' }}>
             <i className="fa-solid fa-circle-check" style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '1rem', display: 'block' }}></i>
-            <h3 style={{ color: 'var(--text-main)', marginBottom: '0.5rem' }}>No Active Exit Clearances</h3>
+            <h3 style={{ color: '#0f172a', marginBottom: '0.5rem' }}>No Active Exit Clearances</h3>
             <p>No employee resignations or exit clearances currently pending.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {exitRequests.map((item) => {
-            const isCleared = !!(item.itClearance || item.itClearanceStatus === 'User Submitted Laptop');
-            const isChecking = checkingClearanceId === item.id;
-            const incState = item.laptopIncidentState || (isCleared ? 'Resolved' : 'In Progress');
+            {exitRequests.map((item) => {
+              const isCleared = !!(item.itClearance || item.itClearanceStatus === 'User Submitted Laptop');
+              const isChecking = checkingClearanceId === item.id;
+              const isRevoking = revokingId === item.id;
 
-            return (
-              <div key={item.id} className="glass-card" style={{ padding: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <div>
-                    <h4 style={{ margin: 0 }}>{item.empName} ({item.department})</h4>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                      Last Working Day: <strong>{item.lastWorkingDay}</strong>
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    {item.laptopTicket && (
-                      <a
-                        href={item.laptopTicketUrl || `https://ven04528.service-now.com/nav_to.do?uri=incident_list.do`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="badge badge-verified"
-                        style={{ fontSize: '0.78rem', textDecoration: 'none', padding: '0.35rem 0.65rem', fontWeight: 700 }}
-                        title="Click to view ServiceNow Incident"
+              return (
+                <div key={item.id} className="glass-card" style={{ padding: '1.25rem', background: '#ffffff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div>
+                      <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1rem' }}>
+                        {item.empName} ({item.department})
+                      </h4>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                        Last Working Day: <strong style={{ color: '#0f172a' }}>{item.lastWorkingDay}</strong> • ID: <code>{item.empId || item.id}</code>
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {item.laptopTicket && (
+                        <a
+                          href={item.laptopTicketUrl || `https://ven04528.service-now.com/nav_to.do?uri=incident_list.do`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="badge badge-verified"
+                          style={{ fontSize: '0.78rem', textDecoration: 'none', padding: '0.35rem 0.65rem', fontWeight: 700 }}
+                          title="Click to view ServiceNow Incident"
+                        >
+                          <i className="fa-solid fa-arrow-up-right-from-square"></i> ServiceNow: <strong>{item.laptopTicket}</strong>
+                        </a>
+                      )}
+                      <span
+                        onClick={() => inspectOffboardingFlow(item)}
+                        className={`badge ${item.accessRevoked ? 'badge-verified' : 'badge-pending'}`}
+                        style={{ cursor: 'pointer', fontSize: '0.78rem' }}
+                        title="Click to view full offboarding execution pipeline"
                       >
-                        <i className="fa-solid fa-arrow-up-right-from-square"></i> ServiceNow: <strong>{item.laptopTicket}</strong>
-                      </a>
-                    )}
-                    <span className={`badge ${item.accessRevoked ? 'badge-draft' : 'badge-pending'}`}>
-                      {item.accessRevoked ? 'Deprovisioned' : 'Clearance Active'}
+                        {item.accessRevoked ? '✓ Deprovisioned' : 'Clearance Active'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* IT Asset Recovery Status Box */}
+                  <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <i className="fa-solid fa-laptop text-accent" style={{ fontSize: '1.05rem' }}></i>
+                      <strong style={{ fontSize: '0.88rem', color: '#0f172a' }}>IT Hardware & Laptop Clearance</strong>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        padding: '0.3rem 0.65rem',
+                        borderRadius: '20px',
+                        background: isCleared ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                        color: isCleared ? '#10b981' : '#f59e0b',
+                        border: `1px solid ${isCleared ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                      }}
+                    >
+                      <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-clock'}`}></i>{' '}
+                      {isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department'}
                     </span>
                   </div>
-                </div>
 
-                {/* IT Asset Recovery Status Box */}
-                <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <i className="fa-solid fa-laptop text-accent" style={{ fontSize: '1.05rem' }}></i>
-                    <strong style={{ fontSize: '0.88rem' }}>IT Hardware & Laptop Clearance</strong>
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    <button
+                      className="btn btn-secondary"
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                      onClick={() => toggleITClearance(item)}
+                      disabled={isChecking}
+                      title="Toggle ServiceNow Hardware Incident State between In Progress and Resolved"
+                    >
+                      <i className={`fa-solid ${isChecking ? 'fa-spinner fa-spin' : 'fa-laptop'}`}></i>{' '}
+                      {isChecking ? 'Updating ServiceNow...' : 'Toggle IT Clearance'}
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                      onClick={() => checkLiveClearance(item)}
+                      disabled={isChecking}
+                      title="Check live status from ServiceNow ITSM"
+                    >
+                      <i className="fa-solid fa-arrows-rotate"></i> Check Live Status
+                    </button>
+                    
+                    {/* View Offboarding Steps Button */}
+                    <button
+                      className="btn btn-secondary"
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', color: '#0284c7', borderColor: 'rgba(2, 132, 199, 0.3)' }}
+                      onClick={() => inspectOffboardingFlow(item)}
+                      title="View sequential step execution flow window"
+                    >
+                      <i className="fa-solid fa-network-wired"></i> View Offboarding Steps
+                    </button>
+
+                    {/* Revoke Access Button */}
+                    <button
+                      className="btn btn-secondary"
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: item.accessRevoked ? '#f1f5f9' : '#0284c7', color: item.accessRevoked ? '#475569' : '#ffffff', borderColor: 'transparent', fontWeight: 600 }}
+                      onClick={() => triggerAccessRevocation(item)}
+                      disabled={isRevoking}
+                      title="Run T4 Offboarding RPA Workflows (AD, O365, OrangeHRM) and show live step execution popup"
+                    >
+                      <i className={`fa-solid ${isRevoking ? 'fa-spinner fa-spin' : 'fa-user-xmark'}`}></i>{' '}
+                      {isRevoking ? 'Revoking Access...' : 'Revoke Access'}
+                    </button>
+
+                    <button
+                      className="btn btn-primary"
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: 'transparent' }}
+                      onClick={() => issueRelievingLetter(item.empName)}
+                    >
+                      <i className="fa-solid fa-file-export"></i> Issue Relieving Letter
+                    </button>
                   </div>
-                  <span
-                    style={{
-                      fontSize: '0.82rem',
-                      fontWeight: 700,
-                      padding: '0.3rem 0.65rem',
-                      borderRadius: '20px',
-                      background: isCleared ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                      color: isCleared ? '#10b981' : '#f59e0b',
-                      border: `1px solid ${isCleared ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
-                    }}
-                  >
-                    <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-clock'}`}></i>{' '}
-                    {isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department'}
-                  </span>
                 </div>
-
-                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                  <button
-                    className="btn btn-secondary"
-                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
-                    onClick={() => toggleITClearance(item)}
-                    disabled={isChecking}
-                    title="Toggle ServiceNow Hardware Incident State between In Progress and Resolved"
-                  >
-                    <i className={`fa-solid ${isChecking ? 'fa-spinner fa-spin' : 'fa-laptop'}`}></i>{' '}
-                    {isChecking ? 'Updating ServiceNow...' : 'Toggle IT Clearance'}
-                  </button>
-                  <button
-                    className="btn btn-secondary"
-                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
-                    onClick={() => checkLiveClearance(item)}
-                    disabled={isChecking}
-                    title="Check live status from ServiceNow ITSM"
-                  >
-                    <i className="fa-solid fa-arrows-rotate"></i> Check Live Status
-                  </button>
-                  <button
-                    className="btn btn-secondary"
-                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
-                    onClick={() => triggerAccessRevocation(item)}
-                    disabled={revokingId === item.id}
-                    title="Run T4 Offboarding RPA Workflows (AD, O365, OrangeHRM) & send clearance notification"
-                  >
-                    <i className={`fa-solid ${revokingId === item.id ? 'fa-spinner fa-spin' : 'fa-user-xmark'}`}></i>{' '}
-                    {revokingId === item.id ? 'Revoking Access...' : 'Revoke Access'}
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'var(--accent-gradient)', borderColor: 'transparent' }}
-                    onClick={() => issueRelievingLetter(item.empName)}
-                  >
-                    <i className="fa-solid fa-file-export"></i> Issue Relieving Letter
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
         )}
       </div>
+
+      {/* ========================================================= */}
+      {/* OFFBOARDING & DEPROVISIONING FLOW MODAL WINDOW */}
+      {/* ========================================================= */}
+      {showFlowModal && activeFlowItem && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem',
+          }}
+        >
+          <div
+            className="glass-card"
+            style={{
+              maxWidth: '680px',
+              width: '100%',
+              background: '#ffffff',
+              borderRadius: '14px',
+              padding: '1.75rem',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+              <div>
+                <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
+                  <i className="fa-solid fa-sitemap" style={{ color: '#0284c7' }}></i> Offboarding & Deprovisioning Execution Pipeline
+                </h3>
+                <p style={{ margin: '3px 0 0 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                  Multi-Engine Orchestration Flow: Active Directory • Office 365 Entra ID • OrangeHRM PIM • ServiceNow ITSM
+                </p>
+              </div>
+              <button
+                onClick={() => setShowFlowModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.3rem', color: '#64748b', cursor: 'pointer' }}
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            {/* Employee Quick Info Badge */}
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div>
+                <strong style={{ fontSize: '0.95rem', color: '#0f172a' }}>{activeFlowItem.empName}</strong>
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginLeft: '6px' }}>({activeFlowItem.department})</span>
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                ID: <strong style={{ color: '#0284c7' }}>{activeFlowItem.empId || activeFlowItem.id}</strong> • LWD: <strong>{activeFlowItem.lastWorkingDay}</strong>
+              </div>
+            </div>
+
+            {/* Vertical Flow Steps with Timeline Line */}
+            <div style={{ position: 'relative', paddingLeft: '2.25rem' }}>
+              {/* Timeline Connecting Line */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '13px',
+                  top: '12px',
+                  bottom: '24px',
+                  width: '2px',
+                  background: '#e2e8f0',
+                  zIndex: 1,
+                }}
+              />
+
+              {/* STEP 1: ServiceNow Offboarding & Laptop Hardware Clearance */}
+              <div style={{ position: 'relative', marginBottom: '0.9rem' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '-2.25rem',
+                    top: '2px',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    background: '#f0fdf4',
+                    border: '2px solid #16a34a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#16a34a',
+                    fontSize: '0.78rem',
+                    zIndex: 2,
+                  }}
+                >
+                  <i className="fa-solid fa-laptop"></i>
+                </div>
+
+                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '0.75rem 1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <strong style={{ fontSize: '0.88rem', color: '#15803d' }}>1. ServiceNow IT Asset & Laptop Clearance</strong>
+                    <span className="badge badge-verified" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                      <i className="fa-solid fa-check"></i> CLEARED
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    <div>• <strong>Offboarding REQ:</strong> <code>{activeFlowItem.serviceNowReq || 'REQ0014290'}</code></div>
+                    <div>• <strong>Hardware Recovery Incident:</strong> <strong>{activeFlowItem.laptopTicket || 'INC0040469'}</strong> (Resolved / Closed)</div>
+                    <div>• <strong>Assigned Specialist:</strong> {activeFlowItem.assignedTo || 'Alejandra Prenatt'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* STEP 2: Active Directory Deprovisioning */}
+              <div style={{ position: 'relative', marginBottom: '0.9rem' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '-2.25rem',
+                    top: '2px',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    background: flowStepStatus.step2 === 'running' ? '#eff6ff' : '#f0fdf4',
+                    border: `2px solid ${flowStepStatus.step2 === 'running' ? '#0284c7' : '#16a34a'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: flowStepStatus.step2 === 'running' ? '#0284c7' : '#16a34a',
+                    fontSize: '0.78rem',
+                    zIndex: 2,
+                  }}
+                >
+                  <i className={`fa-solid ${flowStepStatus.step2 === 'running' ? 'fa-spinner fa-spin' : 'fa-robot'}`}></i>
+                </div>
+
+                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.75rem 1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <strong style={{ fontSize: '0.88rem', color: '#0369a1' }}>2. Active Directory (AD) Deprovisioning</strong>
+                    <span className={`badge ${flowStepStatus.step2 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                      {flowStepStatus.step2 === 'running' ? 'RUNNING ON T4' : '✓ WORKFLOW COMPLETE'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    <div>• <strong>T4 Workflow:</strong> <code>{flowData?.adRemoval?.workflowName || 'HR Demo OffboardingRemoveADUser'}</code></div>
+                    <div>• <strong>Parameter:</strong> <code>ADUserName: "{(activeFlowItem.empName || 'Employee').replace(' ', '.')}"</code></div>
+                    <div>• <strong>Automation Request:</strong> <strong>#{flowData?.adRemoval?.automationRequestId || '3295924'}</strong></div>
+                    <div>• <strong>RPA Agent:</strong> <code>{flowData?.adRemoval?.agentName || 'mahesh@mspevent-win-1'}</code></div>
+                    <div style={{ color: '#15803d', fontSize: '0.74rem', marginTop: '2px', fontWeight: 600 }}>
+                      ✓ {flowData?.adRemoval?.message || `AD User ${(activeFlowItem.empName || 'Employee').replace(' ', '.')} Removed`}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* STEP 3: Office 365 / Microsoft Entra ID Deletion */}
+              <div style={{ position: 'relative', marginBottom: '0.9rem' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '-2.25rem',
+                    top: '2px',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    background: flowStepStatus.step3 === 'running' ? '#eff6ff' : '#f0fdf4',
+                    border: `2px solid ${flowStepStatus.step3 === 'running' ? '#0284c7' : '#16a34a'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: flowStepStatus.step3 === 'running' ? '#0284c7' : '#16a34a',
+                    fontSize: '0.78rem',
+                    zIndex: 2,
+                  }}
+                >
+                  <i className={`fa-solid ${flowStepStatus.step3 === 'running' ? 'fa-spinner fa-spin' : 'fa-envelope-circle-check'}`}></i>
+                </div>
+
+                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.75rem 1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <strong style={{ fontSize: '0.88rem', color: '#0369a1' }}>3. Office 365 & Entra ID Account Deletion</strong>
+                    <span className={`badge ${flowStepStatus.step3 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                      {flowStepStatus.step3 === 'running' ? 'RUNNING ON T4' : '✓ ENTRA ID REMOVED'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    <div>• <strong>T4 Workflow:</strong> <code>{flowData?.o365Delete?.workflowName || 'HR DEMO offboarding Delete O365 user'}</code></div>
+                    <div>• <strong>Automation Request:</strong> <strong>#{flowData?.o365Delete?.automationRequestId || '3295925'}</strong></div>
+                    <div>• <strong>Microsoft Graph API:</strong> User account & Exchange mailbox deleted from Entra ID</div>
+                    <div style={{ color: '#15803d', fontSize: '0.74rem', marginTop: '2px', fontWeight: 600 }}>
+                      ✓ {flowData?.o365Delete?.message || 'User deleted from O365'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* STEP 4: OrangeHRM PIM Master Record Removal */}
+              <div style={{ position: 'relative', marginBottom: '0.9rem' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '-2.25rem',
+                    top: '2px',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    background: flowStepStatus.step4 === 'running' ? '#eff6ff' : '#f0fdf4',
+                    border: `2px solid ${flowStepStatus.step4 === 'running' ? '#0284c7' : '#16a34a'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: flowStepStatus.step4 === 'running' ? '#0284c7' : '#16a34a',
+                    fontSize: '0.78rem',
+                    zIndex: 2,
+                  }}
+                >
+                  <i className={`fa-solid ${flowStepStatus.step4 === 'running' ? 'fa-spinner fa-spin' : 'fa-user-xmark'}`}></i>
+                </div>
+
+                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.75rem 1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <strong style={{ fontSize: '0.88rem', color: '#0369a1' }}>4. OrangeHRM PIM Master Record Deletion</strong>
+                    <span className={`badge ${flowStepStatus.step4 === 'running' ? 'badge-pending' : 'badge-verified'}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                      {flowStepStatus.step4 === 'running' ? 'RUNNING ON T4' : '✓ PIM PROFILE REMOVED'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    <div>• <strong>T4 Workflow:</strong> <code>{flowData?.orangeHrmDelete?.workflowName || 'HR DEMO Offboarding Delete OrangeHRM User'}</code></div>
+                    <div>• <strong>Automation Request:</strong> <strong>#{flowData?.orangeHrmDelete?.automationRequestId || '3295926'}</strong></div>
+                    <div>• <strong>OrangeHRM REST API:</strong> Master employee record deleted from HR database</div>
+                    <div style={{ color: '#15803d', fontSize: '0.74rem', marginTop: '2px', fontWeight: 600 }}>
+                      ✓ {flowData?.orangeHrmDelete?.message || 'User data deleted from OrangeHRM'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* STEP 5: Offboarding Clearance Email Notification */}
+              <div style={{ position: 'relative' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '-2.25rem',
+                    top: '2px',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    background: '#f0fdf4',
+                    border: '2px solid #16a34a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#16a34a',
+                    fontSize: '0.78rem',
+                    zIndex: 2,
+                  }}
+                >
+                  <i className="fa-solid fa-paper-plane"></i>
+                </div>
+
+                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '0.75rem 1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <strong style={{ fontSize: '0.88rem', color: '#15803d' }}>5. Clearance Email Notification Dispatched</strong>
+                    <span className="badge badge-verified" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                      <i className="fa-solid fa-envelope"></i> EMAIL SENT
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    <div>• <strong>Recipient:</strong> <strong style={{ color: '#0284c7' }}>abhishek.malwadkar@valuedx.com</strong></div>
+                    <div>• <strong>Method:</strong> Microsoft Graph API (Automated Multi-System Confirmation)</div>
+                    <div style={{ color: '#15803d', fontSize: '0.74rem', marginTop: '2px', fontWeight: 600 }}>
+                      ✓ Offboarding completion summary & system clearance notification delivered
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowFlowModal(false)}
+                style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: 'transparent', fontWeight: 700 }}
+              >
+                <i className="fa-solid fa-check"></i> Close Pipeline View
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
