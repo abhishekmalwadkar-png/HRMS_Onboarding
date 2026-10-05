@@ -223,10 +223,7 @@ export default function OffboardingView() {
     return (
       <section className="view-section active">
         <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
-          <h2><i className="fa-solid fa-file-signature text-accent"></i> Employee Resignation Submission</h2>
-          <p style={{ color: 'var(--text-muted)' }}>
-            Submit your resignation to initiate notice period and route exit clearance approvals to HR Operations.
-          </p>
+          <h2 style={{ margin: 0 }}><i className="fa-solid fa-file-signature text-accent"></i> Employee Resignation Submission</h2>
         </div>
 
         <div style={{ maxWidth: '680px', margin: '0 auto' }}>
@@ -342,10 +339,7 @@ export default function OffboardingView() {
       <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h2><i className="fa-solid fa-person-walking-arrow-right text-accent"></i> Employee Exit & Offboarding Management</h2>
-            <p style={{ color: 'var(--text-muted)' }}>
-              Resignation tracking, clearance approvals, Active Directory & Office 365 account deprovisioning, and FnF settlement.
-            </p>
+            <h2 style={{ margin: 0 }}><i className="fa-solid fa-person-walking-arrow-right text-accent"></i> Employee Exit & Offboarding Management</h2>
           </div>
           <button
             className="btn btn-secondary"
