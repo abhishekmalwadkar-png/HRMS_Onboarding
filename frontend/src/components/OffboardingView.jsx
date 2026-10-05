@@ -502,34 +502,6 @@ export default function OffboardingView() {
                       {isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department'}
                     </span>
                   </div>
-
-                  {/* Explicit message whether IT department has closed/resolved ticket */}
-                  <div
-                    style={{
-                      fontSize: '0.84rem',
-                      borderRadius: '6px',
-                      padding: '0.6rem 0.85rem',
-                      background: isCleared ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
-                      borderLeft: `3px solid ${isCleared ? '#10b981' : '#f59e0b'}`,
-                      color: isCleared ? '#10b981' : '#f59e0b',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.6rem'
-                    }}
-                  >
-                    <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-triangle-exclamation'}`} style={{ fontSize: '1rem' }}></i>
-                    <div>
-                      {isCleared ? (
-                        <span>
-                          <strong>ServiceNow Status ({incState}):</strong> IT Department has <strong>resolved/closed</strong> the ticket ({item.laptopTicket || 'Hardware'}). <strong>User Submitted Laptop</strong>.
-                        </span>
-                      ) : (
-                        <span>
-                          <strong>ServiceNow Status ({incState}):</strong> Ticket ({item.laptopTicket || 'Hardware'}) is currently <strong>in progress</strong> with {item.assignedTo || 'IT'}. <strong>Clearance waiting from IT department</strong>.
-                        </span>
-                      )}
-                    </div>
-                  </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
