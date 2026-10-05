@@ -7,66 +7,16 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
   const [approvingId, setApprovingId] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   
-  // Right-side line flow drawer state
+  // Onboarding flow modal state
   const [activeFlowCandidate, setActiveFlowCandidate] = useState(null);
   const [flowStepStatus, setFlowStepStatus] = useState({
-    step1: 'idle', // 'idle' | 'running' | 'completed' | 'error'
-    step2: 'idle',
-    step3: 'idle',
-    step4: 'idle',
+    step1: 'pending',
+    step2: 'pending',
+    step3: 'pending',
+    step4: 'pending',
+    step5: 'pending',
   });
   const [flowData, setFlowData] = useState(null);
-
-  // Draggable state for Flow card
-  const [panelPos, setPanelPos] = useState({ x: null, y: null });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef({ mouseX: 0, mouseY: 0, startX: 0, startY: 0 });
-
-  // Reset or initialize position when panel opens
-  useEffect(() => {
-    if (activeFlowCandidate) {
-      const defaultX = Math.max(15, window.innerWidth - 395);
-      const defaultY = 60;
-      setPanelPos({ x: defaultX, y: defaultY });
-    }
-  }, [activeFlowCandidate]);
-
-  const handleDragMouseDown = (e) => {
-    if (e.target.closest('button') || e.target.closest('a')) return;
-    setIsDragging(true);
-    dragStartRef.current = {
-      mouseX: e.clientX,
-      mouseY: e.clientY,
-      startX: panelPos.x !== null ? panelPos.x : Math.max(15, window.innerWidth - 395),
-      startY: panelPos.y !== null ? panelPos.y : 60,
-    };
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isDragging) return;
-      const dx = e.clientX - dragStartRef.current.mouseX;
-      const dy = e.clientY - dragStartRef.current.mouseY;
-      const newX = Math.max(10, Math.min(window.innerWidth - 385, dragStartRef.current.startX + dx));
-      const newY = Math.max(10, Math.min(window.innerHeight - 120, dragStartRef.current.startY + dy));
-      setPanelPos({ x: newX, y: newY });
-    };
-
-    const handleMouseUp = () => {
-      if (isDragging) {
-        setIsDragging(false);
-      }
-    };
-
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
@@ -97,18 +47,81 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
     }
   };
 
+  const inspectApprovalFlow = (cand) => {
+    setActiveFlowCandidate(cand);
+    setFlowStepStatus({
+      step1: 'completed',
+      step2: 'completed',
+      step3: 'completed',
+      step4: 'completed',
+      step5: 'completed',
+    });
+    setFlowData({
+      serviceNow: {
+        reqNumber: cand.serviceNowReq || 'REQ0010042',
+        approvalStatus: 'Approved',
+      },
+      aeT4Ad: {
+        workflowName: cand.aeT4Workflow || 'AD-Create User and Assin Role',
+        automationRequestId: cand.aeT4RequestId || '3294476',
+        agentName: cand.aeT4Agent || 'mahesh@mspevent-win-1',
+        executionStatus: 'Complete',
+      },
+      office365: {
+        userPrincipalName: cand.o365Email || `${cand.fullName ? cand.fullName.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user'}@automationedge.ai`,
+        status: 'success',
+      },
+      orangeHrm: {
+        empNumber: cand.orangeHrmEmpNumber || '17',
+        status: 'success',
+      },
+      laptopProvisioning: {
+        ticketNumber: cand.laptopTicket || 'INC0040420',
+      },
+      offerLetter: {
+        status: 'success',
+        recipient: 'abhishek.malwadkar@valuedx.com',
+      },
+    });
+  };
+
   const handleApprove = async (cand) => {
     setApprovingId(cand.id);
     setActiveFlowCandidate(cand);
     setFlowStepStatus({
-      step1: 'running',
+      step1: 'completed',
       step2: 'running',
-      step3: 'running',
-      step4: 'running',
+      step3: 'pending',
+      step4: 'pending',
+      step5: 'pending',
     });
     setFlowData(null);
 
     showToast(`⏳ Initiating Sequential Provisioning for ${cand.fullName}: 1st ServiceNow ➔ 2nd AD ➔ 3rd Office 365 ➔ 4th OrangeHRM...`, 'info');
+
+    const timer1 = setTimeout(() => {
+      setFlowStepStatus((prev) => ({
+        ...prev,
+        step2: 'completed',
+        step3: 'running',
+      }));
+    }, 3500);
+
+    const timer2 = setTimeout(() => {
+      setFlowStepStatus((prev) => ({
+        ...prev,
+        step3: 'completed',
+        step4: 'running',
+      }));
+    }, 7000);
+
+    const timer3 = setTimeout(() => {
+      setFlowStepStatus((prev) => ({
+        ...prev,
+        step4: 'completed',
+        step5: 'running',
+      }));
+    }, 10500);
 
     try {
       const res = await fetch('/api/servicenow/approve', {
@@ -130,6 +143,10 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
         }),
       });
 
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+
       if (res.ok) {
         const result = await res.json();
         setFlowData(result);
@@ -138,6 +155,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
           step2: 'completed',
           step3: 'completed',
           step4: 'completed',
+          step5: 'completed',
         });
 
         confetti({
@@ -152,53 +170,27 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
           step2: 'completed',
           step3: 'completed',
           step4: 'completed',
+          step5: 'completed',
         });
         showToast(`✓ Onboarding approved for ${cand.fullName}! Offer Letter dispatched.`, 'success');
       }
     } catch (err) {
       console.error('Approval error:', err);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
       setFlowStepStatus({
         step1: 'completed',
         step2: 'completed',
         step3: 'completed',
         step4: 'completed',
+        step5: 'completed',
       });
       showToast(`✓ Onboarding approved for ${cand.fullName}!`, 'success');
     } finally {
       setApprovingId(null);
       if (onRefreshEmployees) onRefreshEmployees();
     }
-  };
-
-  const inspectApprovalFlow = (cand) => {
-    setActiveFlowCandidate(cand);
-    setFlowStepStatus({
-      step1: 'completed',
-      step2: 'completed',
-      step3: 'completed',
-      step4: 'completed',
-    });
-    setFlowData({
-      laptopProvisioning: {
-        ticketNumber: cand.laptopTicket || 'ITSM-ASSET-0420',
-        hardwareItem: cand.hardware || 'Apple MacBook Pro M3 Max',
-        ticketUrl: cand.laptopTicketUrl || `https://ven04528.service-now.com/nav_to.do?uri=incident_list.do`,
-      },
-      aeT4Ad: {
-        automationRequestId: cand.aeT4RequestId || '10388',
-        workflowName: cand.aeT4Workflow || 'AD-Create User and Assin Role',
-        agentName: cand.aeT4Agent || 'mahesh@mspevent-win-1',
-        executionStatus: cand.aeT4Status || 'Complete',
-      },
-      office365: {
-        userPrincipalName: cand.o365Email || `${cand.fullName ? cand.fullName.toLowerCase().replace(/[^a-z0-9]/g, '') : 'candidate'}@automationedge.ai`,
-        status: 'Active (Entra ID)',
-      },
-      orangeHrm: {
-        empNumber: cand.orangeHrmEmpNumber || '17',
-        workEmail: cand.o365Email || `${cand.fullName ? cand.fullName.toLowerCase().replace(/[^a-z0-9]/g, '') : 'candidate'}@automationedge.ai`,
-      },
-    });
   };
 
   const handleSyncServiceNow = async () => {
@@ -630,462 +622,325 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
       </div>
 
       {/* ========================================================================= */}
-      {/* RIGHT-SIDE LINE FLOW DRAWER (Shows triggered workflows & changes) */}
-      {/* ========================================================================= */}
-      {/* ========================================================================= */}
-      {/* RIGHT-SIDE LINE FLOW CARD (Shows triggered workflows & changes) */}
+      {/* ONBOARDING & ENTERPRISE PROVISIONING FLOW MODAL WINDOW */}
       {/* ========================================================================= */}
       {activeFlowCandidate && (
         <div
           style={{
             position: 'fixed',
-            left: panelPos.x !== null ? `${panelPos.x}px` : 'auto',
-            right: panelPos.x !== null ? 'auto' : '1rem',
-            top: panelPos.y !== null ? `${panelPos.y}px` : '3.85rem',
-            width: '375px',
-            maxWidth: 'calc(100vw - 1.5rem)',
-            maxHeight: 'calc(100vh - 4.5rem)',
-            zIndex: 1050,
-            background: 'var(--bg-card)',
-            boxShadow: isDragging
-              ? '0 20px 50px rgba(0, 0, 0, 0.28), 0 4px 15px rgba(0, 0, 0, 0.15)'
-              : '0 12px 35px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08)',
-            border: isDragging ? '1.5px solid var(--brand-orange)' : '1px solid var(--border-color)',
-            borderRadius: '12px',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
             display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            userSelect: isDragging ? 'none' : 'auto',
-            transition: isDragging ? 'none' : 'box-shadow 0.2s ease, border-color 0.2s ease',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '0.75rem',
           }}
         >
-          {/* Card Top Header - Draggable Area */}
           <div
-            onMouseDown={handleDragMouseDown}
+            className="glass-card"
             style={{
-              padding: '0.85rem 1.15rem',
-              borderBottom: '1px solid var(--border-color)',
-              background: isDragging ? 'var(--bg-primary)' : 'var(--bg-accent-soft)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: isDragging ? 'grabbing' : 'grab',
-              userSelect: 'none',
-              transition: 'background 0.15s ease',
+              maxWidth: '640px',
+              width: '100%',
+              background: '#ffffff',
+              borderRadius: '12px',
+              padding: '1.2rem 1.35rem',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.25)',
             }}
-            title="Click and drag to move panel anywhere on screen"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <div style={{ color: 'var(--brand-orange)', fontSize: '0.9rem', opacity: 0.8, display: 'flex', alignItems: 'center' }}>
-                <i className="fa-solid fa-grip-vertical"></i>
-              </div>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.45rem' }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                  <h3 style={{ margin: 0, fontSize: '0.98rem', color: 'var(--text-main)', fontWeight: 700 }}>
-                    Orchestrated Workflow Pipeline
-                  </h3>
-                  <span className="live-pulse-dot"></span>
-                </div>
-                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
-                  Candidate: <strong>{activeFlowCandidate.fullName}</strong> (<code>{activeFlowCandidate.id}</code>)
-                </span>
+                <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '1.05rem' }}>
+                  <i className="fa-solid fa-sitemap" style={{ color: '#0284c7' }}></i> Onboarding & Enterprise Provisioning Pipeline
+                </h3>
+                <p style={{ margin: '2px 0 0 0', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                  Multi-System Flow: ServiceNow Request • AD (T4) • O365 Entra ID • OrangeHRM PIM • Laptop & Offer Letter
+                </p>
               </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'var(--bg-secondary)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
-                <i className="fa-solid fa-arrows-up-down-left-right"></i> Drag
-              </span>
               <button
                 onClick={() => setActiveFlowCandidate(null)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  fontSize: '1.3rem',
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)',
-                  lineHeight: 1,
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                }}
-                title="Close Flow Panel"
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: '#64748b', cursor: 'pointer', padding: '2px 6px' }}
+                title="Close Modal"
               >
-                &times;
+                <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
-          </div>
 
-          {/* Card Body - Fitted Vertical Pipeline Stepper */}
-          <div style={{ overflowY: 'auto', padding: '1rem 1.15rem', flex: '0 1 auto' }}>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.85rem' }}>
-              Execution status across all 5 automated enterprise steps:
+            {/* Candidate Quick Info Chip */}
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '7px', padding: '0.45rem 0.8rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+              <div>
+                <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{activeFlowCandidate.fullName}</strong>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '5px' }}>({activeFlowCandidate.jobTitle || 'Staff AI Systems Engineer'} • {activeFlowCandidate.department || 'Engineering'})</span>
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                ID: <strong style={{ color: '#0284c7' }}>{activeFlowCandidate.id}</strong> • CTC: <strong>{activeFlowCandidate.salary || '₹32.0 LPA'}</strong>
+              </div>
             </div>
 
-            {/* Vertical Line Timeline Container */}
-            <div style={{ position: 'relative', paddingLeft: '2.25rem' }}>
-              {/* Connected Flow Line: Animates while running, stops when completed */}
-              <div className={`animated-flow-line ${approvingId !== activeFlowCandidate?.id && !Object.values(flowStepStatus).some(s => s === 'running') ? 'completed-static' : ''}`}>
-                <div className="flow-line-base"></div>
-                {(approvingId === activeFlowCandidate?.id || Object.values(flowStepStatus).some(s => s === 'running')) && (
-                  <div className="flow-stream-pulse"></div>
-                )}
-              </div>
+            {/* Vertical Flow Steps with Timeline Line */}
+            <div style={{ position: 'relative', paddingLeft: '1.9rem' }}>
+              {/* Timeline Connecting Line */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '10px',
+                  top: '12px',
+                  bottom: '12px',
+                  width: '2px',
+                  background: '#e2e8f0',
+                  zIndex: 1,
+                }}
+              ></div>
 
-              {/* STEP 1: ServiceNow Service Catalog Approval */}
-              <div style={{ position: 'relative', marginBottom: '0.55rem' }}>
-                {/* Node Icon */}
+              {/* STEP 1: ServiceNow Request Approval */}
+              <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
-                    background: '#ecfdf5',
-                    border: '2px solid #10b981',
+                    background: '#f0fdf4',
+                    border: '2px solid #16a34a',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#10b981',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.06)',
-                    fontSize: '0.78rem',
+                    color: '#16a34a',
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
                   <i className="fa-solid fa-file-signature"></i>
                 </div>
 
-                {/* Step Content Card */}
-                <div
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-sm, 6px)',
-                    padding: '0.5rem 0.75rem',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#0284c7' }}>1. ServiceNow Request</strong>
-                    <span className="badge badge-verified" style={{ fontSize: '0.62rem', padding: '0.15rem 0.4rem' }}>
+                <div style={{ background: 'var(--bg-primary)', border: '1px solid #bbf7d0', borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#15803d' }}>1. ServiceNow Request & Catalog Approval</strong>
+                    <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
                       <i className="fa-solid fa-check"></i> APPROVED
                     </span>
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                    <div>• <strong>Request:</strong> <code>{activeFlowCandidate.serviceNowReq || 'REQ0010042'}</code> marked <strong>Approved</strong></div>
-                    <div>• <strong>Catalog Item:</strong> <span>Employee Onboarding Request</span></div>
-                    <div style={{ color: '#15803d', fontSize: '0.68rem', marginTop: '1px', fontWeight: 600 }}>
-                      ✓ HR Verification Approved in ServiceNow Service Catalog
-                    </div>
+                    <div>• <strong>Request:</strong> <code>{activeFlowCandidate.serviceNowReq || 'REQ0010042'}</code> marked <strong>Approved</strong> &nbsp;•&nbsp; <strong>Catalog Item:</strong> Employee Onboarding Request</div>
+                    <div>• <strong>Verification:</strong> <span style={{ color: '#15803d', fontWeight: 600 }}>✓ HR Verification & Background Clearance Approved in ServiceNow</span></div>
                   </div>
                 </div>
               </div>
 
-              {/* STEP 2: Active Directory (AutomationEdge T4) */}
-              <div style={{ position: 'relative', marginBottom: '0.55rem' }}>
-                {/* Node Icon */}
+              {/* STEP 2: Active Directory Account Provisioning (T4 RPA) */}
+              <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
-                    background: '#f0f9ff',
-                    border: '2px solid #0284c7',
+                    background: flowStepStatus.step2 === 'running' ? '#eff6ff' : (flowStepStatus.step2 === 'completed' ? '#f0fdf4' : '#f8fafc'),
+                    border: `2px solid ${flowStepStatus.step2 === 'running' ? '#0284c7' : (flowStepStatus.step2 === 'completed' ? '#16a34a' : '#cbd5e1')}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#0284c7',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.06)',
-                    fontSize: '0.78rem',
+                    color: flowStepStatus.step2 === 'running' ? '#0284c7' : (flowStepStatus.step2 === 'completed' ? '#16a34a' : '#94a3b8'),
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
-                  <i className="fa-solid fa-robot"></i>
+                  <i className={`fa-solid ${flowStepStatus.step2 === 'running' ? 'fa-spinner fa-spin' : (flowStepStatus.step2 === 'completed' ? 'fa-circle-check' : 'fa-robot')}`}></i>
                 </div>
 
-                {/* Step Content Card */}
-                <div
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-orange)',
-                    borderRadius: 'var(--radius-sm, 6px)',
-                    padding: '0.5rem 0.75rem',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#c2410c' }}>2. Active Directory (AD)</strong>
-                    <span className="badge" style={{ background: '#e0f2fe', color: '#c2410c', fontSize: '0.62rem', padding: '0.15rem 0.4rem', border: '1px solid #bae6fd' }}>
-                      <i className="fa-solid fa-circle-check"></i> WORKFLOW COMPLETE
-                    </span>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step2 === 'running' ? '#bfdbfe' : (flowStepStatus.step2 === 'completed' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: flowStepStatus.step2 === 'running' ? '#0284c7' : (flowStepStatus.step2 === 'completed' ? '#15803d' : '#475569') }}>2. Active Directory (AD) Provisioning</strong>
+                    {flowStepStatus.step2 === 'running' ? (
+                      <span className="badge badge-pending" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-spinner fa-spin"></i> RUNNING ON T4
+                      </span>
+                    ) : flowStepStatus.step2 === 'completed' ? (
+                      <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-check"></i> DOMAIN USER CREATED
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: '0.64rem', padding: '1px 6px', border: '1px solid #e2e8f0' }}>
+                        QUEUED
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                    <div>• <strong>T4 Workflow:</strong> <code>{flowData?.aeT4Ad?.workflowName || activeFlowCandidate.aeT4Workflow || 'AD-Create User and Assin Role'}</code></div>
-                    <div>• <strong>Automation Request:</strong> <strong>#{flowData?.aeT4Ad?.automationRequestId || activeFlowCandidate.aeT4RequestId || '3294476'}</strong></div>
-                    <div>• <strong>RPA Agent:</strong> <code>{flowData?.aeT4Ad?.agentName || activeFlowCandidate.aeT4Agent || 'mahesh@mspevent-win-1'}</code></div>
-                    <div style={{ color: '#15803d', fontSize: '0.68rem', marginTop: '1px', fontWeight: 600 }}>
-                      ✓ Domain User & Role assigned in Active Directory
-                    </div>
+                    <div>• <strong>T4 Workflow:</strong> <code>{flowData?.aeT4Ad?.workflowName || activeFlowCandidate.aeT4Workflow || 'AD-Create User and Assin Role'}</code> &nbsp;•&nbsp; <strong>Req:</strong> #{flowData?.aeT4Ad?.automationRequestId || activeFlowCandidate.aeT4RequestId || '3294476'}</div>
+                    <div>• <strong>Agent:</strong> <code>{flowData?.aeT4Ad?.agentName || activeFlowCandidate.aeT4Agent || 'mahesh@mspevent-win-1'}</code> • <span style={{ color: '#15803d', fontWeight: 600 }}>✓ Domain User & Role assigned in Active Directory</span></div>
                   </div>
                 </div>
               </div>
 
-              {/* STEP 3: Microsoft 365 / Entra ID */}
-              <div style={{ position: 'relative', marginBottom: '0.55rem' }}>
-                {/* Node Icon */}
+              {/* STEP 3: Microsoft 365 / Entra ID Account Creation */}
+              <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
-                    background: '#eff6ff',
-                    border: '2px solid #1d4ed8',
+                    background: flowStepStatus.step3 === 'running' ? '#eff6ff' : (flowStepStatus.step3 === 'completed' ? '#f0fdf4' : '#f8fafc'),
+                    border: `2px solid ${flowStepStatus.step3 === 'running' ? '#0284c7' : (flowStepStatus.step3 === 'completed' ? '#16a34a' : '#cbd5e1')}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#1d4ed8',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.06)',
-                    fontSize: '0.78rem',
+                    color: flowStepStatus.step3 === 'running' ? '#0284c7' : (flowStepStatus.step3 === 'completed' ? '#16a34a' : '#94a3b8'),
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
-                  <i className="fa-brands fa-microsoft"></i>
+                  <i className={`fa-solid ${flowStepStatus.step3 === 'running' ? 'fa-spinner fa-spin' : (flowStepStatus.step3 === 'completed' ? 'fa-circle-check' : 'fa-envelope-circle-check')}`}></i>
                 </div>
 
-                {/* Step Content Card */}
-                <div
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid #bfdbfe',
-                    borderRadius: 'var(--radius-sm, 6px)',
-                    padding: '0.5rem 0.75rem',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#1d4ed8' }}>3. Microsoft 365 Account</strong>
-                    <span className="badge" style={{ background: '#dbeafe', color: '#1e40af', fontSize: '0.62rem', padding: '0.15rem 0.4rem', border: '1px solid #93c5fd' }}>
-                      <i className="fa-solid fa-circle-check"></i> ENTRA ID ACTIVE
-                    </span>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step3 === 'running' ? '#bfdbfe' : (flowStepStatus.step3 === 'completed' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: flowStepStatus.step3 === 'running' ? '#0284c7' : (flowStepStatus.step3 === 'completed' ? '#15803d' : '#475569') }}>3. Microsoft 365 & Entra ID Account</strong>
+                    {flowStepStatus.step3 === 'running' ? (
+                      <span className="badge badge-pending" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-spinner fa-spin"></i> PROVISIONING...
+                      </span>
+                    ) : flowStepStatus.step3 === 'completed' ? (
+                      <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-check"></i> ENTRA ID ACTIVE
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: '0.64rem', padding: '1px 6px', border: '1px solid #e2e8f0' }}>
+                        QUEUED
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                    <div>• <strong>Generated Work Email:</strong> <strong style={{ color: '#1d4ed8' }}>{flowData?.office365?.userPrincipalName || activeFlowCandidate.o365Email || `${activeFlowCandidate.fullName ? activeFlowCandidate.fullName.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user'}@automationedge.ai`}</strong></div>
-                    <div>• <strong>Tenant Domain:</strong> <code>automationedge.ai</code></div>
-                    <div>• <strong>Status:</strong> Cloud Mailbox & Teams Provisioned</div>
+                    <div>• <strong>Generated Work Email:</strong> <strong style={{ color: '#0284c7' }}>{flowData?.office365?.userPrincipalName || activeFlowCandidate.o365Email || `${activeFlowCandidate.fullName ? activeFlowCandidate.fullName.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user'}@automationedge.ai`}</strong></div>
+                    <div>• <strong>Entra ID Status:</strong> <span style={{ color: '#15803d', fontWeight: 600 }}>✓ Cloud Mailbox & Teams Active (Tenant: automationedge.ai)</span></div>
                   </div>
                 </div>
               </div>
 
-              {/* STEP 4: OrangeHRM PIM */}
-              <div style={{ position: 'relative', marginBottom: '0.55rem' }}>
-                {/* Node Icon */}
+              {/* STEP 4: OrangeHRM PIM Master Employee Profile */}
+              <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
-                    background: '#ecfdf5',
-                    border: '2px solid #059669',
+                    background: flowStepStatus.step4 === 'running' ? '#eff6ff' : (flowStepStatus.step4 === 'completed' ? '#f0fdf4' : '#f8fafc'),
+                    border: `2px solid ${flowStepStatus.step4 === 'running' ? '#0284c7' : (flowStepStatus.step4 === 'completed' ? '#16a34a' : '#cbd5e1')}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#059669',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.06)',
-                    fontSize: '0.78rem',
+                    color: flowStepStatus.step4 === 'running' ? '#0284c7' : (flowStepStatus.step4 === 'completed' ? '#16a34a' : '#94a3b8'),
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
-                  <i className="fa-solid fa-user-check"></i>
+                  <i className={`fa-solid ${flowStepStatus.step4 === 'running' ? 'fa-spinner fa-spin' : (flowStepStatus.step4 === 'completed' ? 'fa-circle-check' : 'fa-user-check')}`}></i>
                 </div>
 
-                {/* Step Content Card */}
-                <div
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid #a7f3d0',
-                    borderRadius: 'var(--radius-sm, 6px)',
-                    padding: '0.5rem 0.75rem',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#059669' }}>4. OrangeHRM Profile</strong>
-                    <span className="badge badge-verified" style={{ fontSize: '0.62rem', padding: '0.15rem 0.4rem', borderColor: '#a7f3d0', color: '#059669', background: '#ecfdf5' }}>
-                      <i className="fa-solid fa-check"></i> PIM CREATED
-                    </span>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step4 === 'running' ? '#bfdbfe' : (flowStepStatus.step4 === 'completed' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: flowStepStatus.step4 === 'running' ? '#0284c7' : (flowStepStatus.step4 === 'completed' ? '#15803d' : '#475569') }}>4. OrangeHRM PIM Master Profile Creation</strong>
+                    {flowStepStatus.step4 === 'running' ? (
+                      <span className="badge badge-pending" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-spinner fa-spin"></i> SYNCING PIM...
+                      </span>
+                    ) : flowStepStatus.step4 === 'completed' ? (
+                      <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-check"></i> PIM PROFILE SYNCED
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: '0.64rem', padding: '1px 6px', border: '1px solid #e2e8f0' }}>
+                        QUEUED
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     <div>• <strong>PIM Employee Number:</strong> <strong>#{flowData?.orangeHrm?.empNumber || activeFlowCandidate.orangeHrmEmpNumber || '17'}</strong></div>
-                    <div>• <strong>Synced Email:</strong> <span>{flowData?.office365?.userPrincipalName || activeFlowCandidate.o365Email || `${activeFlowCandidate.fullName ? activeFlowCandidate.fullName.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user'}@automationedge.ai`}</span></div>
-                    <div style={{ color: '#059669', fontSize: '0.68rem', marginTop: '1px', fontWeight: 600 }}>
-                      ✓ Profile created & linked with Microsoft 365 workEmail
-                    </div>
+                    <div>• <strong>Database Record:</strong> <span style={{ color: '#15803d', fontWeight: 600 }}>✓ Master employee profile registered with synced workEmail</span></div>
                   </div>
                 </div>
               </div>
 
-              {/* STEP 5: ServiceNow ITSM Hardware Incident (Triggered AFTER OrangeHRM) */}
-              <div style={{ position: 'relative', marginBottom: '0.55rem' }}>
-                {/* Node Icon */}
+              {/* STEP 5: ServiceNow Laptop Ticket & Offer Letter Dispatched */}
+              <div style={{ position: 'relative' }}>
                 <div
                   style={{
                     position: 'absolute',
-                    left: '-2.25rem',
+                    left: '-1.9rem',
                     top: '2px',
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
-                    background: '#ecfdf5',
-                    border: '2px solid #0284c7',
+                    background: flowStepStatus.step5 === 'running' ? '#eff6ff' : (flowStepStatus.step5 === 'completed' ? '#f0fdf4' : '#f8fafc'),
+                    border: `2px solid ${flowStepStatus.step5 === 'running' ? '#0284c7' : (flowStepStatus.step5 === 'completed' ? '#16a34a' : '#cbd5e1')}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#0284c7',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.06)',
-                    fontSize: '0.78rem',
+                    color: flowStepStatus.step5 === 'running' ? '#0284c7' : (flowStepStatus.step5 === 'completed' ? '#16a34a' : '#94a3b8'),
+                    fontSize: '0.7rem',
                     zIndex: 2,
                   }}
                 >
-                  <i className="fa-solid fa-laptop"></i>
+                  <i className={`fa-solid ${flowStepStatus.step5 === 'running' ? 'fa-spinner fa-spin' : (flowStepStatus.step5 === 'completed' ? 'fa-circle-check' : 'fa-envelope')}`}></i>
                 </div>
 
-                {/* Step Content Card */}
-                <div
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid #bae6fd',
-                    borderRadius: 'var(--radius-sm, 6px)',
-                    padding: '0.5rem 0.75rem',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#0284c7' }}>5. ServiceNow Laptop Incident</strong>
-                    <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: '0.62rem', padding: '0.15rem 0.4rem', border: '1px solid #bae6fd' }}>
-                      <i className="fa-solid fa-box"></i> CATEGORY: HARDWARE
-                    </span>
+                <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step5 === 'running' ? '#bfdbfe' : (flowStepStatus.step5 === 'completed' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: flowStepStatus.step5 === 'running' ? '#0284c7' : (flowStepStatus.step5 === 'completed' ? '#15803d' : '#475569') }}>5. Laptop Asset Ticket & Offer Letter Dispatched</strong>
+                    {flowStepStatus.step5 === 'running' ? (
+                      <span className="badge badge-pending" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-spinner fa-spin"></i> DISPATCHING...
+                      </span>
+                    ) : flowStepStatus.step5 === 'completed' ? (
+                      <span className="badge badge-verified" style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
+                        <i className="fa-solid fa-check"></i> OFFER LETTER SENT
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: '0.64rem', padding: '1px 6px', border: '1px solid #e2e8f0' }}>
+                        QUEUED
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                    <div>• <strong>Laptop Incident Ticket:</strong> <strong style={{ color: '#059669' }}>{flowData?.laptopProvisioning?.ticketNumber || activeFlowCandidate.laptopTicket || 'INC0040420'}</strong></div>
-                    <div>• <strong>Category:</strong> <span className="badge badge-verified" style={{ fontSize: '0.6rem', padding: '0.1rem 0.3rem' }}>Hardware</span></div>
-                    <div>• <strong>Hardware:</strong> {activeFlowCandidate.hardware || 'Apple MacBook Pro M3 Max'}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.68rem', marginTop: '1px' }}>
-                      <i className="fa-solid fa-truck-fast"></i> Dispatched to IT Desk with OrangeHRM Employee #{flowData?.orangeHrm?.empNumber || activeFlowCandidate.orangeHrmEmpNumber || '17'}
-                    </div>
+                    <div>• <strong>Laptop Incident:</strong> <strong style={{ color: '#059669' }}>{flowData?.laptopProvisioning?.ticketNumber || activeFlowCandidate.laptopTicket || 'INC0040420'}</strong> ({activeFlowCandidate.hardware || 'Apple MacBook Pro M3 Max'})</div>
+                    <div>• <strong>Offer Letter PDF:</strong> <span style={{ color: '#15803d', fontWeight: 600 }}>✓ Executive PDF with INR breakdown emailed to abhishek.malwadkar@valuedx.com</span></div>
                   </div>
                 </div>
               </div>
-
-              {/* COMPLETION END NODE: Green Tick Mark Milestone */}
-              <div style={{ position: 'relative' }}>
-                {/* Node Icon - Green Tick Mark */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: '-2.25rem',
-                    top: '2px',
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                    border: '2px solid #047857',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#ffffff',
-                    boxShadow: '0 0 12px rgba(16, 185, 129, 0.55), 0 2px 6px rgba(0,0,0,0.1)',
-                    fontSize: '0.92rem',
-                    fontWeight: 900,
-                    zIndex: 2,
-                  }}
-                >
-                  <i className="fa-solid fa-check"></i>
-                </div>
-
-                {/* Completion Banner */}
-                <div
-                  style={{
-                    background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-                    border: '1.5px solid #10b981',
-                    borderRadius: 'var(--radius-sm, 8px)',
-                    padding: '0.65rem 0.85rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.12)',
-                  }}
-                >
-                  <div>
-                    <strong style={{ fontSize: '0.82rem', color: '#065f46', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <i className="fa-solid fa-circle-check" style={{ color: '#059669', fontSize: '0.9rem' }}></i>
-                      All Steps Completed
-                    </strong>
-                    <div style={{ fontSize: '0.71rem', color: '#047857', marginTop: '1px', fontWeight: 600 }}>
-                      End-to-End Enterprise Provisioning Finished
-                    </div>
-                  </div>
-                  <span
-                    className="badge"
-                    style={{
-                      background: '#10b981',
-                      color: '#ffffff',
-                      border: '1px solid #059669',
-                      fontSize: '0.66rem',
-                      fontWeight: 800,
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '6px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.3rem',
-                    }}
-                  >
-                    <i className="fa-solid fa-check"></i> COMPLETE
-                  </span>
-                </div>
-              </div>
-
             </div>
-          </div>
 
-          {/* Card Footer Actions */}
-          <div
-            style={{
-              padding: '0.75rem 1.15rem',
-              borderTop: '1px solid var(--border-color)',
-              background: 'var(--bg-secondary)',
-              display: 'flex',
-              gap: '0.5rem',
-              justifyContent: 'space-between',
-            }}
-          >
-            <button
-              className="btn btn-secondary"
-              onClick={() => setActiveFlowCandidate(null)}
-              style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
-            >
-              Close
-            </button>
-            <a
-              href={`http://10.41.5.39/orangehrm/web/index.php/pim/viewEmployeeList`}
-              target="_blank"
-              rel="noreferrer"
-              className="btn btn-primary"
-              style={{
-                padding: '0.4rem 0.85rem',
-                fontSize: '0.8rem',
-                background: 'var(--accent-gradient)',
-                borderColor: 'transparent',
-                fontWeight: 700,
-                textDecoration: 'none',
-              }}
-            >
-              <i className="fa-solid fa-arrow-up-right-from-square"></i> Open OrangeHRM
-            </a>
+            {/* Modal Footer Actions */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.85rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.65rem' }}>
+              <a
+                href="http://10.41.5.39/orangehrm/web/index.php/pim/viewEmployeeList"
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-secondary"
+                style={{ fontSize: '0.8rem', padding: '0.35rem 0.85rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                <i className="fa-solid fa-arrow-up-right-from-square"></i> Open OrangeHRM
+              </a>
+              <button
+                className="btn btn-primary"
+                onClick={() => setActiveFlowCandidate(null)}
+                style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: 'transparent', fontWeight: 700, fontSize: '0.8rem', padding: '0.35rem 0.85rem' }}
+              >
+                <i className="fa-solid fa-check"></i> Close Pipeline View
+              </button>
+            </div>
           </div>
         </div>
       )}
