@@ -118,15 +118,20 @@ function applyUserRole(user) {
   }
 
   // Role based Nav Tabs & Actions Visibility
-  const hrOnlyTabs = ['tabRecruitment', 'tabDashboard', 'tabApprovals', 'tabServices', 'tabExit', 'tabAnalytics'];
+  const hrOnlyTabs = ['tabRecruitment', 'tabDashboard', 'tabApprovals', 'tabServices', 'tabAnalytics'];
   const sidebarAutofillBox = document.getElementById('sidebarAutofillBox');
   const headerAutofillBtn = document.getElementById('headerAutofillBtn');
+  const wizardTab = document.getElementById('tabWizard');
+  const exitTab = document.getElementById('tabExit');
   
   if (user.role === 'hr') {
     hrOnlyTabs.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'flex';
     });
+    if (exitTab) exitTab.style.display = 'flex';
+    if (wizardTab) wizardTab.style.display = 'none';
+
     // Hide candidate autofill action button from sidebar & header in HR login
     if (sidebarAutofillBox) sidebarAutofillBox.style.display = 'none';
     if (headerAutofillBtn) headerAutofillBtn.style.display = 'none';
@@ -135,17 +140,23 @@ function applyUserRole(user) {
     switchView('approvals');
     loadApprovals();
   } else {
-    // Candidate view: Hide HR only tabs, show Onboarding and Autofill buttons
+    // Candidate / Employee view: Hide HR administrative tabs, show Onboarding and Offboarding
     hrOnlyTabs.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
-    const wizardTab = document.getElementById('tabWizard');
     if (wizardTab) wizardTab.style.display = 'flex';
+    if (exitTab) exitTab.style.display = 'flex';
     
     // Show autofill action button for candidate onboarding
     if (sidebarAutofillBox) sidebarAutofillBox.style.display = 'block';
     if (headerAutofillBtn) headerAutofillBtn.style.display = 'inline-flex';
+
+    // Pre-fill employee name in exit form if present
+    const exitEmpNameInput = document.getElementById('exitEmpName');
+    if (exitEmpNameInput && !exitEmpNameInput.value) {
+      exitEmpNameInput.value = user.name || 'Sneha Rao';
+    }
 
     switchView('wizard');
   }
