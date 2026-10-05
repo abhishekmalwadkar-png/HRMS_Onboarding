@@ -222,45 +222,23 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
 
   return (
     <section className="view-section active" style={{ position: 'relative' }}>
-      {/* Header Card */}
-      <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <h2><i className="fa-solid fa-clipboard-check text-accent"></i> Candidate Verification & Approvals</h2>
-            </div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Review candidate personal details and uploaded documents. Approve from HR portal to trigger Laptop IT asset ticket creation, AD user provisioning, Office 365, and OrangeHRM profile creation.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <button
-              className="btn btn-secondary"
-              onClick={handleSyncServiceNow}
-              disabled={isSyncing}
-              title="Poll ServiceNow PDI for external approvals"
-            >
-              <i className={`fa-solid fa-arrows-rotate ${isSyncing ? 'fa-spin' : ''}`}></i> Sync SN
-            </button>
+      {/* Main Approvals Content */}
+      <div style={{ marginBottom: '2.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem', margin: 0 }}>
+            <i className="fa-solid fa-folder-open text-accent"></i> Pending Onboarding Submissions (Action Required)
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="badge badge-pending">{pendingApprovals.length} Pending</span>
             <button
               className="btn btn-secondary"
               onClick={onRefreshEmployees}
+              style={{ padding: '0.3rem 0.7rem', fontSize: '0.78rem' }}
               title="Refresh Approvals list"
             >
               <i className="fa-solid fa-rotate"></i> Refresh
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* Main Approvals Content */}
-      <div style={{ marginBottom: '2.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
-            <i className="fa-solid fa-folder-open text-accent"></i> Pending Onboarding Submissions (Action Required)
-          </h3>
-          <span className="badge badge-pending">{pendingApprovals.length} Pending</span>
         </div>
 
         {pendingApprovals.length === 0 ? (
