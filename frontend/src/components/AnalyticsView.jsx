@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, animate, useReducedMotion } from 'motion/react';
+import { PageHeader, Skeleton } from './ui';
 
 // Stagger reveal for grids of cards (design system: 300-450ms, ~60ms stagger, no overshoot on data UI)
 const gridVariants = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
@@ -104,11 +105,16 @@ export default function AnalyticsView({ employees, isLoading }) {
     };
   }, [employees]);
 
-  const show = (value) => (isLoading ? '–' : value);
-  const count = (value, suffix) => (isLoading ? '–' : <CountUp value={value} suffix={suffix} />);
+  const show = (value) => (isLoading ? <Skeleton width="6rem" /> : value);
+  const count = (value, suffix) => (isLoading ? <Skeleton width="3rem" /> : <CountUp value={value} suffix={suffix} />);
 
   return (
-    <section className="view-section active">
+    <section className="view-section active page">
+      <PageHeader
+        icon="fa-solid fa-chart-pie"
+        title="HR analytics"
+        description="Live headcount, provisioning coverage and integration health."
+      />
       <motion.div className="kpi-grid" variants={gridVariants} initial="hidden" animate="show">
         <motion.div variants={tileVariants} className="glass-card kpi-tile">
           <span className="kpi-label">Total Records</span>

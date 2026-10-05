@@ -309,7 +309,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
       <PageHeader
         icon="fa-solid fa-user-plus"
         title="Employee onboarding"
-        description="Register a candidate and upload verification documents. Submitting creates a ServiceNow catalog request and queues the candidate for HR approval."
+        description="Register a candidate and upload verification documents for HR approval."
         actions={
           <button type="button" className="btn btn-secondary" onClick={handleAutoFill} title="Fill the form with a sample candidate profile">
             <i className="fa-solid fa-wand-magic-sparkles text-accent" aria-hidden="true"></i> Auto-fill sample

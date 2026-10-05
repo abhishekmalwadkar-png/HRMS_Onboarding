@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '../context/ToastContext';
+import { PageHeader } from './ui';
 
 export default function RecruitmentView() {
   const { showToast } = useToast();
@@ -346,58 +347,33 @@ export default function RecruitmentView() {
   };
 
   return (
-    <section className="view-section active">
-      {/* Top Banner Header */}
-      <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h2 style={{ color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.6rem', margin: 0 }}>
-              <i className="fa-solid fa-user-plus" style={{ color: '#c2410c' }}></i> Candidate Recruitment & AI Screening
-            </h2>
-            <p style={{ color: 'var(--text-muted)', margin: '0.35rem 0 0 0', fontSize: '0.88rem' }}>
-              Upload resumes, run intelligent job description matching, and schedule Google Meet interviews with automated email dispatch.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-            <button
-              className="btn btn-secondary"
-              onClick={fetchCandidates}
-              style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
-              title="Refresh candidate list"
-            >
-              <i className="fa-solid fa-arrows-rotate"></i> Refresh
+    <section className="view-section active page">
+      <PageHeader
+        icon="fa-solid fa-user-plus"
+        title="Recruitment & AI screening"
+        description="Screen resumes against open roles and schedule Google Meet interviews."
+        actions={
+          <>
+            <button className="btn btn-secondary btn-sm" onClick={fetchCandidates} aria-label="Refresh candidate list">
+              <i className="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Refresh
             </button>
             {candidates.length > 0 && (
-              <button
-                className="btn btn-secondary"
-                onClick={handleClearCandidates}
-                style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem', color: '#e11d48', borderColor: 'rgba(225, 29, 72, 0.3)' }}
-                title="Clear all screened candidates"
-              >
-                <i className="fa-solid fa-trash-can"></i> Clear List
+              <button className="btn btn-secondary btn-sm btn-danger-outline" onClick={handleClearCandidates}>
+                <i className="fa-solid fa-trash-can" aria-hidden="true"></i> Clear list
               </button>
             )}
             <button
-              className="btn btn-primary"
+              className="btn btn-primary btn-sm"
               onClick={() => {
                 setLastScreenedResult(null);
                 setShowScreenModal(true);
               }}
-              style={{
-                background: 'var(--button-gradient)',
-                borderColor: 'transparent',
-                fontWeight: 700,
-                padding: '0.5rem 1.15rem',
-                fontSize: '0.88rem',
-                boxShadow: '0 4px 12px rgba(248, 121, 23, 0.25)',
-              }}
             >
-              <i className="fa-solid fa-file-arrow-up"></i> Upload & Screen Resume
+              <i className="fa-solid fa-file-arrow-up" aria-hidden="true"></i> Upload & screen resume
             </button>
-          </div>
-        </div>
-      </div>
-
+          </>
+        }
+      />
       {/* Main Grid: Requisitions + Candidates */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(420px, 1.4fr)', gap: '1.5rem', alignItems: 'start' }}>
         
@@ -405,10 +381,10 @@ export default function RecruitmentView() {
         <div className="glass-card" style={{ background: '#ffffff' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <i className="fa-solid fa-briefcase" style={{ color: '#c2410c' }}></i> Open Job Requisitions ({jobPostings.length})
+              <i className="fa-solid fa-briefcase" style={{ color: '#c2410c' }}></i> Open roles ({jobPostings.length})
             </h3>
             <span className="badge badge-verified" style={{ fontSize: '0.72rem', fontWeight: 700 }}>
-              Hiring Active
+              Hiring active
             </span>
           </div>
 
@@ -464,7 +440,7 @@ export default function RecruitmentView() {
         <div className="glass-card" style={{ background: '#ffffff' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <i className="fa-solid fa-users-viewfinder" style={{ color: '#c2410c' }}></i> Candidate Evaluation & Stages ({candidates.length})
+              <i className="fa-solid fa-users-viewfinder" style={{ color: '#c2410c' }}></i> Candidates in pipeline ({candidates.length})
             </h3>
             <button
               className="btn btn-secondary"
@@ -474,14 +450,14 @@ export default function RecruitmentView() {
               }}
               style={{ padding: '0.3rem 0.7rem', fontSize: '0.75rem', fontWeight: 600 }}
             >
-              <i className="fa-solid fa-plus"></i> Add Resume
+              <i className="fa-solid fa-plus"></i> Add resume
             </button>
           </div>
 
           {candidates.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem 1.5rem', color: 'var(--text-muted)' }}>
               <i className="fa-solid fa-file-magnifying-glass" style={{ fontSize: '2.5rem', color: '#c2410c', opacity: 0.6, marginBottom: '1rem', display: 'block' }}></i>
-              <h4 style={{ color: '#0f172a', marginBottom: '0.3rem' }}>No Screened Candidates Yet</h4>
+              <h4 style={{ color: '#0f172a', marginBottom: '0.3rem' }}>No screened candidates yet</h4>
               <p style={{ fontSize: '0.85rem', marginBottom: '1.2rem' }}>
                 Upload candidate resumes to extract skills and match against open job descriptions.
               </p>
@@ -612,33 +588,18 @@ export default function RecruitmentView() {
                     {/* Action Buttons */}
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
                       <button
-                        className="btn btn-secondary"
-                        style={{
-                          padding: '0.35rem 0.8rem',
-                          fontSize: '0.78rem',
-                          borderColor: '#f87917',
-                          color: '#c2410c',
-                          background: '#fff7ed',
-                          fontWeight: 600,
-                        }}
+                        className="btn btn-ghost btn-sm"
                         onClick={() => viewScreeningFlowForCandidate(cand)}
                         title="View sequential T4 RPA screening & match execution pipeline flow"
                       >
-                        <i className="fa-solid fa-network-wired"></i> View Screening Flow
+                        <i className="fa-solid fa-network-wired"></i> View screening flow
                       </button>
                       <button
-                        className="btn btn-primary"
-                        style={{
-                          padding: '0.35rem 0.85rem',
-                          fontSize: '0.78rem',
-                          background: isScheduled ? '#059669' : 'var(--button-gradient)',
-                          borderColor: 'transparent',
-                          fontWeight: 700,
-                        }}
+                        className={`btn btn-sm btn-secondary ${isScheduled ? '' : 'btn-accent-outline'}`}
                         onClick={() => openInterviewModal(cand)}
                       >
                         <i className={`fa-solid ${isScheduled ? 'fa-calendar-check' : 'fa-calendar-plus'}`}></i>{' '}
-                        {isScheduled ? 'Reschedule Google Meet' : 'Interview (Google Meet)'}
+                        {isScheduled ? 'Reschedule interview' : 'Schedule interview'}
                       </button>
                     </div>
                   </div>
@@ -806,7 +767,7 @@ export default function RecruitmentView() {
                     style={{ background: 'var(--button-gradient)', borderColor: 'transparent', fontWeight: 700 }}
                   >
                     <i className={`fa-solid ${isScreening ? 'fa-spinner fa-spin' : 'fa-robot'}`}></i>{' '}
-                    {isScreening ? 'Screening Resume...' : 'Start AI Screening'}
+                    {isScreening ? 'Screening resume…' : 'Start AI screening'}
                   </button>
                 </div>
               </div>
@@ -1057,7 +1018,7 @@ export default function RecruitmentView() {
                   }}
                 >
                   <i className={`fa-solid ${isScheduling ? 'fa-spinner fa-spin' : 'fa-calendar-check'}`}></i>{' '}
-                  {isScheduling ? 'Dispatching Meet Invite...' : 'Send Google Meet Invite'}
+                  {isScheduling ? 'Sending invite…' : 'Send Google Meet invite'}
                 </button>
               </div>
             </form>

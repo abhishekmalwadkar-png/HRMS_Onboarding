@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext';
 
 // hrOnly items are hidden for non-HR roles (App.jsx also refuses to render those views)
 const NAV_ITEMS = [
+  { view: 'home', icon: 'fa-gauge-high', label: 'Dashboard', hrOnly: true },
   { view: 'wizard', icon: 'fa-wand-magic-sparkles', label: 'Onboarding' },
   { view: 'approvals', icon: 'fa-clipboard-check', label: 'Approvals', hrOnly: true },
   { view: 'recruitment', icon: 'fa-user-plus', label: 'Recruitment', hrOnly: true },
@@ -12,10 +13,11 @@ const NAV_ITEMS = [
   { view: 'services', icon: 'fa-headset', label: 'Services & AI', hrOnly: true },
   { view: 'exit', icon: 'fa-person-walking-arrow-right', label: 'Offboarding' },
   { view: 'analytics', icon: 'fa-chart-pie', label: 'HR Analytics', hrOnly: true },
+  { view: 'whatsapp', icon: 'fa-comments', label: 'WhatsApp Discovery' },
 ];
 
 export default function Sidebar({ currentView, setCurrentView, isCollapsed, isMobileOpen, toggleCollapse }) {
-  const { currentUser, logout, theme, toggleTheme } = useAuth();
+  const { currentUser, logout } = useAuth();
   const { showToast } = useToast();
 
   const isHR = currentUser?.role === 'hr';
@@ -40,8 +42,8 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, isMo
             <i className="fa-solid fa-cube"></i>
           </div>
           <div className="brand-text">
-            <span className="brand-title">MangoHRMS</span>
-            <span className="brand-subtitle">Enterprise Suite</span>
+            <span className="brand-title">AutomationEdge</span>
+            <span className="brand-subtitle">HR Suite</span>
           </div>
           <button
             className="sidebar-close-btn"
@@ -53,7 +55,7 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, isMo
           </button>
         </div>
 
-        <div className="sidebar-section-title">Main Navigation</div>
+        <div className="sidebar-section-title">Main navigation</div>
 
         <nav className="sidebar-nav">
           {NAV_ITEMS.filter((item) => isHR || !item.hrOnly).map((item) => (
@@ -79,20 +81,6 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, isMo
 
       {/* Sidebar Footer */}
       <div className="sidebar-footer">
-        <div className="sidebar-footer-controls">
-          <button
-            className="theme-toggle-btn"
-            onClick={toggleTheme}
-            title="Toggle Dark/Light Mode"
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'}`}></i>
-          </button>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-            {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
-          </span>
-        </div>
-
         <div className="sidebar-user-card">
           <div className="user-avatar" aria-hidden="true">{avatar}</div>
           <div className="user-meta">

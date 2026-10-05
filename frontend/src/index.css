@@ -31,9 +31,10 @@
   --accent-secondary: #fd8235;
   --accent-gradient: linear-gradient(135deg, #ef5809 0%, #f87917 100%);
   --accent-gradient-hover: linear-gradient(135deg, #c2500a 0%, #ef5809 100%);
-  /* Filled buttons carry white text, so they use deeper oranges to keep >= 4.5:1 contrast */
-  --button-gradient: linear-gradient(135deg, #c2410c 0%, #ad3a0b 100%); /* white text: 5.2:1 or better */
-  --button-gradient-hover: linear-gradient(135deg, #9a3412 0%, #7c2d12 100%);
+  /* Filled buttons: bright AutomationEdge orange with charcoal text (6.05:1 on #f87917, higher on #fd8f3a) */
+  --button-gradient: linear-gradient(135deg, #fd8f3a 0%, #f87917 100%);
+  --on-button: #1c1f2a;
+  --button-gradient-hover: linear-gradient(135deg, #f87917 0%, #ea580c 100%); /* charcoal text 4.6:1+ */
   /* Icons/accent glyphs need >= 3:1 against white; #f87917 alone is ~2.6:1 */
   --accent-icon: #ea580c;
   --accent-text: #c2410c;
@@ -3146,6 +3147,857 @@ a:focus-visible,
 }
 
 /* ===================================================================
+   Dashboard
+   =================================================================== */
+.kpi-link {
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+.kpi-link:hover {
+  border-color: var(--border-orange-strong);
+  box-shadow: var(--shadow-md);
+}
+.kpi-link .kpi-note i {
+  font-size: 0.7rem;
+  margin-left: 2px;
+}
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+.dash-grid > .ui-card {
+  margin-bottom: 0;
+}
+.dash-span-2 {
+  grid-column: span 2;
+}
+@media (max-width: 1100px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+  .dash-span-2 {
+    grid-column: auto;
+  }
+}
+
+.chart-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin: -0.35rem 0 0.75rem;
+}
+.funnel {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.funnel-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 150px 1fr 64px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: var(--radius-sm);
+  cursor: default;
+  outline: none;
+}
+.funnel-row.is-active,
+.funnel-row:focus-visible {
+  background: var(--bg-accent-soft);
+}
+.funnel-row:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-primary);
+}
+.funnel-label {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+.funnel-label i {
+  width: 16px;
+  color: var(--text-muted);
+}
+.funnel-track {
+  height: 22px;
+  background: var(--border-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+}
+/* Single-series bar: #ea580c keeps >= 3:1 against the card surface */
+.funnel-bar {
+  display: block;
+  height: 100%;
+  background: #ea580c;
+  border-radius: 0 4px 4px 0;
+}
+[data-theme="dark"] .funnel-bar {
+  background: #fb923c;
+}
+.funnel-value {
+  text-align: right;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+}
+.funnel-value small {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.chart-tooltip {
+  position: absolute;
+  z-index: 5;
+  left: 160px;
+  top: calc(100% + 4px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius-md);
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 0.8rem;
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.chart-tooltip span {
+  color: #cbd5e1;
+}
+@media (max-width: 560px) {
+  .funnel-row {
+    grid-template-columns: 1fr 56px;
+  }
+  .funnel-label {
+    grid-column: 1 / -1;
+  }
+  .chart-tooltip {
+    left: 0;
+  }
+}
+
+.mini-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.mini-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.mini-list-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.mini-list-text strong {
+  font-size: 0.9rem;
+}
+.mini-list-text span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.quick-action {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.quick-action:hover {
+  border-color: var(--border-orange-strong);
+  box-shadow: var(--shadow-sm);
+}
+.quick-action-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--bg-accent-soft);
+  color: var(--accent-icon);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.quick-action-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.quick-action-text strong {
+  font-size: 0.9rem;
+}
+.quick-action-text span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.quick-action-arrow {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+
+/* ===================================================================
+   WhatsApp discovery (phone playback mockup)
+   =================================================================== */
+.wa-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  padding: 0.3rem;
+  margin-bottom: 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  width: fit-content;
+  max-width: 100%;
+}
+.wa-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  padding: 0.5rem 0.95rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.wa-tab > i,
+.wa-tab > span:not(.wa-tab-pill) {
+  position: relative;
+  z-index: 1;
+}
+.wa-tab.is-active {
+  color: #fff;
+}
+.wa-tab:not(.is-active):hover {
+  color: var(--accent-text);
+  background: var(--bg-accent-soft);
+}
+.wa-tab-pill {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-md);
+  background: var(--button-gradient);
+}
+
+.wa-layout {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .wa-layout {
+    grid-template-columns: 1fr;
+  }
+}
+.wa-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.wa-phone {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  height: 640px;
+  border-radius: 40px;
+  border: 10px solid #1e293b;
+  background: #efeae2;
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.28);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.wa-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 22px;
+  background: #1e293b;
+  border-radius: 0 0 14px 14px;
+  z-index: 3;
+}
+.wa-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.6rem 0.9rem 0.65rem;
+  background: #075e54;
+  color: #fff;
+}
+.wa-header > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.wa-header strong {
+  font-size: 0.92rem;
+}
+.wa-header span {
+  font-size: 0.74rem;
+  opacity: 0.85;
+}
+.wa-header > i {
+  margin-left: 0.6rem;
+  opacity: 0.9;
+}
+.wa-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--button-gradient);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+.wa-chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background-color: #efeae2;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 1px);
+  background-size: 14px 14px;
+  /* Thin phone-style scrollbar so it's clear the chat can be scrolled */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(17, 27, 33, 0.28) transparent;
+  overscroll-behavior: contain;
+  outline: none;
+}
+.wa-chat::-webkit-scrollbar {
+  width: 5px;
+}
+.wa-chat::-webkit-scrollbar-track {
+  background: transparent;
+}
+.wa-chat::-webkit-scrollbar-thumb {
+  background: rgba(17, 27, 33, 0.28);
+  border-radius: 999px;
+}
+.wa-chat:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-primary);
+}
+/* Shown when the viewer has scrolled up while new messages arrive */
+.wa-jump {
+  position: absolute;
+  right: 14px;
+  bottom: 70px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 34px;
+  padding: 0.35rem 0.8rem;
+  border: none;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #075e54;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+  cursor: pointer;
+}
+.wa-jump:hover {
+  background: #f0fdf4;
+}
+.wa-day {
+  align-self: center;
+  font-size: 0.7rem;
+  color: #54656f;
+  background: #fff;
+  padding: 0.15rem 0.6rem;
+  border-radius: 8px;
+  margin-bottom: 0.35rem;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06);
+}
+.wa-msg {
+  position: relative;
+  max-width: 82%;
+  padding: 0.4rem 0.6rem 0.3rem;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: #111b21;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+}
+.wa-msg p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+.wa-msg-bot {
+  align-self: flex-start;
+  background: #fff;
+  border-top-left-radius: 2px;
+}
+.wa-msg-user {
+  align-self: flex-end;
+  background: #d9fdd3;
+  border-top-right-radius: 2px;
+}
+.wa-meta {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.66rem;
+  color: #667781;
+  margin-top: 1px;
+}
+.wa-meta i {
+  color: #53bdeb;
+}
+.wa-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.04);
+  min-width: 200px;
+}
+.wa-file-icon {
+  width: 32px;
+  height: 36px;
+  border-radius: 4px;
+  background: #e11d48;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.wa-file-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.wa-file-name strong {
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+.wa-file-name small {
+  font-size: 0.68rem;
+  color: #667781;
+}
+.wa-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0.45rem 0.6rem;
+  border-left: 3px solid #f87917;
+  border-radius: 6px;
+  background: #fff7ed;
+  min-width: 190px;
+}
+.wa-card strong {
+  font-size: 0.8rem;
+  color: #9a3412;
+}
+.wa-card strong i {
+  margin-right: 3px;
+}
+.wa-card span {
+  font-size: 0.76rem;
+  color: #3b4a54;
+}
+.wa-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0.4rem -0.6rem -0.3rem;
+  border-top: 1px solid #e9edef;
+}
+.wa-button {
+  display: block;
+  text-align: center;
+  padding: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #027eb5;
+  border-bottom: 1px solid #e9edef;
+}
+.wa-button:last-child {
+  border-bottom: none;
+}
+.wa-typing {
+  display: inline-flex;
+  gap: 4px;
+  padding: 0.65rem 0.75rem;
+}
+.wa-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #8696a0;
+  animation: typingDot 1s infinite ease-in-out;
+}
+.wa-typing span:nth-child(2) { animation-delay: 0.15s; }
+.wa-typing span:nth-child(3) { animation-delay: 0.3s; }
+
+.wa-composer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem 0.8rem;
+  background: #efeae2;
+}
+.wa-composer > span:first-child {
+  flex: 1;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.82rem;
+  color: #8696a0;
+}
+.wa-composer > span:first-child i {
+  margin-right: 0.4rem;
+}
+.wa-mic {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #00a884;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.wa-hover-pause {
+  position: absolute;
+  top: auto;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.8);
+  color: #fff;
+  font-size: 0.74rem;
+  white-space: nowrap;
+  z-index: 4;
+}
+
+.wa-player {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+}
+.wa-progress {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border-color);
+  overflow: hidden;
+}
+.wa-progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--button-gradient);
+}
+.wa-player-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.wa-ctrl {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+.wa-ctrl:hover:not(:disabled) {
+  border-color: var(--border-orange-strong);
+  color: var(--accent-text);
+}
+.wa-ctrl:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.wa-ctrl-main {
+  width: 56px;
+  height: 56px;
+  font-size: 1.1rem;
+  background: var(--button-gradient);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 16px rgba(194, 65, 12, 0.3);
+}
+.wa-ctrl-main:hover:not(:disabled) {
+  color: #fff;
+}
+.wa-speed {
+  font-weight: 800;
+  font-size: 0.82rem;
+}
+.wa-counter {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.wa-summary {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+.wa-persona {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.wa-persona i {
+  margin-right: 0.35rem;
+}
+.wa-systems {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.wa-system {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  transition: var(--transition-normal);
+}
+.wa-system.is-active {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--border-glow);
+}
+.wa-system.is-done {
+  border-color: #a7f3d0;
+  background: var(--accent-emerald-soft);
+}
+.wa-system-node {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  color: var(--text-muted);
+  border: 2px solid var(--border-color);
+  transition: var(--transition-normal);
+}
+.wa-system.is-active .wa-system-node {
+  border-color: var(--accent-primary);
+  color: var(--accent-icon);
+  background: var(--bg-accent-soft);
+}
+.wa-system.is-done .wa-system-node {
+  background: var(--accent-emerald-dark);
+  border-color: transparent;
+  color: #fff;
+}
+.wa-system-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+  min-width: 0;
+}
+.wa-system-text strong {
+  font-size: 0.9rem;
+}
+.wa-system-text span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.wa-system .badge {
+  text-transform: none;
+}
+[data-theme="dark"] .wa-system.is-done {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(110, 231, 183, 0.3);
+}
+.wa-transcript-toggle {
+  margin-top: 1rem;
+}
+.wa-transcript {
+  margin-top: 0.6rem;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+
+/* -------------------------------------------------------------------
+   WhatsApp discovery: fill the content area exactly (no page scroll).
+   .app-scroll is the scroll container with a definite height, so 100% works at any zoom.
+   ------------------------------------------------------------------- */
+@media (min-width: 901px) and (min-height: 460px) {
+  .wa-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  .wa-page .wa-layout {
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .wa-page .wa-stage {
+    min-height: 0;
+    gap: 0.5rem;
+  }
+  /* Phone takes whatever height is left after the player row */
+  .wa-page .wa-phone {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    max-height: 700px;
+    border-width: 8px;
+    border-radius: 34px;
+  }
+  .wa-page .wa-side {
+    min-height: 0;
+    display: flex;
+  }
+  /* Steps card fills the column; scrolls inside itself only if the window is very short */
+  .wa-page .wa-side > .ui-card {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    margin-bottom: 0;
+    padding: 1rem 1.15rem;
+  }
+  .wa-page .wa-side .ui-card-head {
+    margin-bottom: 0.4rem;
+  }
+  .wa-page .wa-summary {
+    font-size: 0.9rem;
+  }
+  .wa-page .wa-persona {
+    margin-top: 0.25rem;
+  }
+  .wa-page .subsection-title {
+    margin: 0.8rem 0 0.45rem;
+  }
+  .wa-page .wa-systems {
+    gap: 0.4rem;
+  }
+  .wa-page .wa-system {
+    padding: 0.45rem 0.7rem;
+  }
+  .wa-page .wa-system-node {
+    width: 30px;
+    height: 30px;
+    font-size: 0.8rem;
+  }
+  .wa-page .wa-transcript-toggle {
+    margin-top: 0.5rem;
+  }
+}
+/* Short windows (high browser zoom): shrink the phone chrome so chat stays readable */
+@media (min-width: 901px) and (max-height: 700px) {
+  .wa-page .wa-header {
+    padding: 1.2rem 0.75rem 0.5rem;
+  }
+  .wa-page .wa-composer {
+    padding: 0.4rem 0.5rem 0.55rem;
+  }
+  .wa-page .wa-msg,
+  .wa-page .wa-msg p {
+    font-size: 0.8rem;
+  }
+  .wa-page .wa-system-text span {
+    display: none;
+  }
+}
+
+/* Compact single-row player under the phone */
+.wa-player {
+  gap: 0.45rem;
+}
+.wa-player-row {
+  gap: 0.4rem;
+}
+.wa-ctrl {
+  width: 40px;
+  height: 40px;
+}
+.wa-ctrl-main {
+  width: 48px;
+  height: 48px;
+}
+.wa-counter {
+  min-width: 48px;
+  text-align: center;
+  margin-left: 0.2rem;
+}
+
+/* ===================================================================
    Provisioning pipeline dialog (Approvals)
    =================================================================== */
 .flow-candidate {
@@ -3640,3 +4492,908 @@ a:focus-visible,
   gap: 0.75rem;
 }
 
+
+/* ===================================================================
+   App shell v2: fixed-height layout, content area scrolls
+   =================================================================== */
+.main-layout {
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+.app-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.app-container {
+  padding: 1rem 1.25rem 1.25rem;
+  min-height: 100%;
+}
+@media (max-width: 992px) {
+  .app-container {
+    padding: 0.85rem 0.85rem 1.25rem;
+  }
+}
+
+/* Tighter vertical rhythm everywhere (minimum scrolling) */
+.ui-card {
+  margin-bottom: 1rem;
+  padding: 1.1rem 1.2rem;
+}
+.kpi-grid {
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+.panel-grid,
+.dash-grid {
+  gap: 1rem;
+}
+
+/* ===================================================================
+   Top app bar v2: page title, description and actions live here
+   =================================================================== */
+.top-header {
+  height: auto;
+  min-height: 60px;
+  padding: 0.5rem 1.25rem;
+  gap: 0.9rem;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 1px 0 var(--border-color), 0 4px 16px rgba(15, 23, 42, 0.03);
+  border-bottom: none;
+}
+.sidebar-toggle-btn {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+.top-header-slot {
+  flex: 1;
+  min-width: 0;
+}
+.top-header .page-header {
+  margin: 0;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 1rem;
+}
+.top-header .page-header-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.top-header .page-title {
+  font-size: 1.1rem;
+  gap: 0.6rem;
+}
+.top-header .page-title-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.top-header .page-title-icon {
+  width: 32px;
+  height: 32px;
+  font-size: 0.85rem;
+  border-radius: 9px;
+}
+.top-header .page-description {
+  margin: 0.05rem 0 0 calc(32px + 0.6rem);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: none;
+}
+.top-header .page-actions {
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+}
+.top-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+  padding-left: 0.9rem;
+  border-left: 1px solid var(--border-color);
+}
+.header-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+.header-icon-btn:hover {
+  color: var(--accent-text);
+  border-color: var(--border-orange-strong);
+}
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.header-user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--button-gradient);
+  color: #fff;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.header-user-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+/* Narrower screens: actions drop to a second row, description and user name hide */
+@media (max-width: 1280px) {
+  .header-user-name {
+    display: none;
+  }
+}
+@media (max-width: 1100px) {
+  .top-header .page-header {
+    flex-wrap: wrap;
+  }
+  .top-header .page-actions {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 720px) {
+  .top-header .page-description {
+    display: none;
+  }
+  .top-header-tools {
+    padding-left: 0;
+    border-left: none;
+  }
+}
+
+/* WhatsApp tabs sit inside the top bar: compact segmented control */
+.top-header .wa-tabs {
+  margin: 0;
+  padding: 0.2rem;
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+}
+.top-header .wa-tab {
+  min-height: 34px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+}
+@media (max-width: 1400px) {
+  .top-header .wa-tab > span:not(.wa-tab-pill) {
+    display: none;
+  }
+  .top-header .wa-tab {
+    padding: 0.35rem 0.7rem;
+  }
+  .top-header .wa-tab.is-active > span:not(.wa-tab-pill) {
+    display: inline;
+  }
+}
+
+/* ===================================================================
+   Dark sidebar (AutomationEdge charcoal #1c1f2a with orange accent)
+   =================================================================== */
+.sidebar {
+  background: #1c1f2a;
+  border-right: none;
+  box-shadow: 4px 0 24px rgba(15, 23, 42, 0.12);
+}
+[data-theme="dark"] .sidebar {
+  background: #12141c;
+}
+.sidebar .brand {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.sidebar .brand-title {
+  background: none;
+  -webkit-text-fill-color: #fb923c;
+  color: #fb923c;
+}
+.sidebar .brand-subtitle,
+.sidebar .sidebar-section-title {
+  color: #94a3b8;
+}
+.sidebar-nav .nav-tab-btn {
+  color: #cbd5e1;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.86rem;
+}
+.sidebar-nav .nav-tab-btn i {
+  color: #94a3b8;
+}
+.sidebar-nav .nav-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: transparent;
+}
+.sidebar-nav .nav-tab-btn:hover i {
+  color: #fdba74;
+}
+.sidebar-close-btn {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #cbd5e1;
+}
+.sidebar-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+.sidebar-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+.sidebar-user-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.sidebar .user-name {
+  color: #f8fafc;
+}
+.sidebar .user-role {
+  background: rgba(248, 121, 23, 0.16);
+  border-color: rgba(248, 121, 23, 0.35);
+  color: #fdba74;
+}
+.sidebar .logout-btn {
+  background: rgba(225, 29, 72, 0.16);
+  color: #fda4af;
+}
+.sidebar .logout-btn:hover {
+  background: rgba(225, 29, 72, 0.28);
+}
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ===================================================================
+   Dashboard v2: hero banner + colored KPI tiles
+   =================================================================== */
+.dash-hero {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1.35rem 1.6rem;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-xl);
+  color: #fff;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 92% 20%, rgba(248, 121, 23, 0.55) 0%, transparent 42%),
+    radial-gradient(circle at 70% 120%, rgba(239, 88, 9, 0.45) 0%, transparent 45%),
+    linear-gradient(120deg, #1c1f2a 0%, #262a38 60%, #3a2a24 100%);
+  box-shadow: 0 14px 34px rgba(28, 31, 42, 0.22);
+}
+.dash-hero-text {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+.dash-hero-date {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fdba74;
+}
+.dash-hero h2 {
+  color: #fff;
+  font-size: 1.55rem;
+  font-weight: 800;
+  margin: 0.2rem 0 0.35rem;
+  letter-spacing: -0.02em;
+}
+.dash-hero p {
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  max-width: 60ch;
+}
+.dash-hero-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem;
+}
+.dash-hero-btn {
+  background: #ffffff;
+  color: #1c1f2a;
+  font-weight: 700;
+  border: none;
+}
+.dash-hero-btn:hover {
+  background: #fff7ed;
+}
+.dash-hero-count {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: #c2410c;
+  color: #fff;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.dash-hero-btn-ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  font-weight: 600;
+}
+.dash-hero-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.dash-hero-systems {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.dash-hero-systems li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+}
+.dash-hero-systems i {
+  color: #fdba74;
+  width: 16px;
+  text-align: center;
+}
+@media (max-width: 720px) {
+  .dash-hero-systems {
+    display: none;
+  }
+}
+
+/* KPI tiles: icon chip + colored top accent */
+.kpi-tile {
+  position: relative;
+  overflow: hidden;
+}
+.kpi-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--kpi-accent, var(--accent-primary));
+}
+.kpi-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.kpi-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  background: var(--kpi-soft, var(--bg-accent-soft));
+  color: var(--kpi-ink, var(--accent-icon));
+}
+.kpi-c1 { --kpi-accent: #ea580c; --kpi-soft: #fff7ed; --kpi-ink: #c2410c; }
+.kpi-c2 { --kpi-accent: #d97706; --kpi-soft: #fffbeb; --kpi-ink: #b45309; }
+.kpi-c3 { --kpi-accent: #059669; --kpi-soft: #ecfdf5; --kpi-ink: #047857; }
+.kpi-c4 { --kpi-accent: #4f46e5; --kpi-soft: #eef2ff; --kpi-ink: #4338ca; }
+[data-theme="dark"] .kpi-c1 { --kpi-soft: rgba(234, 88, 12, 0.16); --kpi-ink: #fdba74; }
+[data-theme="dark"] .kpi-c2 { --kpi-soft: rgba(217, 119, 6, 0.16); --kpi-ink: #fcd34d; }
+[data-theme="dark"] .kpi-c3 { --kpi-soft: rgba(5, 150, 105, 0.16); --kpi-ink: #6ee7b7; }
+[data-theme="dark"] .kpi-c4 { --kpi-soft: rgba(79, 70, 229, 0.2); --kpi-ink: #c7d2fe; }
+.kpi-value {
+  margin-top: 0.35rem;
+}
+
+/* ===================================================================
+   WhatsApp page: definite height (fixes blinking + page scrollbar)
+   The page container gets the exact height of the scroll area and the
+   scroll area stops scrolling, so the layout can no longer oscillate.
+   =================================================================== */
+@media (min-width: 901px) and (min-height: 460px) {
+  .app-scroll:has(.wa-page) {
+    overflow: hidden;
+  }
+  .app-container:has(> .wa-page) {
+    height: 100%;
+    min-height: 0;
+    padding-bottom: 1rem;
+  }
+  /* Phone column sized to the phone; info panel takes the rest */
+  .wa-page .wa-layout {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  /* Width follows the available height (about 1:1.6), between 320px and 420px */
+  .wa-page .wa-phone {
+    width: clamp(320px, calc((100vh - 230px) * 0.62), 420px);
+    max-width: none;
+    max-height: none;
+  }
+  .wa-page .wa-player {
+    width: clamp(320px, calc((100vh - 230px) * 0.62), 420px);
+  }
+}
+
+/* ===================================================================
+   Phone mockup polish
+   =================================================================== */
+.wa-phone {
+  border: none;
+  padding: 9px;
+  background: linear-gradient(145deg, #2b3140 0%, #12151d 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 30px 60px -18px rgba(15, 23, 42, 0.45),
+    0 12px 24px -12px rgba(15, 23, 42, 0.3);
+}
+/* Screen inside the frame */
+.wa-phone > .wa-statusbar,
+.wa-phone > .wa-header,
+.wa-phone > .wa-chat,
+.wa-phone > .wa-composer {
+  position: relative;
+}
+.wa-phone > .wa-statusbar {
+  border-radius: 28px 28px 0 0;
+}
+.wa-phone > .wa-composer {
+  border-radius: 0 0 28px 28px;
+}
+.wa-notch {
+  display: none;
+}
+.wa-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+  padding: 0 1.1rem;
+  background: #075e54;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.wa-island {
+  width: 86px;
+  height: 22px;
+  border-radius: 999px;
+  background: #0b0d12;
+}
+.wa-status-icons {
+  display: inline-flex;
+  gap: 0.35rem;
+  font-size: 0.66rem;
+}
+.wa-phone .wa-header,
+.wa-page .wa-phone .wa-header {
+  padding: 0.35rem 0.85rem 0.6rem;
+  flex-shrink: 0;
+}
+.wa-phone .wa-composer {
+  flex-shrink: 0;
+}
+.wa-hover-pause {
+  bottom: 18px;
+}
+
+/* Fix: `.view-section.active { display:block }` out-ranked `.wa-page { display:flex }`,
+   so the page never became a flex column and the phone overflowed the window. */
+@media (min-width: 901px) and (min-height: 460px) {
+  .view-section.active.wa-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+}
+
+/* Newest message gets a short highlight so the eye lands on it */
+@keyframes waLatestPulse {
+  0% { box-shadow: 0 0 0 0 rgba(248, 121, 23, 0.55), 0 1px 1px rgba(0, 0, 0, 0.08); }
+  100% { box-shadow: 0 0 0 8px rgba(248, 121, 23, 0), 0 1px 1px rgba(0, 0, 0, 0.08); }
+}
+.wa-msg-latest {
+  animation: waLatestPulse 1.2s ease-out 1;
+}
+/* Onboarding: action bar stays visible (sticky to the bottom of the scroll area) + tighter form */
+.wizard-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin: 1.1rem -1.2rem -1.1rem;
+  padding: 0.75rem 1.2rem;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  box-shadow: 0 -8px 16px -12px rgba(15, 23, 42, 0.18);
+}
+.wizard-steps {
+  margin-bottom: 0.85rem;
+}
+.wizard-step {
+  padding: 0.55rem 0.85rem;
+}
+.wizard-section-title {
+  margin-bottom: 0.75rem;
+}
+.form-grid-2 {
+  gap: 0.8rem 1.25rem;
+}
+.page-narrow .ui-card {
+  padding: 1rem 1.2rem 1.1rem;
+}
+/* ===================================================================
+   Bright brand orange fills carry charcoal text/icons (--on-button).
+   White on #f87917 is only 2.71:1; charcoal is 6.05:1.
+   =================================================================== */
+.btn-primary,
+.btn-primary:hover,
+.sidebar-nav .nav-tab-btn.active,
+.sidebar-nav .nav-tab-btn.active:hover,
+.sidebar-nav .nav-tab-btn.active i,
+.sidebar-nav .nav-tab-btn.active:hover i,
+.page-btn.is-current,
+.ui-avatar,
+.chat-msg-user,
+.wa-tab.is-active,
+.wa-avatar,
+.wa-ctrl-main,
+.wa-ctrl-main:hover:not(:disabled),
+.candidate-avatar,
+.wizard-step.is-current .wizard-step-num,
+.header-user-avatar,
+.user-avatar,
+.page-title-icon,
+.brand-icon {
+  color: var(--on-button);
+}
+.btn-primary {
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(248, 121, 23, 0.3);
+}
+.btn-primary:hover {
+  box-shadow: 0 5px 14px rgba(248, 121, 23, 0.4);
+}
+.nav-active-pill {
+  box-shadow: 0 4px 14px rgba(248, 121, 23, 0.35);
+}
+/* Brand marks use the same bright fill */
+.page-title-icon,
+.brand-icon,
+.user-avatar {
+  background: var(--button-gradient);
+}
+.chat-msg-user .wa-meta,
+.chat-msg-user .sr-only {
+  color: inherit;
+}
+/* ===================================================================
+   Taste pass (taste-skill redesign audit)
+   =================================================================== */
+
+/* 1. One gray family: cool neutral page background to match the slate text,
+      borders and charcoal sidebar (was warm peach + orange radial blotches) */
+:root {
+  --bg-primary: #f5f6f8;
+  --shadow-sm: 0 1px 2px rgba(28, 31, 42, 0.06), 0 2px 6px rgba(28, 31, 42, 0.04);
+  --shadow-md: 0 4px 12px -2px rgba(28, 31, 42, 0.1), 0 2px 4px -2px rgba(28, 31, 42, 0.06);
+  --shadow-lg: 0 14px 28px -6px rgba(28, 31, 42, 0.16), 0 6px 12px -4px rgba(28, 31, 42, 0.08);
+}
+body {
+  background-image: none;
+  background-color: var(--bg-primary);
+}
+
+/* 2. One accent: the 4th KPI used indigo; status tiles keep their meaning (amber=pending, green=approved) */
+.kpi-c4 { --kpi-accent: #1c1f2a; --kpi-soft: #eef0f4; --kpi-ink: #1c1f2a; }
+[data-theme="dark"] .kpi-c4 { --kpi-accent: #94a3b8; --kpi-soft: rgba(148, 163, 184, 0.16); --kpi-ink: #e2e8f0; }
+.kpi-c4 .kpi-value.tone-accent { color: var(--text-main); }
+
+/* 3. Sentence case instead of ALL CAPS for badges, section labels and table headers */
+.badge {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  border-radius: 6px;
+}
+.sidebar-section-title,
+.subsection-title,
+.detail-panel-title,
+.dash-hero-date {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.sidebar-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.subsection-title,
+.detail-panel-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.data-table th {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* 4. Squircle avatars instead of generic circles */
+.ui-avatar,
+.candidate-avatar,
+.header-user-avatar,
+.user-avatar,
+.wa-avatar {
+  border-radius: 30%;
+}
+
+/* 5. Typography polish: balanced headings, no orphans, tabular numbers */
+h1, h2, h3, .page-title, .ui-card-title {
+  text-wrap: balance;
+}
+p, .page-description, .cell-sub {
+  text-wrap: pretty;
+}
+.kpi-value,
+.funnel-value,
+.data-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 6. Dashboard: compact funnel so the page fits without scrolling */
+.funnel {
+  gap: 0.3rem;
+}
+.funnel-row {
+  padding: 0.2rem 0.4rem;
+}
+.funnel-track {
+  height: 14px;
+}
+.funnel-value {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+.funnel-value small {
+  display: inline;
+}
+.dash-hero {
+  padding: 1.15rem 1.5rem;
+}
+.dash-hero h2 {
+  font-size: 1.4rem;
+}
+
+/* 7. Compact empty state inside cards (Approvals "All caught up" was a tall block) */
+.ui-card > .ui-empty:only-child {
+  padding: 1.25rem 1rem;
+}
+
+/* 8. Accent-outline button for secondary actions that still need emphasis */
+.btn-accent-outline {
+  border-color: var(--border-orange-strong);
+  color: var(--accent-text);
+}
+.btn-accent-outline:hover {
+  background: var(--bg-accent-soft);
+  border-color: var(--accent-primary);
+}
+
+/* 9. Phone layout: top bar wraps cleanly (tools stay top-right, page actions get their own row) */
+@media (max-width: 720px) {
+  .top-header {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+  .top-header-slot {
+    order: 3;
+    flex-basis: 100%;
+  }
+  .top-header-tools {
+    margin-left: auto;
+  }
+  .top-header .page-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .top-header .page-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .top-header .page-actions .btn {
+    flex: 1 1 auto;
+  }
+  /* KPI tiles two per row instead of one long column */
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+  .kpi-tile {
+    padding: 0.85rem 0.9rem;
+  }
+  .kpi-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* 10. Skip link for keyboard users */
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -48px;
+  z-index: 2000;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-md);
+  background: var(--button-gradient);
+  color: var(--on-button);
+  font-weight: 700;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 0.75rem;
+}
+
+/* Skip-link target receives focus programmatically; no outline around the whole content area */
+.app-scroll:focus {
+  outline: none;
+}
+
+/* Single-column dashboard: minmax(0,1fr) so a wide table can't stretch the grid past the viewport */
+@media (max-width: 1100px) {
+  .dash-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.dash-grid > .ui-card,
+.panel-grid > .ui-card {
+  min-width: 0;
+}
+/* App frame must never scroll: `clip` (unlike `hidden`) also blocks programmatic scrolling,
+   e.g. a child's scrollIntoView(), which previously shifted the whole layout up */
+.main-layout,
+.app-layout {
+  overflow: clip;
+}
+/* ===================================================================
+   Motion pass (UI/UX Pro Max + taste-skill guidance)
+   =================================================================== */
+
+/* Skeleton shimmer while data loads */
+.ui-skeleton {
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--border-subtle) 0%, var(--border-color) 50%, var(--border-subtle) 100%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.3s ease-in-out infinite;
+}
+.kpi-value .ui-skeleton {
+  height: 1.6rem !important;
+}
+@keyframes skeletonShimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* Spotlight border: a soft orange glow that follows the pointer (position set by trackSpotlight) */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+}
+.spotlight::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(180px circle at var(--spot-x, 50%) var(--spot-y, 50%), rgba(248, 121, 23, 0.85), transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+.spotlight:hover::after {
+  opacity: 1;
+}
+@media (hover: none) {
+  .spotlight::after {
+    display: none;
+  }
+}
+
+/* Live status pulse (used only when something is actually waiting) */
+.live-dot {
+  width: 8px;
+  height: 8px;
+  margin-left: 0.15rem;
+  border-radius: 50%;
+  background: #d97706;
+  box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.6);
+  animation: liveDot 1.8s ease-out infinite;
+}
+@keyframes liveDot {
+  0% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.55); }
+  70% { box-shadow: 0 0 0 7px rgba(217, 119, 6, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+}
+
+/* Table rows fade/slide in with a short cascade (no overshoot on data UI) */
+.data-table tbody tr {
+  animation: rowIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.data-table tbody tr:nth-child(1) { animation-delay: 0.02s; }
+.data-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
+.data-table tbody tr:nth-child(3) { animation-delay: 0.08s; }
+.data-table tbody tr:nth-child(4) { animation-delay: 0.11s; }
+.data-table tbody tr:nth-child(5) { animation-delay: 0.14s; }
+.data-table tbody tr:nth-child(6) { animation-delay: 0.17s; }
+.data-table tbody tr:nth-child(7) { animation-delay: 0.2s; }
+.data-table tbody tr:nth-child(n + 8) { animation-delay: 0.23s; }
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.data-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+.data-table tbody tr:hover {
+  background: var(--bg-accent-soft);
+}
+
+/* Cards that act as links lift slightly on hover */
+.kpi-link,
+.quick-action {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.kpi-link:hover {
+  transform: translateY(-2px);
+}
+
+/* Reduced motion: stop shimmer, pulse and row cascade */
+@media (prefers-reduced-motion: reduce) {
+  .ui-skeleton,
+  .live-dot,
+  .data-table tbody tr {
+    animation: none;
+  }
+  .kpi-link:hover {
+    transform: none;
+  }
+}

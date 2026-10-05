@@ -44,12 +44,15 @@ export default function ServicesView() {
   const [messages, setMessages] = useState([
     { id: 1, text: 'Hello! I am your HR policy assistant. Ask me about leave rules, laptops, email accounts or employee benefits.', sender: 'bot' },
   ]);
-  const chatEndRef = useRef(null);
+  const chatLogRef = useRef(null);
 
   const requestedDays = daysBetween(fromDate, toDate);
 
+  // Scroll only the chat log itself. scrollIntoView() would also scroll every ancestor,
+  // including the fixed app frame, which pushed the whole page up and hid the top bar.
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const log = chatLogRef.current;
+    if (log) log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' });
   }, [messages, isTyping]);
 
   const handleApplyLeave = (e) => {
@@ -182,7 +185,7 @@ export default function ServicesView() {
 
         {/* AI HR Policy Assistant */}
         <Card title="HR policy assistant" icon="fa-solid fa-robot" className="chat-card">
-          <div className="chat-log" role="log" aria-live="polite" aria-label="Conversation with HR assistant">
+          <div className="chat-log" ref={chatLogRef} role="log" aria-live="polite" aria-label="Conversation with HR assistant">
             <AnimatePresence initial={false}>
               {messages.map((m) => (
                 <motion.div
@@ -202,7 +205,6 @@ export default function ServicesView() {
                 <span></span><span></span><span></span>
               </div>
             )}
-            <div ref={chatEndRef} />
           </div>
 
           <div className="chat-suggestions">

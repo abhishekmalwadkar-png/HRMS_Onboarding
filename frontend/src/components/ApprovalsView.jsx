@@ -313,7 +313,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
       <PageHeader
         icon="fa-solid fa-clipboard-check"
         title="HR approvals"
-        description="Review submitted candidates. Approving provisions ServiceNow, Active Directory, Microsoft 365, OrangeHRM and a laptop ticket in sequence."
+        description="Review candidates. Approving provisions every connected system in sequence."
         actions={
           <>
             <button className="btn btn-secondary" onClick={handleSyncServiceNow} disabled={isSyncing} aria-busy={isSyncing}>

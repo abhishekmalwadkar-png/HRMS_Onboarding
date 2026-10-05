@@ -11,12 +11,14 @@ import OffboardingView from './components/OffboardingView';
 import RecruitmentView from './components/RecruitmentView';
 import ServicesView from './components/ServicesView';
 import AnalyticsView from './components/AnalyticsView';
+import DashboardView from './components/DashboardView';
+import WhatsAppView from './components/WhatsAppView';
 
 export default function App() {
   const { currentUser } = useAuth();
 
   const isHR = currentUser?.role === 'hr';
-  const [currentView, setCurrentView] = useState(() => (isHR ? 'approvals' : 'wizard'));
+  const [currentView, setCurrentView] = useState(() => (isHR ? 'home' : 'wizard'));
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     return localStorage.getItem('mangohrms_sidebar_collapsed') === 'true';
   });
@@ -46,7 +48,7 @@ export default function App() {
   useEffect(() => {
     if (currentUser) {
       fetchEmployees();
-      setCurrentView(currentUser.role === 'hr' ? 'approvals' : 'wizard');
+      setCurrentView(currentUser.role === 'hr' ? 'home' : 'wizard');
     }
   }, [currentUser, fetchEmployees]);
 
@@ -73,6 +75,7 @@ export default function App() {
 
   return (
     <div className={`app-layout ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+      <a href="#main-content" className="skip-link">Skip to content</a>
       {/* Sidebar Navigation */}
       <Sidebar
         currentView={currentView}
@@ -102,6 +105,8 @@ export default function App() {
           toggleSidebar={toggleSidebar}
         />
 
+        {/* The content area is the scroll container, so full-height pages (WhatsApp) can fit exactly */}
+        <main className="app-scroll" id="main-content" tabIndex={-1}>
         <AnimatePresence mode="wait">
         <motion.div
           key={currentView}
@@ -110,6 +115,12 @@ export default function App() {
           animate={{ opacity: 1, y: 0, transition: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }}
           exit={{ opacity: 0, y: -6, transition: { duration: 0.15, ease: 'easeIn' } }}
         >
+          {currentView === 'home' && isHR && (
+            <DashboardView employees={employees} isLoading={isLoadingEmployees} onNavigate={navigateTo} />
+          )}
+
+          {currentView === 'whatsapp' && <WhatsAppView />}
+
           {currentView === 'approvals' && isHR && (
             <ApprovalsView
               employees={employees}
@@ -150,6 +161,7 @@ export default function App() {
           )}
         </motion.div>
         </AnimatePresence>
+        </main>
       </div>
     </div>
   );

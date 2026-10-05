@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { PageHeader } from './ui';
 
 export default function OffboardingView() {
   const { currentUser } = useAuth();
@@ -108,7 +109,7 @@ export default function OffboardingView() {
       const res = await fetch('/api/exit/clear', { method: 'POST' });
       if (res.ok) {
         setExitRequests([]);
-        showToast('✓ Active exit requests and clearance logs cleared.', 'success');
+        showToast('Active exit requests and clearance logs cleared.', 'success');
       }
     } catch (e) {
       setExitRequests([]);
@@ -493,7 +494,7 @@ export default function OffboardingView() {
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', margin: '0 auto 1.25rem' }}>
                 <i className="fa-solid fa-check"></i>
               </div>
-              <h3 style={{ marginBottom: '0.5rem', color: '#0f172a' }}>Resignation Submitted Successfully</h3>
+              <h3 style={{ marginBottom: '0.5rem', color: '#0f172a' }}>Resignation submitted</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', marginBottom: '1.5rem' }}>
                 Your resignation has been submitted and forwarded to <strong>HR Operations & Management</strong> for clearance processing.
               </p>
@@ -600,7 +601,7 @@ export default function OffboardingView() {
                   }}
                 >
                   <i className={`fa-solid ${isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`}></i>{' '}
-                  {isSubmitting ? 'Submitting Resignation...' : 'Submit Resignation'}
+                  {isSubmitting ? 'Submitting…' : 'Submit resignation'}
                 </button>
               </form>
             </div>
@@ -614,54 +615,30 @@ export default function OffboardingView() {
    * 2. HR OPERATIONS VIEW
    * ------------------------------------------------------------- */
   return (
-    <section className="view-section active">
-      {/* Top Banner Header */}
-      <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h2 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <i className="fa-solid fa-person-walking-dashed-line-arrow-right" style={{ color: '#c2410c' }}></i> Employee Offboarding & Exit Management
-            </h2>
-            <p style={{ color: 'var(--text-muted)', margin: '0.35rem 0 0 0', fontSize: '0.88rem' }}>
-              Manage employee resignations, ServiceNow hardware recovery incidents, and execute multi-system deprovisioning workflows.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+    <section className="view-section active page">
+      <PageHeader
+        icon="fa-solid fa-person-walking-arrow-right"
+        title="Offboarding & exit"
+        description="Resignations, hardware recovery and multi-system deprovisioning."
+        actions={
+          <>
             <button
-              className="btn btn-secondary"
+              className="btn btn-secondary btn-sm"
               onClick={handleAutofillOrangeHRM}
               disabled={isAutofilling}
-              style={{
-                borderColor: '#f87917',
-                color: '#c2410c',
-                background: '#fff7ed',
-                fontWeight: 700,
-                padding: '0.5rem 1rem',
-                fontSize: '0.88rem',
-              }}
-              title="Auto-fill random employee from OrangeHRM live directory"
+              aria-busy={isAutofilling}
+              title="Auto-fill a random employee from the OrangeHRM directory"
             >
-              <i className={`fa-solid ${isAutofilling ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`}></i>{' '}
-              {isAutofilling ? 'Fetching...' : '⚡ Auto-Fill from OrangeHRM'}
+              <i className={`fa-solid ${isAutofilling ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'} text-accent`} aria-hidden="true"></i>
+              {isAutofilling ? 'Fetching…' : 'Auto-fill from OrangeHRM'}
             </button>
-            <button
-              className="btn btn-primary"
-              onClick={() => setShowHRInitiateForm(!showHRInitiateForm)}
-              style={{
-                background: 'var(--button-gradient)',
-                borderColor: 'transparent',
-                fontWeight: 700,
-                padding: '0.5rem 1.15rem',
-                fontSize: '0.88rem',
-              }}
-            >
-              <i className={`fa-solid ${showHRInitiateForm ? 'fa-xmark' : 'fa-plus'}`}></i>{' '}
-              {showHRInitiateForm ? 'Close Resignation Form' : 'Initiate Resignation'}
+            <button className="btn btn-primary btn-sm" onClick={() => setShowHRInitiateForm(!showHRInitiateForm)} aria-expanded={showHRInitiateForm}>
+              <i className={`fa-solid ${showHRInitiateForm ? 'fa-xmark' : 'fa-plus'}`} aria-hidden="true"></i>
+              {showHRInitiateForm ? 'Close form' : 'Initiate resignation'}
             </button>
-          </div>
-        </div>
-      </div>
-
+          </>
+        }
+      />
       {/* HR Initiate Resignation Card */}
       {showHRInitiateForm && (
         <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff', padding: '1.5rem', borderLeft: '4px solid #f87917' }}>
@@ -797,7 +774,7 @@ export default function OffboardingView() {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a' }}>
-            Active Exit & Offboarding Clearances ({exitRequests.length})
+            Active exit clearances ({exitRequests.length})
           </h3>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             {exitRequests.length > 0 && (
@@ -807,7 +784,7 @@ export default function OffboardingView() {
                 style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem', color: '#e11d48', borderColor: 'rgba(225, 29, 72, 0.3)' }}
                 title="Clear all exit records and clearance logs"
               >
-                <i className="fa-solid fa-trash-can"></i> Clear Logs
+                <i className="fa-solid fa-trash-can"></i> Clear logs
               </button>
             )}
             <button className="btn btn-secondary" onClick={fetchExitRequests} style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>
@@ -819,7 +796,7 @@ export default function OffboardingView() {
         {exitRequests.length === 0 ? (
           <div className="glass-card" style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)', background: '#ffffff' }}>
             <i className="fa-solid fa-circle-check" style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '1rem', display: 'block' }}></i>
-            <h3 style={{ color: '#0f172a', marginBottom: '0.5rem' }}>No Active Exit Clearances</h3>
+            <h3 style={{ color: '#0f172a', marginBottom: '0.5rem' }}>No active exit clearances</h3>
             <p>No employee resignations or exit clearances currently pending.</p>
           </div>
         ) : (
@@ -859,7 +836,7 @@ export default function OffboardingView() {
                         style={{ cursor: 'pointer', fontSize: '0.78rem' }}
                         title="Click to view full offboarding execution pipeline"
                       >
-                        {item.accessRevoked ? '✓ Deprovisioned' : 'Clearance Active'}
+                        {item.accessRevoked ? 'Deprovisioned' : 'Clearance active'}
                       </span>
                     </div>
                   </div>
@@ -868,7 +845,7 @@ export default function OffboardingView() {
                   <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                       <i className="fa-solid fa-laptop text-accent" style={{ fontSize: '1.05rem' }}></i>
-                      <strong style={{ fontSize: '0.88rem', color: '#0f172a' }}>IT Hardware & Laptop Clearance</strong>
+                      <strong style={{ fontSize: '0.88rem', color: '#0f172a' }}>IT hardware & laptop clearance</strong>
                     </div>
                     <span
                       style={{
@@ -896,7 +873,7 @@ export default function OffboardingView() {
                       title="Toggle ServiceNow Hardware Incident State between In Progress and Resolved"
                     >
                       <i className={`fa-solid ${isChecking ? 'fa-spinner fa-spin' : 'fa-laptop'}`}></i>{' '}
-                      {isChecking ? 'Updating ServiceNow...' : 'Toggle IT Clearance'}
+                      {isChecking ? 'Updating ServiceNow…' : 'Toggle IT clearance'}
                     </button>
                     <button
                       className="btn btn-secondary"
@@ -905,19 +882,18 @@ export default function OffboardingView() {
                       disabled={isChecking}
                       title="Check live status from ServiceNow ITSM"
                     >
-                      <i className="fa-solid fa-arrows-rotate"></i> Check Live Status
+                      <i className="fa-solid fa-arrows-rotate"></i> Check live status
                     </button>
                     
                     {/* Revoke Access Button */}
                     <button
-                      className="btn btn-secondary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: item.accessRevoked ? '#f1f5f9' : '#f87917', color: item.accessRevoked ? '#475569' : '#ffffff', borderColor: 'transparent', fontWeight: 600 }}
+                      className={`btn btn-secondary btn-sm ${item.accessRevoked ? '' : 'btn-danger-outline'}`}
                       onClick={() => triggerAccessRevocation(item)}
                       disabled={isRevoking}
                       title="Run T4 Offboarding RPA Workflows (AD, O365, OrangeHRM) and show live step execution popup"
                     >
                       <i className={`fa-solid ${isRevoking ? 'fa-spinner fa-spin' : 'fa-user-xmark'}`}></i>{' '}
-                      {isRevoking ? 'Revoking Access...' : 'Revoke Access'}
+                      {isRevoking ? 'Revoking access…' : 'Revoke access'}
                     </button>
 
                     <button
@@ -925,7 +901,8 @@ export default function OffboardingView() {
                       style={{
                         padding: '0.35rem 0.75rem',
                         fontSize: '0.78rem',
-                        background: item.relievingLetterIssued ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'var(--button-gradient)',
+                        background: item.relievingLetterIssued ? '#047857' : 'var(--button-gradient)',
+                        color: item.relievingLetterIssued ? '#ffffff' : undefined,
                         borderColor: 'transparent',
                         fontWeight: 600,
                       }}
@@ -934,7 +911,7 @@ export default function OffboardingView() {
                       title="Generate PDF Relieving Letter & Experience Certificate and email to abhishek.malwadkar@valuedx.com"
                     >
                       <i className={`fa-solid ${issuingLetterId === item.id ? 'fa-spinner fa-spin' : (item.relievingLetterIssued ? 'fa-circle-check' : 'fa-file-export')}`}></i>{' '}
-                      {issuingLetterId === item.id ? 'Generating & Emailing...' : (item.relievingLetterIssued ? 'Relieving Letter Sent' : 'Issue Relieving Letter')}
+                      {issuingLetterId === item.id ? 'Generating…' : (item.relievingLetterIssued ? 'Relieving letter sent' : 'Issue relieving letter')}
                     </button>
                   </div>
                 </div>

@@ -14,7 +14,7 @@ export function AuthProvider({ children }) {
       const defaultHR = {
         role: 'hr',
         name: 'Pooja Deshmukh (HR Operations Director)',
-        email: 'pooja.deshmukh@mangohrms.com',
+        email: 'pooja.deshmukh@automationedge.ai',
         avatar: 'P',
         badge: 'HR Administrator'
       };
@@ -24,7 +24,7 @@ export function AuthProvider({ children }) {
       return {
         role: 'hr',
         name: 'Pooja Deshmukh (HR Operations Director)',
-        email: 'pooja.deshmukh@mangohrms.com',
+        email: 'pooja.deshmukh@automationedge.ai',
         avatar: 'P',
         badge: 'HR Administrator'
       };
@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
     const userObj = {
       role: 'hr',
       name: name || 'Pooja Deshmukh (HR Operations Director)',
-      email: email || 'pooja.deshmukh@mangohrms.com',
+      email: email || 'pooja.deshmukh@automationedge.ai',
       avatar: 'P',
       badge: 'HR Administrator'
     };

@@ -15,6 +15,8 @@ from orangehrm_client import orangehrm_client
 import resume_screener
 
 PORT = int(os.environ.get('PORT', 8081))
+# Bind address: '' = all interfaces (default). Set HOST=127.0.0.1 behind Nginx so only Nginx can reach it.
+HOST = os.environ.get('HOST', '')
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'employees.json')
 AUTOFILL_FILE = os.path.join(os.path.dirname(__file__), 'autofill.json')
 HEALTH_CHECK_TIMEOUT = 15
@@ -853,7 +855,7 @@ if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__))
     watcher_thread = threading.Thread(target=servicenow_watcher_loop, daemon=True)
     watcher_thread.start()
-    with socketserver.TCPServer(("", PORT), MangoHRMSRequestHandler) as httpd:
-        print(f"MangoHRMS Server running at http://localhost:{PORT}")
+    with socketserver.TCPServer((HOST, PORT), MangoHRMSRequestHandler) as httpd:
+        print(f"AutomationEdge HR server running at http://localhost:{PORT}")
         httpd.serve_forever()
 

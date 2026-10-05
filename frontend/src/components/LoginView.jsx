@@ -6,7 +6,7 @@ export default function LoginView() {
   const { loginAs } = useAuth();
   const { showToast } = useToast();
 
-  const [hrEmail, setHrEmail] = useState('pooja.deshmukh@mangohrms.com');
+  const [hrEmail, setHrEmail] = useState('pooja.deshmukh@automationedge.ai');
   const [hrPassword, setHrPassword] = useState('••••••••');
 
   const handleHRSubmit = (e) => {
@@ -23,7 +23,7 @@ export default function LoginView() {
             <div className="brand-icon">
               <i className="fa-solid fa-cube"></i>
             </div>
-            <span className="brand-title">MangoHRMS Suite</span>
+            <span className="brand-title">AutomationEdge HR</span>
           </div>
           <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
             <span className="badge badge-verified" style={{ fontSize: '0.78rem', padding: '3px 10px' }}>

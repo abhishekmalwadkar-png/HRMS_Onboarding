@@ -105,7 +105,7 @@ export default function DirectoryView({ employees }) {
       <PageHeader
         icon="fa-solid fa-users-gear"
         title="Employee directory"
-        description="Search every onboarding record and inspect its provisioning status across ServiceNow, Active Directory, Microsoft 365 and OrangeHRM."
+        description="Search every record and check its provisioning status in each system."
         actions={
           <button className="btn btn-secondary" onClick={exportCSV} disabled={filteredEmployees.length === 0}>
             <i className="fa-solid fa-file-csv text-accent" aria-hidden="true"></i> Export CSV

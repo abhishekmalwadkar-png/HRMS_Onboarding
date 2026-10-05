@@ -1,6 +1,7 @@
-// Shared UI building blocks for MangoHRMS.
+// Shared UI building blocks for AutomationEdge HR.
 // Design rules: design-system/mangohrms/MASTER.md (UI/UX Pro Max design system + project decisions).
-import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const EASE_OUT = [0.16, 1, 0.3, 1];
@@ -12,20 +13,31 @@ export const staggerItem = {
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT } },
 };
 
-// Title row for every page: icon, title, one-line description, optional actions on the right
+export const PAGE_HEADER_SLOT_ID = 'page-header-slot';
+
+// Page title + actions. Rendered into the sticky top bar (Header.jsx) through a portal so pages
+// don't spend a separate row on their title; falls back to inline if the slot isn't mounted.
 export function PageHeader({ icon, title, description, actions }) {
-  return (
-    <header className="page-header">
+  const [slot, setSlot] = useState(null);
+  // Layout effect: find the slot before the browser paints, so the top bar never flashes empty
+  useLayoutEffect(() => {
+    setSlot(document.getElementById(PAGE_HEADER_SLOT_ID));
+  }, []);
+
+  const content = (
+    <div className="page-header">
       <div className="page-header-text">
         <h1 className="page-title">
           {icon && <span className="page-title-icon" aria-hidden="true"><i className={icon}></i></span>}
-          {title}
+          <span className="page-title-text">{title}</span>
         </h1>
-        {description && <p className="page-description">{description}</p>}
+        {description && <p className="page-description" title={description}>{description}</p>}
       </div>
       {actions && <div className="page-actions">{actions}</div>}
-    </header>
+    </div>
   );
+
+  return slot ? createPortal(content, slot) : null;
 }
 
 // Card with optional title row; animates with the surrounding stagger container when `animated`
@@ -226,6 +238,20 @@ export function Pagination({ page, totalPages, total, pageSize, onChange, label 
       </div>
     </nav>
   );
+}
+
+// Shimmering placeholder shown while data loads (keeps the layout shape; static under reduced motion)
+export function Skeleton({ width = '3.5rem', height = '1em', className = '' }) {
+  return <span className={`ui-skeleton ${className}`} style={{ width, height }} aria-hidden="true" />;
+}
+
+// Spotlight border: writes the pointer position into CSS variables on the element itself.
+// No React state, so moving the mouse never re-renders the component.
+export function trackSpotlight(e) {
+  const el = e.currentTarget;
+  const r = el.getBoundingClientRect();
+  el.style.setProperty('--spot-x', `${e.clientX - r.left}px`);
+  el.style.setProperty('--spot-y', `${e.clientY - r.top}px`);
 }
 
 // Maps an employee status to its badge class

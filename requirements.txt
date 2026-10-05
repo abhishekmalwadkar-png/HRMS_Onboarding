@@ -1,0 +1,5 @@
+requests
+reportlab
+python-dotenv
+python-docx
+pypdf
