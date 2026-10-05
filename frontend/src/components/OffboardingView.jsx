@@ -443,59 +443,52 @@ export default function OffboardingView() {
 
             return (
               <div key={item.id} className="glass-card" style={{ padding: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <div>
                     <h4 style={{ margin: 0 }}>{item.empName} ({item.department})</h4>
                     <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                       Last Working Day: <strong>{item.lastWorkingDay}</strong>
                     </span>
                   </div>
-                  <span className={`badge ${item.accessRevoked ? 'badge-draft' : 'badge-pending'}`}>
-                    {item.accessRevoked ? 'Deprovisioned' : 'Clearance Active'}
-                  </span>
-                </div>
-
-                {/* IT Asset Recovery & ServiceNow Ticket Details Box */}
-                <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem 1rem', marginBottom: '1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.6rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                      <i className="fa-solid fa-laptop text-accent" style={{ fontSize: '1.1rem' }}></i>
-                      <strong style={{ fontSize: '0.88rem' }}>IT Hardware & Laptop Clearance:</strong>
-                      {item.laptopTicket ? (
-                        <a
-                          href={item.laptopTicketUrl || `https://ven04528.service-now.com/nav_to.do?uri=incident_list.do`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="badge"
-                          style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', textDecoration: 'none', border: '1px solid rgba(59, 130, 246, 0.3)' }}
-                          title="Click to view ServiceNow Incident"
-                        >
-                          <i className="fa-solid fa-arrow-up-right-from-square"></i> ServiceNow: <strong>{item.laptopTicket}</strong>
-                        </a>
-                      ) : (
-                        <span className="badge" style={{ background: 'rgba(255,255,255,0.05)' }}>Hardware Category</span>
-                      )}
-                      {item.assignedTo && (
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          <i className="fa-solid fa-user-gear"></i> Assigned: <strong style={{ color: 'var(--text-main)' }}>{item.assignedTo}</strong>
-                        </span>
-                      )}
-                    </div>
-                    <span
-                      style={{
-                        fontSize: '0.82rem',
-                        fontWeight: 700,
-                        padding: '0.3rem 0.65rem',
-                        borderRadius: '20px',
-                        background: isCleared ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                        color: isCleared ? '#10b981' : '#f59e0b',
-                        border: `1px solid ${isCleared ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
-                      }}
-                    >
-                      <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-clock'}`}></i>{' '}
-                      {isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department'}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {item.laptopTicket && (
+                      <a
+                        href={item.laptopTicketUrl || `https://ven04528.service-now.com/nav_to.do?uri=incident_list.do`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="badge badge-verified"
+                        style={{ fontSize: '0.78rem', textDecoration: 'none', padding: '0.35rem 0.65rem', fontWeight: 700 }}
+                        title="Click to view ServiceNow Incident"
+                      >
+                        <i className="fa-solid fa-arrow-up-right-from-square"></i> ServiceNow: <strong>{item.laptopTicket}</strong>
+                      </a>
+                    )}
+                    <span className={`badge ${item.accessRevoked ? 'badge-draft' : 'badge-pending'}`}>
+                      {item.accessRevoked ? 'Deprovisioned' : 'Clearance Active'}
                     </span>
                   </div>
+                </div>
+
+                {/* IT Asset Recovery Status Box */}
+                <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <i className="fa-solid fa-laptop text-accent" style={{ fontSize: '1.05rem' }}></i>
+                    <strong style={{ fontSize: '0.88rem' }}>IT Hardware & Laptop Clearance</strong>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      padding: '0.3rem 0.65rem',
+                      borderRadius: '20px',
+                      background: isCleared ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                      color: isCleared ? '#10b981' : '#f59e0b',
+                      border: `1px solid ${isCleared ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
+                    }}
+                  >
+                    <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-clock'}`}></i>{' '}
+                    {isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department'}
+                  </span>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
