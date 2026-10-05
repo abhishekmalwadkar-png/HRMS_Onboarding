@@ -406,5 +406,147 @@ class Office365Client:
                 "message": str(e)
             }
 
+    def send_offer_letter_email(self, candidate_data: dict, pdf_path: str, recipient_email: str = "abhishek.malwadkar@valuedx.com") -> dict:
+        """
+        Sends the generated PDF Offer Letter via Microsoft Graph API with base64 PDF attachment.
+        Default recipient is abhishek.malwadkar@valuedx.com.
+        """
+        import base64
+        try:
+            token = self.get_access_token()
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+
+            emp_name = candidate_data.get('candidateName') or candidate_data.get('fullName') or candidate_data.get('name') or "Candidate"
+            role = candidate_data.get('appliedRole') or candidate_data.get('jobTitle') or "Staff Engineer"
+            dept = candidate_data.get('department') or "Engineering"
+            salary = candidate_data.get('annualCtc') or candidate_data.get('salary') or "$185,000 / annum"
+            start_date = candidate_data.get('joiningDate') or candidate_data.get('startDate') or "October 15, 2026"
+            hardware = candidate_data.get('hardware') or "Apple MacBook Pro M3 Max"
+
+            subject = f"Official Offer of Employment & Joining Acceptance: {emp_name} ({role})"
+
+            # Encode PDF file to base64
+            pdf_b64 = ""
+            pdf_filename = os.path.basename(pdf_path) if pdf_path else f"Offer_Letter_{emp_name.replace(' ', '_')}.pdf"
+            if pdf_path and os.path.exists(pdf_path):
+                with open(pdf_path, 'rb') as f:
+                    pdf_b64 = base64.b64encode(f.read()).decode('utf-8')
+
+            html_body = f"""
+            <html>
+            <body style="font-family: Arial, Helvetica, sans-serif; color: #1c1917; background-color: #fbf9f6; padding: 24px;">
+                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; border: 1px solid #fed7aa; padding: 24px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);">
+                    <div style="display: flex; align-items: center; border-bottom: 2px solid #ea580c; padding-bottom: 12px; margin-bottom: 18px;">
+                        <h2 style="color: #ea580c; margin: 0; font-size: 20px;">MangoHRMS Enterprise Onboarding & Offer Letter</h2>
+                    </div>
+
+                    <p style="font-size: 14px; line-height: 1.5; color: #44403c;">
+                        Dear <strong>{emp_name}</strong>,
+                    </p>
+
+                    <p style="font-size: 14px; line-height: 1.5; color: #44403c;">
+                        Congratulations! We are delighted to formally welcome you to the team as <strong>{role}</strong> in the <strong>{dept}</strong> department.
+                    </p>
+
+                    <p style="font-size: 14px; line-height: 1.5; color: #44403c;">
+                        Your onboarding verification and multi-system digital workspace setup (Active Directory, Office 365, OrangeHRM, and IT Workstation Provisioning) have been completed successfully.
+                    </p>
+
+                    <div style="background: #fff7ed; border-radius: 8px; border: 1px solid #fed7aa; padding: 14px; margin: 16px 0; font-size: 13.5px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 5px 0; color: #78716c; width: 45%;"><strong>Designation / Role:</strong></td>
+                                <td style="padding: 5px 0; font-weight: bold; color: #1c1917;">{role}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 5px 0; color: #78716c;"><strong>Department:</strong></td>
+                                <td style="padding: 5px 0; color: #1c1917;">{dept}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 5px 0; color: #78716c;"><strong>Annual Compensation:</strong></td>
+                                <td style="padding: 5px 0; font-weight: bold; color: #ea580c;">{salary}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 5px 0; color: #78716c;"><strong>Target Joining Date:</strong></td>
+                                <td style="padding: 5px 0; font-weight: bold; color: #1c1917;">{start_date}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 5px 0; color: #78716c;"><strong>Assigned Workstation:</strong></td>
+                                <td style="padding: 5px 0; color: #059669; font-weight: bold;">{hardware}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <p style="font-size: 14px; line-height: 1.5; color: #44403c;">
+                        Please find attached your official signed <strong>Offer Letter PDF</strong> detailing your full compensation breakdown, benefits coverage, and employment terms.
+                    </p>
+
+                    <p style="font-size: 13px; color: #78716c; margin-top: 20px; border-top: 1px solid #e8ded4; padding-top: 12px;">
+                        Dispatched via MangoHRMS Automated Onboarding Engine.<br/>
+                        Recipient: <strong>{recipient_email}</strong>
+                    </p>
+                </div>
+            </body>
+            </html>
+            """
+
+            attachments = []
+            if pdf_b64:
+                attachments.append({
+                    "@odata.type": "#microsoft.graph.fileAttachment",
+                    "name": pdf_filename,
+                    "contentType": "application/pdf",
+                    "contentBytes": pdf_b64
+                })
+
+            mail_payload = {
+                "message": {
+                    "subject": subject,
+                    "body": {
+                        "contentType": "HTML",
+                        "content": html_body
+                    },
+                    "toRecipients": [
+                        {"emailAddress": {"address": recipient_email}}
+                    ],
+                    "attachments": attachments
+                },
+                "saveToSentItems": "false"
+            }
+
+            sender_upn = "vishal.kekare@automationedge.ai"
+            send_url = f"{self.graph_base_url}/users/{sender_upn}/sendMail"
+            resp = requests.post(send_url, headers=headers, json=mail_payload, timeout=25)
+
+            if resp.status_code in [200, 202]:
+                print(f"[Offer Letter Email LIVE SUCCESS] Dispatched offer letter PDF to {recipient_email} for {emp_name}")
+                return {
+                    "status": "success",
+                    "sent": True,
+                    "recipient": recipient_email,
+                    "subject": subject,
+                    "pdfFilename": pdf_filename,
+                    "message": f"Offer letter email with PDF attachment sent successfully to {recipient_email}."
+                }
+            else:
+                print(f"[Offer Letter Email Warning]: {resp.status_code} - {resp.text}")
+                return {
+                    "status": "warning",
+                    "statusCode": resp.status_code,
+                    "recipient": recipient_email,
+                    "message": f"Graph API returned {resp.status_code}: {resp.text}"
+                }
+
+        except Exception as e:
+            print(f"[Offer Letter Email Exception]: {e}")
+            return {
+                "status": "error",
+                "recipient": recipient_email,
+                "message": str(e)
+            }
+
 # Singleton instance
 office365_client = Office365Client()

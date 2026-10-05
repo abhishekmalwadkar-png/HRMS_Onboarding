@@ -129,7 +129,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
           spread: 70,
           origin: { y: 0.6 },
         });
-        showToast(`🎉 Verified ${cand.fullName}! T4 AD, Office 365, OrangeHRM & Laptop Ticket created!`, 'success');
+        showToast(`🎉 Verified ${cand.fullName}! T4 AD, O365, OrangeHRM & Laptop Ticket created. Offer Letter emailed to abhishek.malwadkar@valuedx.com!`, 'success');
       } else {
         setFlowStepStatus({
           step1: 'completed',
@@ -137,7 +137,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
           step3: 'completed',
           step4: 'completed',
         });
-        showToast(`✓ Onboarding approved for ${cand.fullName}! Laptop ticket created.`, 'success');
+        showToast(`✓ Onboarding approved for ${cand.fullName}! Offer Letter dispatched to abhishek.malwadkar@valuedx.com.`, 'success');
       }
     } catch (err) {
       console.error('Approval error:', err);
@@ -413,7 +413,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
               >
                 <div style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 600 }}>
                   <i className="fa-solid fa-circle-check text-emerald" style={{ fontSize: '1.15rem' }}></i>
-                  <span>Documents verified. Click Approve to trigger automated provisioning for AD, O365, OrangeHRM, and IT Laptop asset.</span>
+                  <span>Documents verified. Click Approve to provision AD, O365, OrangeHRM, Laptop asset & email Offer Letter to abhishek.malwadkar@valuedx.com.</span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

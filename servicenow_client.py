@@ -14,6 +14,7 @@ import urllib.error
 from orangehrm_client import orangehrm_client
 from office365_client import office365_client
 from ae_rpa_client import ae_client
+from generate_offer_letter import generate_offer_letter_pdf
 
 ENV_FILE = os.path.join(os.path.dirname(__file__), '.env')
 
@@ -543,6 +544,29 @@ class ServiceNowClient:
             except Exception as e:
                 print(f"[ServiceNow Incident Error] {e}")
 
+        # -------------------------------------------------------------------------
+        # STEP 7: Generate Official Offer Letter PDF & Dispatch Email to abhishek.malwadkar@valuedx.com
+        # -------------------------------------------------------------------------
+        print(f"\n[APPROVAL FLOW - STEP 7/7] Generating Offer Letter PDF and dispatching email to abhishek.malwadkar@valuedx.com for {emp_name}...")
+        offer_letter_result = {}
+        try:
+            candidate_offer_data = {
+                'candidateName': emp_name,
+                'appliedRole': employee_data.get('jobTitle', 'Staff AI Systems Engineer'),
+                'department': employee_data.get('department', 'Engineering'),
+                'annualCtc': employee_data.get('salary', '$185,000 / annum'),
+                'joiningDate': employee_data.get('startDate', '2026-10-15'),
+                'hardware': hardware,
+                'email': 'abhishek.malwadkar@valuedx.com'
+            }
+            gen_res = generate_offer_letter_pdf(candidate_offer_data)
+            pdf_file_path = gen_res[0] if isinstance(gen_res, tuple) else gen_res
+            offer_letter_result = office365_client.send_offer_letter_email(candidate_offer_data, pdf_file_path, recipient_email="abhishek.malwadkar@valuedx.com")
+            print(f"[APPROVAL FLOW - STEP 7/7 COMPLETE] Offer letter PDF dispatched to abhishek.malwadkar@valuedx.com ({offer_letter_result.get('status')})")
+        except Exception as off_err:
+            print(f"[APPROVAL FLOW - STEP 7/7 ERROR] Offer Letter Email: {off_err}")
+            offer_letter_result = {"status": "error", "message": str(off_err)}
+
         return {
             "status": "success",
             "approvalStatus": "Approved",
@@ -555,6 +579,7 @@ class ServiceNowClient:
                 "message": f"Hello {emp_name}, your submitted personal details and documents have been successfully verified and approved by HR.",
                 "status": "Dispatched"
             },
+            "offerLetter": offer_letter_result,
             "laptopProvisioning": {
                 "ticketNumber": laptop_ticket,
                 "ticketUrl": laptop_ticket_url,
@@ -581,7 +606,7 @@ class ServiceNowClient:
             "orangeHrm": orangehrm_result,
             "orangeHrmProfileUrl": orangehrm_result.get('profileUrl'),
             "orangeHrmEmpNumber": orangehrm_result.get('empNumber'),
-            "message": f"HR Approval confirmed for {active_req}. Step 1: ServiceNow Approved -> Step 2: T4 AD Workflow (Req #{ae_ad_result.get('automationRequestId')}) -> Step 3: Office 365 Account ({o365_result.get('userPrincipalName')}) -> Step 4: OrangeHRM Profile (#{orangehrm_result.get('empNumber')}) -> Step 5: ServiceNow Laptop Incident ({laptop_ticket}) under category 'Hardware'."
+            "message": f"HR Approval confirmed for {active_req}. Step 1: ServiceNow Approved -> Step 2: T4 Mgmt Approval -> Step 3: T4 AD Workflow (Req #{ae_ad_result.get('automationRequestId')}) -> Step 4: Office 365 Account ({o365_result.get('userPrincipalName')}) -> Step 5: OrangeHRM Profile (#{orangehrm_result.get('empNumber')}) -> Step 6: Laptop Incident ({laptop_ticket}) -> Step 7: Offer Letter PDF Emailed to abhishek.malwadkar@valuedx.com."
         }
 
     def check_and_sync_servicenow_approvals(self, employees):

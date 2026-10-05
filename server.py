@@ -143,10 +143,13 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                         if ae_ad_info.get('status') == 'success' or approve_result.get('aeT4RequestId'):
                             emp['aeT4RequestId'] = approve_result.get('aeT4RequestId')
                             emp['aeT4Workflow'] = approve_result.get('aeT4Workflow') or 'AD-Create User and Assin Role'
-                            emp['aeT4Status'] = approve_result.get('aeT4Status') or 'Complete'
-                            emp['aeT4Agent'] = approve_result.get('aeT4Agent')
-                            emp['aeT4Message'] = approve_result.get('aeT4Message')
-                            emp['aeT4Url'] = approve_result.get('aeT4Url')
+                        # Offer Letter Email Details
+                        offer_info = approve_result.get('offerLetter', {})
+                        if offer_info.get('status') == 'success' or offer_info.get('sent'):
+                            emp['offerLetterEmailed'] = True
+                            emp['offerLetterRecipient'] = offer_info.get('recipient', 'abhishek.malwadkar@valuedx.com')
+                            emp['offerLetterPdf'] = offer_info.get('pdfFilename')
+
                         break
                 self.write_db(db)
             self.end_headers()
