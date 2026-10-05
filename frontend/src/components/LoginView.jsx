@@ -21,7 +21,7 @@ export default function LoginView() {
         <div className="login-brand-header">
           <div className="brand" style={{ justifyContent: 'center', marginBottom: '0.75rem' }}>
             <div className="brand-icon">
-              <i className="fa-solid fa-mango"></i>
+              <i className="fa-solid fa-cube"></i>
             </div>
             <span className="brand-title">MangoHRMS Suite</span>
           </div>

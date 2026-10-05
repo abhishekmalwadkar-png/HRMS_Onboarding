@@ -277,7 +277,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
               style={{
                 marginBottom: '1.5rem',
                 border: '1px solid var(--border-orange)',
-                boxShadow: '0 8px 24px rgba(234, 88, 12, 0.08)',
+                boxShadow: '0 8px 24px rgba(2, 132, 199, 0.08)',
                 padding: '1.5rem',
               }}
             >
@@ -336,7 +336,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                       target="_blank"
                       rel="noreferrer"
                       className="btn btn-secondary"
-                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: 'var(--border-orange)', color: 'var(--brand-orange)', background: '#fff7ed', fontWeight: 700, textDecoration: 'none', borderRadius: '6px' }}
+                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: 'var(--border-orange)', color: 'var(--brand-orange)', background: '#f0f9ff', fontWeight: 700, textDecoration: 'none', borderRadius: '6px' }}
                     >
                       <i className="fa-solid fa-ticket"></i> ServiceNow Request
                     </a>
@@ -440,7 +440,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                       background: 'var(--accent-gradient)',
                       borderColor: 'transparent',
                       fontWeight: 800,
-                      boxShadow: '0 4px 14px rgba(234, 88, 12, 0.3)',
+                      boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
                       borderRadius: '8px',
                     }}
                   >
@@ -529,7 +529,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                           <i className="fa-solid fa-check-double"></i> Verified
                         </span>
                         {item.orangeHrmEmpNumber && (
-                          <span className="badge badge-verified" style={{ fontSize: '0.72rem', borderColor: '#fdba74', color: '#ea580c', background: '#fff7ed' }}>
+                          <span className="badge badge-verified" style={{ fontSize: '0.72rem', borderColor: '#93c5fd', color: '#0284c7', background: '#f0f9ff' }}>
                             <i className="fa-solid fa-user-check"></i> OrangeHRM #{item.orangeHrmEmpNumber}
                           </span>
                         )}
@@ -622,7 +622,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'var(--transition-fast)',
-                    boxShadow: pageNum === validCurrentPage ? '0 2px 6px rgba(234, 88, 12, 0.25)' : 'none',
+                    boxShadow: pageNum === validCurrentPage ? '0 2px 6px rgba(2, 132, 199, 0.25)' : 'none',
                   }}
                 >
                   {pageNum}
@@ -811,12 +811,12 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                     width: '28px',
                     height: '28px',
                     borderRadius: '50%',
-                    background: '#fff7ed',
-                    border: '2px solid #ea580c',
+                    background: '#f0f9ff',
+                    border: '2px solid #0284c7',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#ea580c',
+                    color: '#0284c7',
                     boxShadow: '0 2px 5px rgba(0,0,0,0.06)',
                     fontSize: '0.78rem',
                     zIndex: 2,
@@ -836,7 +836,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
                     <strong style={{ fontSize: '0.82rem', color: '#c2410c' }}>2. Active Directory (AD)</strong>
-                    <span className="badge" style={{ background: '#ffedd5', color: '#c2410c', fontSize: '0.62rem', padding: '0.15rem 0.4rem', border: '1px solid #fed7aa' }}>
+                    <span className="badge" style={{ background: '#e0f2fe', color: '#c2410c', fontSize: '0.62rem', padding: '0.15rem 0.4rem', border: '1px solid #bae6fd' }}>
                       <i className="fa-solid fa-circle-check"></i> WORKFLOW COMPLETE
                     </span>
                   </div>

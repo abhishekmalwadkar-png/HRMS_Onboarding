@@ -65,11 +65,11 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.font = "italic bold 32px 'Caveat', cursive, 'Brush Script MT', sans-serif";
-      ctx.fillStyle = '#ea580c';
+      ctx.fillStyle = '#0284c7';
       ctx.fillText(formData.fullName || 'Aarav Sharma', 40, canvas.height / 2 + 10);
 
       ctx.beginPath();
-      ctx.strokeStyle = '#ea580c';
+      ctx.strokeStyle = '#0284c7';
       ctx.lineWidth = 2.5;
       ctx.moveTo(35, canvas.height / 2 + 25);
       ctx.quadraticCurveTo(canvas.width / 2, canvas.height / 2 + 40, canvas.width - 60, canvas.height / 2 + 20);

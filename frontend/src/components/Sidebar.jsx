@@ -18,7 +18,7 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, togg
       <div className="sidebar-top">
         <div className="brand">
           <div className="brand-icon">
-            <i className="fa-solid fa-mango"></i>
+            <i className="fa-solid fa-cube"></i>
           </div>
           <div className="brand-text">
             <span className="brand-title">MangoHRMS</span>
@@ -122,7 +122,7 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, togg
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              boxShadow: '0 2px 6px rgba(234, 88, 12, 0.25)',
+              boxShadow: '0 2px 6px rgba(2, 132, 199, 0.25)',
             }}
           >
             {currentUser?.avatar || 'P'}

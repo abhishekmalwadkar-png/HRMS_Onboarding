@@ -91,7 +91,7 @@ export default function AnalyticsView({ employees }) {
               <span className="badge badge-verified"><i className="fa-solid fa-check"></i> Connected</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem', background: 'var(--bg-primary)', borderRadius: '8px' }}>
-              <span><i className="fa-solid fa-robot" style={{ color: '#ea580c' }}></i> AutomationEdge T4 RPA Engine</span>
+              <span><i className="fa-solid fa-robot" style={{ color: '#0284c7' }}></i> AutomationEdge T4 RPA Engine</span>
               <span className="badge badge-verified"><i className="fa-solid fa-check"></i> Active</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem', background: 'var(--bg-primary)', borderRadius: '8px' }}>
@@ -99,7 +99,7 @@ export default function AnalyticsView({ employees }) {
               <span className="badge badge-verified"><i className="fa-solid fa-check"></i> Synced</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem', background: 'var(--bg-primary)', borderRadius: '8px' }}>
-              <span><i className="fa-solid fa-user-check" style={{ color: '#ea580c' }}></i> OrangeHRM Enterprise PIM</span>
+              <span><i className="fa-solid fa-user-check" style={{ color: '#0284c7' }}></i> OrangeHRM Enterprise PIM</span>
               <span className="badge badge-verified"><i className="fa-solid fa-check"></i> Connected</span>
             </div>
           </div>
