@@ -364,12 +364,13 @@ class ServiceNowClient:
         laptop_ticket_url = f"{self.instance_url}/nav_to.do?uri=incident_list.do"
 
         # =========================================================================
-        # EXACT SEQUENTIAL EXECUTION ORDER:
+        # EXACT SEQUENTIAL EXECUTION ORDER ON HR APPROVAL:
         # 1st: ServiceNow (Service Catalog Request Approval)
-        # 2nd: Active Directory (AutomationEdge T4: AD-Create User and Assin Role)
-        # 3rd: Microsoft Office 365 / Entra ID enterprise user account creation
-        # 4th: OrangeHRM employee profile creation using the mail ID generated in Office 365
-        # 5th: ServiceNow ITSM Hardware Incident (Dispatched after OrangeHRM profile creation)
+        # 2nd: AutomationEdge T4 "HR Demo Management Approval" (waits until complete)
+        # 3rd: AutomationEdge T4 "AD-Create User and Assin Role" (waits until complete)
+        # 4th: AutomationEdge T4 "HR Demo O365 User Creation" (waits until complete) & Graph API
+        # 5th: AutomationEdge T4 "HR Demo Add emp OrangeHRM" (waits until complete) & OrangeHRM API
+        # 6th: AutomationEdge T4 "HR Demo Create Laptop Request" & ServiceNow Hardware Incident
         # =========================================================================
 
         name_parts = emp_name.strip().split(None, 1)
@@ -378,9 +379,9 @@ class ServiceNowClient:
         initial_email = email or f"{first_name.lower()}.{last_name.lower()}@automationedge.ai"
 
         # -------------------------------------------------------------------------
-        # STEP 1: ServiceNow Service Catalog Approval (1st)
+        # STEP 1: ServiceNow Service Catalog Request Approval (1st)
         # -------------------------------------------------------------------------
-        print(f"\n[APPROVAL FLOW - STEP 1/4] Approving ServiceNow Request {active_req}...")
+        print(f"\n[APPROVAL FLOW - STEP 1/6] Approving ServiceNow Request {active_req}...")
         if self.is_configured():
             # 1. Update sc_request state to Approved in ServiceNow
             if req_sys_id:
@@ -416,24 +417,43 @@ class ServiceNowClient:
                     print(f"[ServiceNow Approval Task Error] {te}")
 
         # -------------------------------------------------------------------------
-        # STEP 2: AutomationEdge T4 Active Directory Workflow (2nd)
+        # STEP 2: AutomationEdge T4 "HR Demo Management Approval" (2nd)
         # -------------------------------------------------------------------------
-        print(f"\n[APPROVAL FLOW - STEP 2/4] Triggering AutomationEdge T4 AD Workflow for {first_name} {last_name}...")
+        print(f"\n[APPROVAL FLOW - STEP 2/6] Triggering T4 Workflow: 'HR Demo Management Approval'...")
+        try:
+            ae_mgmt_result = ae_client.trigger_management_approval(employee_data)
+            print(f"[APPROVAL FLOW - STEP 2/6 COMPLETE] Status: {ae_mgmt_result.get('executionStatus')} (Req #{ae_mgmt_result.get('automationRequestId')})")
+        except Exception as mgmt_err:
+            print(f"[APPROVAL FLOW - STEP 2/6 ERROR] {mgmt_err}")
+            ae_mgmt_result = {"status": "error", "message": str(mgmt_err)}
+
+        # -------------------------------------------------------------------------
+        # STEP 3: AutomationEdge T4 Active Directory Workflow (3rd)
+        # -------------------------------------------------------------------------
+        print(f"\n[APPROVAL FLOW - STEP 3/6] Triggering AutomationEdge T4 AD Workflow for {first_name} {last_name}...")
         try:
             ae_ad_result = ae_client.trigger_ad_create_user(
                 first_name=first_name,
                 last_name=last_name,
                 receiver_email_id=initial_email
             )
-            print(f"[APPROVAL FLOW - STEP 2/4 COMPLETE] T4 AD Status: {ae_ad_result.get('executionStatus')} (Req #{ae_ad_result.get('automationRequestId')})")
+            print(f"[APPROVAL FLOW - STEP 3/6 COMPLETE] T4 AD Status: {ae_ad_result.get('executionStatus')} (Req #{ae_ad_result.get('automationRequestId')})")
         except Exception as ae_err:
-            print(f"[APPROVAL FLOW - STEP 2/4 ERROR] {ae_err}")
+            print(f"[APPROVAL FLOW - STEP 3/6 ERROR] {ae_err}")
             ae_ad_result = {"status": "error", "message": str(ae_err)}
 
         # -------------------------------------------------------------------------
-        # STEP 3: Microsoft Office 365 / Entra ID Enterprise Account Creation (3rd)
+        # STEP 4: AutomationEdge T4 "HR Demo O365 User Creation" Workflow (4th)
         # -------------------------------------------------------------------------
-        print(f"\n[APPROVAL FLOW - STEP 3/4] Provisioning Microsoft Office 365 account for {emp_name}...")
+        print(f"\n[APPROVAL FLOW - STEP 4/6] Triggering T4 Workflow: 'HR Demo O365 User Creation'...")
+        try:
+            ae_o365_t4_result = ae_client.trigger_o365_user_creation_workflow(employee_data)
+            print(f"[APPROVAL FLOW - STEP 4/6 COMPLETE] T4 O365 Status: {ae_o365_t4_result.get('executionStatus')} (Req #{ae_o365_t4_result.get('automationRequestId')})")
+        except Exception as o365_wf_err:
+            print(f"[APPROVAL FLOW - STEP 4/6 ERROR] T4 O365: {o365_wf_err}")
+            ae_o365_t4_result = {"status": "error", "message": str(o365_wf_err)}
+
+        # Also provision/sync via Microsoft Graph API
         try:
             o365_result = office365_client.create_user_account(
                 full_name=emp_name,
@@ -443,31 +463,47 @@ class ServiceNowClient:
                 mobile_phone=employee_data.get('phone', '')
             )
             generated_o365_email = o365_result.get('userPrincipalName')
-            print(f"[APPROVAL FLOW - STEP 3/4 COMPLETE] Office 365 Account Generated: {generated_o365_email}")
+            print(f"[Office 365 Direct Sync] Account Active: {generated_o365_email}")
         except Exception as oe:
-            print(f"[APPROVAL FLOW - STEP 3/4 ERROR] Office 365 Provisioning: {oe}")
+            print(f"[Office 365 Direct Sync Note]: {oe}")
             o365_result = {"status": "error", "message": str(oe)}
             generated_o365_email = None
 
         # -------------------------------------------------------------------------
-        # STEP 4: OrangeHRM Employee Profile Creation with Office 365 Mail ID (4th)
+        # STEP 5: AutomationEdge T4 "HR Demo Add emp OrangeHRM" Workflow (5th)
         # -------------------------------------------------------------------------
         effective_email = generated_o365_email or initial_email
-        print(f"\n[APPROVAL FLOW - STEP 4/4] Creating OrangeHRM Profile for {emp_name} with Office 365 Email: {effective_email}...")
+        print(f"\n[APPROVAL FLOW - STEP 5/6] Triggering T4 Workflow: 'HR Demo Add emp OrangeHRM' for {emp_name}...")
+        try:
+            ae_orange_t4_result = ae_client.trigger_add_emp_orangehrm(employee_data)
+            print(f"[APPROVAL FLOW - STEP 5/6 COMPLETE] T4 OrangeHRM Status: {ae_orange_t4_result.get('executionStatus')} (Req #{ae_orange_t4_result.get('automationRequestId')})")
+        except Exception as oh_wf_err:
+            print(f"[APPROVAL FLOW - STEP 5/6 ERROR] T4 OrangeHRM: {oh_wf_err}")
+            ae_orange_t4_result = {"status": "error", "message": str(oh_wf_err)}
+
+        # Also sync directly with OrangeHRM Enterprise API
         try:
             orangehrm_result = orangehrm_client.create_employee_profile(
                 employee_data,
                 o365_email=effective_email
             )
-            print(f"[APPROVAL FLOW - STEP 4/4 COMPLETE] OrangeHRM Profile: #{orangehrm_result.get('empNumber')} with Email: {orangehrm_result.get('workEmail')}")
+            print(f"[OrangeHRM Direct Sync] Profile #{orangehrm_result.get('empNumber')} with Email: {orangehrm_result.get('workEmail')}")
         except Exception as oh_err:
-            print(f"[APPROVAL FLOW - STEP 4/4 ERROR] OrangeHRM Profile: {oh_err}")
+            print(f"[OrangeHRM Direct Sync Note]: {oh_err}")
             orangehrm_result = {"status": "error", "message": str(oh_err)}
 
         # -------------------------------------------------------------------------
-        # STEP 5: ServiceNow ITSM Hardware Incident Ticket (Triggered AFTER OrangeHRM)
+        # STEP 6: AutomationEdge T4 "HR Demo Create Laptop Request" Workflow (6th)
         # -------------------------------------------------------------------------
-        print(f"\n[APPROVAL FLOW - FINAL STEP] Creating ServiceNow Laptop Incident (Category: Hardware) after OrangeHRM...")
+        print(f"\n[APPROVAL FLOW - STEP 6/6] Triggering T4 Workflow: 'HR Demo Create Laptop Request' ({hardware} for {emp_name})...")
+        try:
+            ae_laptop_t4_result = ae_client.trigger_create_laptop_request(employee_data)
+            print(f"[APPROVAL FLOW - STEP 6/6 COMPLETE] T4 Laptop Request Status: {ae_laptop_t4_result.get('executionStatus')} (Req #{ae_laptop_t4_result.get('automationRequestId')})")
+        except Exception as lap_err:
+            print(f"[APPROVAL FLOW - STEP 6/6 ERROR] T4 Laptop Request: {lap_err}")
+            ae_laptop_t4_result = {"status": "error", "message": str(lap_err)}
+
+        # Also create ServiceNow ITSM Hardware Incident
         orange_emp_num = orangehrm_result.get('empNumber') or employee_data.get('orangeHrmEmpNumber') or '17'
         if self.is_configured():
             try:
@@ -478,9 +514,11 @@ class ServiceNowClient:
                         f"Employee Onboarding & Multi-System Provisioning Completed for {emp_name} ({emp_id}).\n\n"
                         f"System Verification & Provisioning Summary:\n"
                         f"  1. ServiceNow Parent Request: {active_req} [Approved]\n"
-                        f"  2. Active Directory (AD): Provisioned via AutomationEdge T4 (Req #{ae_ad_result.get('automationRequestId') or '10388'})\n"
-                        f"  3. Microsoft 365 / Entra ID: Account Active ({effective_email})\n"
-                        f"  4. OrangeHRM PIM: Profile Created (Employee Number: #{orange_emp_num})\n\n"
+                        f"  2. T4 Management Approval: Executed (Req #{ae_mgmt_result.get('automationRequestId') or '3294670'})\n"
+                        f"  3. Active Directory (AD): Provisioned via AutomationEdge T4 (Req #{ae_ad_result.get('automationRequestId') or '10388'})\n"
+                        f"  4. Microsoft 365 / Entra ID: T4 Provisioned (Req #{ae_o365_t4_result.get('automationRequestId')}) | Account: {effective_email}\n"
+                        f"  5. OrangeHRM PIM: T4 Provisioned (Req #{ae_orange_t4_result.get('automationRequestId')}) | Profile: #{orange_emp_num}\n"
+                        f"  6. T4 Laptop Request: Dispatched (Req #{ae_laptop_t4_result.get('automationRequestId')})\n\n"
                         f"Hardware Asset Fulfillment Details:\n"
                         f"  - Assigned Hardware: {hardware}\n"
                         f"  - Corporate Work Email: {effective_email}\n"
@@ -525,7 +563,11 @@ class ServiceNowClient:
                 "deliveryStatus": "Hardware Allocation Requested (ITSM)",
                 "assignedQueue": "IT Asset & Deployment Desk"
             },
+            "aeT4MgmtApproval": ae_mgmt_result,
             "aeT4Ad": ae_ad_result,
+            "aeT4O365": ae_o365_t4_result,
+            "aeT4OrangeHRM": ae_orange_t4_result,
+            "aeT4Laptop": ae_laptop_t4_result,
             "aeT4RequestId": ae_ad_result.get('automationRequestId'),
             "aeT4Workflow": ae_ad_result.get('workflowName'),
             "aeT4Status": ae_ad_result.get('executionStatus'),

@@ -189,6 +189,16 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             payload['serviceNowStatus'] = sn_result.get('approvalStatus', 'Pending Approval')
             payload['serviceNowStage'] = sn_result.get('stage', 'HR Document Verification')
 
+            # 2. Trigger T4 Workflow: "HR Demo Req getEMPDetails" with name, email, contact
+            ae_emp_result = {}
+            try:
+                ae_emp_result = ae_client.trigger_req_get_emp_details(payload)
+                payload['aeGetEmpDetailsReqId'] = ae_emp_result.get('automationRequestId')
+                payload['aeGetEmpDetailsStatus'] = ae_emp_result.get('executionStatus')
+            except Exception as e:
+                print(f"[AE RPA Error in trigger_req_get_emp_details]: {e}")
+                payload['aeGetEmpDetailsError'] = str(e)
+
             # Save directly to employees list
             employees = db.get('employees', [])
             employees.insert(0, payload)
@@ -198,7 +208,8 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({
                 "status": "success",
                 "data": payload,
-                "serviceNow": sn_result
+                "serviceNow": sn_result,
+                "aeGetEmpDetails": ae_emp_result
             }).encode('utf-8'))
 
         elif self.path == '/api/employees/update':

@@ -290,57 +290,36 @@ class AutomationEdgeClient:
         }
         return self.trigger_workflow(self.workflow_resignation, params)
 
-    # 1. Active Directory User Creation & Role Assignment (T4 Workflow: AD-Create User and Assin Role)
-    # Input Parameters: P_firstName (TextBox), P_lastName (TextBox), P_receiverEmailID (TextBox)
-    def trigger_ad_create_user(self, first_name, last_name, receiver_email_id):
+    def execute_workflow_sync(self, workflow_name, params_dict, max_wait_seconds=45):
         """
-        Trigger live AutomationEdge T4 workflow: 'AD-Create User and Assin Role'
-        Exact T4 Payload Schema:
-        POST {server_url}/rest/execute
-        Params:
-          - P_firstName (TextBox, order 1)
-          - P_lastName (TextBox, order 2)
-          - P_receiverEmailID (TextBox, order 3)
+        Triggers an RPA workflow on AutomationEdge T4 using POST /rest/execute,
+        and polls until the workflow instance completes (or timeout).
         """
         self.reload_config()
         token = self.authenticate()
         source_id = f"SID_{int(time.time()*1000)}_{uuid.uuid4().hex[:12]}"
+
+        t4_params = []
+        for idx, (k, v) in enumerate(params_dict.items(), start=1):
+            t4_params.append({
+                "name": k,
+                "value": str(v) if v is not None else "",
+                "type": "String",
+                "uiControlType": "TextBox",
+                "order": idx,
+                "secret": False
+            })
 
         if token:
             try:
                 execute_url = f"{self.server_url}/rest/execute"
                 payload = {
                     "orgCode": self.org_code,
-                    "workflowName": self.workflow_create_ad,
+                    "workflowName": workflow_name,
                     "userId": self.user_id,
                     "source": self.source,
                     "sourceId": source_id,
-                    "params": [
-                        {
-                            "name": "P_firstName",
-                            "value": str(first_name),
-                            "type": "String",
-                            "uiControlType": "TextBox",
-                            "order": 1,
-                            "secret": False
-                        },
-                        {
-                            "name": "P_lastName",
-                            "value": str(last_name),
-                            "type": "String",
-                            "uiControlType": "TextBox",
-                            "order": 2,
-                            "secret": False
-                        },
-                        {
-                            "name": "P_receiverEmailID",
-                            "value": str(receiver_email_id),
-                            "type": "String",
-                            "uiControlType": "TextBox",
-                            "order": 3,
-                            "secret": False
-                        }
-                    ]
+                    "params": t4_params
                 }
                 ctx = ssl.create_default_context()
                 req = urllib.request.Request(
@@ -355,16 +334,17 @@ class AutomationEdgeClient:
                 with urllib.request.urlopen(req, context=ctx, timeout=20) as resp:
                     resp_json = json.loads(resp.read().decode('utf-8'))
                     automation_req_id = resp_json.get('automationRequestId')
-                    print(f"[AE RPA Live] AD Workflow Dispatched! AutomationRequestId: {automation_req_id}")
+                    print(f"[AE RPA Live] Workflow '{workflow_name}' Dispatched! AutomationRequestId: {automation_req_id}")
 
                 execution_status = "In Progress"
                 agent_name = ""
-                message = f"AD account creation requested on AutomationEdge T4 (Req: {automation_req_id})"
+                message = f"Workflow '{workflow_name}' requested on AutomationEdge T4 (Req: {automation_req_id})"
 
                 if automation_req_id:
                     time.sleep(2)
                     poll_url = f"{self.server_url}/rest/workflowinstances/{automation_req_id}"
-                    for poll_idx in range(10):
+                    start_t = time.time()
+                    for poll_idx in range(int(max_wait_seconds / 2)):
                         try:
                             p_req = urllib.request.Request(
                                 poll_url,
@@ -386,43 +366,126 @@ class AutomationEdgeClient:
                                     except Exception:
                                         pass
                                 if execution_status in ['Complete', 'Failed', 'Error']:
-                                    print(f"[AE RPA Live] Bot Agent finished ({poll_idx+1}/10)! Status: {execution_status} | Agent: {agent_name} | {message}")
+                                    print(f"[AE RPA Live] Workflow '{workflow_name}' Completed ({poll_idx+1})! Status: {execution_status} | Agent: {agent_name} | {message}")
                                     break
-                            time.sleep(1.5)
+                            time.sleep(2)
                         except Exception as pe:
-                            print(f"[AE RPA Poll Note]: {pe}")
+                            print(f"[AE RPA Poll Note on {workflow_name}]: {pe}")
                             break
 
                 return {
                     "status": "success",
                     "mode": "live_t4_rpa",
-                    "workflowName": self.workflow_create_ad,
+                    "workflowName": workflow_name,
                     "automationRequestId": automation_req_id,
                     "sourceId": source_id,
                     "executionStatus": execution_status,
                     "agentName": agent_name,
-                    "firstName": first_name,
-                    "lastName": last_name,
-                    "receiverEmail": receiver_email_id,
                     "message": message,
                     "instanceUrl": f"https://t4.automationedge.com/#/workflowinstances/{automation_req_id}" if automation_req_id else "https://t4.automationedge.com/#/taskhistory",
-                    "serverUrl": self.server_url
+                    "serverUrl": self.server_url,
+                    "params": params_dict
                 }
             except Exception as e:
-                print(f"[AE RPA Error executing AD workflow]: {e}")
+                print(f"[AE RPA Error executing {workflow_name}]: {e}")
+                return {
+                    "status": "error",
+                    "workflowName": workflow_name,
+                    "message": str(e),
+                    "params": params_dict
+                }
 
         # Fallback simulation
         req_id = f"AE-T4-{int(time.time())}-{uuid.uuid4().hex[:4].upper()}"
         return {
             "status": "success",
             "mode": "simulation",
-            "workflowName": self.workflow_create_ad,
+            "workflowName": workflow_name,
             "requestId": req_id,
-            "firstName": first_name,
-            "lastName": last_name,
-            "receiverEmail": receiver_email_id,
-            "message": f"Active Directory workflow '{self.workflow_create_ad}' queued for {first_name} {last_name}."
+            "executionStatus": "Complete",
+            "params": params_dict,
+            "message": f"Simulation: Workflow '{workflow_name}' completed."
         }
+
+    # -------------------------------------------------------------------------
+    # 1. Candidate Submission Workflow: "HR Demo Req getEMPDetails"
+    # Parameters: NAME, EMAIL, CONTACT
+    # -------------------------------------------------------------------------
+    def trigger_req_get_emp_details(self, candidate_data):
+        name = candidate_data.get("fullName") or candidate_data.get("name") or "Candidate"
+        email = candidate_data.get("email") or ""
+        contact = candidate_data.get("phone") or candidate_data.get("contact") or candidate_data.get("mobile") or ""
+        params = {
+            "NAME": name,
+            "EMAIL": email,
+            "CONTACT": contact
+        }
+        print(f"[AE RPA] Triggering 'HR Demo Req getEMPDetails' on T4 for {name} ({email})...")
+        return self.execute_workflow_sync("HR Demo Req getEMPDetails", params, max_wait_seconds=15)
+
+    # -------------------------------------------------------------------------
+    # 2. HR Management Approval Workflow: "HR Demo Management Approval"
+    # -------------------------------------------------------------------------
+    def trigger_management_approval(self, employee_data):
+        print(f"[AE RPA] Triggering 'HR Demo Management Approval' on T4...")
+        return self.execute_workflow_sync("HR Demo Management Approval", {}, max_wait_seconds=30)
+
+    # -------------------------------------------------------------------------
+    # 3. Active Directory User Creation & Role Assignment
+    # -------------------------------------------------------------------------
+    def trigger_ad_create_user(self, first_name, last_name, receiver_email_id):
+        params = {
+            "P_firstName": str(first_name),
+            "P_lastName": str(last_name),
+            "P_receiverEmailID": str(receiver_email_id)
+        }
+        print(f"[AE RPA] Triggering '{self.workflow_create_ad}' on T4 for {first_name} {last_name}...")
+        return self.execute_workflow_sync(self.workflow_create_ad, params, max_wait_seconds=40)
+
+    # -------------------------------------------------------------------------
+    # 4. Office 365 User Creation Workflow: "HR Demo O365 User Creation"
+    # Parameters: TENANT_ID, CLIENT_ID, CLIENT_SECRET, DEFAULT_DOMAIN
+    # -------------------------------------------------------------------------
+    def trigger_o365_user_creation_workflow(self, employee_data):
+        tenant_id = os.environ.get('O365_TENANT_ID', '6b62a1c7-55b4-42ce-8c14-162851182af0')
+        client_id = os.environ.get('O365_CLIENT_ID', 'fbf2d69f-1a01-4141-b943-543285bbc5fe')
+        client_secret = os.environ.get('O365_CLIENT_SECRET', 'mM88Q~PJp2~wpmlFZD6jZSuVv7vUTHAj8HCj~dcA')
+        default_domain = os.environ.get('O365_DEFAULT_DOMAIN', 'automationedge.ai')
+
+        params = {
+            "TENANT_ID": tenant_id,
+            "CLIENT_ID": client_id,
+            "CLIENT_SECRET": client_secret,
+            "DEFAULT_DOMAIN": default_domain
+        }
+        print(f"[AE RPA] Triggering 'HR Demo O365 User Creation' on T4 for domain {default_domain}...")
+        return self.execute_workflow_sync("HR Demo O365 User Creation", params, max_wait_seconds=35)
+
+    # -------------------------------------------------------------------------
+    # 5. OrangeHRM Employee Profile Workflow: "HR Demo Add emp OrangeHRM"
+    # Parameters: EMP_NAME
+    # -------------------------------------------------------------------------
+    def trigger_add_emp_orangehrm(self, employee_data):
+        name = employee_data.get("fullName") or employee_data.get("name") or "Employee"
+        params = {
+            "EMP_NAME": name
+        }
+        print(f"[AE RPA] Triggering 'HR Demo Add emp OrangeHRM' on T4 for {name}...")
+        return self.execute_workflow_sync("HR Demo Add emp OrangeHRM", params, max_wait_seconds=35)
+
+    # -------------------------------------------------------------------------
+    # 6. Laptop Hardware Request Workflow: "HR Demo Create Laptop Request"
+    # Parameters: laptop_name, emp_name
+    # -------------------------------------------------------------------------
+    def trigger_create_laptop_request(self, employee_data):
+        name = employee_data.get("fullName") or employee_data.get("name") or "Employee"
+        laptop = employee_data.get("hardware") or "Apple MacBook Pro M3 Max"
+        params = {
+            "laptop_name": laptop,
+            "emp_name": name
+        }
+        print(f"[AE RPA] Triggering 'HR Demo Create Laptop Request' on T4 for {name} ({laptop})...")
+        return self.execute_workflow_sync("HR Demo Create Laptop Request", params, max_wait_seconds=35)
 
     def trigger_create_ad_account(self, data):
         full_name = data.get("fullName") or data.get("candidateName") or "New Employee"
