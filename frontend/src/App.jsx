@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './context/AuthContext';
-import { useToast } from './context/ToastContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import LoginView from './components/LoginView';
@@ -15,7 +14,6 @@ import AnalyticsView from './components/AnalyticsView';
 
 export default function App() {
   const { currentUser } = useAuth();
-  const { showToast } = useToast();
 
   const isHR = currentUser?.role === 'hr';
   const [currentView, setCurrentView] = useState(() => (isHR ? 'approvals' : 'wizard'));
@@ -69,15 +67,6 @@ export default function App() {
     });
   };
 
-  const handleCandidateAutofill = () => {
-    if (currentView !== 'wizard') {
-      setCurrentView('wizard');
-    }
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('mangohrms-trigger-autofill'));
-    }, 50);
-  };
-
   if (!currentUser) {
     return <LoginView />;
   }
@@ -111,7 +100,6 @@ export default function App() {
         <Header
           currentView={currentView}
           toggleSidebar={toggleSidebar}
-          onAutoFill={handleCandidateAutofill}
         />
 
         <AnimatePresence mode="wait">
@@ -132,6 +120,7 @@ export default function App() {
           {currentView === 'wizard' && (
             <OnboardingWizard
               onRefreshEmployees={fetchEmployees}
+              onNavigate={isHR ? navigateTo : undefined}
             />
           )}
 

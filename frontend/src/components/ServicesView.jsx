@@ -1,5 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../context/ToastContext';
+import { PageHeader, Card, Field, StatusBanner, staggerContainer, EASE_OUT } from './ui';
+
+const SUGGESTED_QUESTIONS = ['How many leaves do I get?', 'When is my laptop dispatched?', 'What is my work email?'];
+
+// Inclusive day count between two ISO dates; 0 when the range is invalid
+function daysBetween(from, to) {
+  if (!from || !to) return 0;
+  const diff = (new Date(to) - new Date(from)) / 86400000;
+  return diff >= 0 ? Math.round(diff) + 1 : 0;
+}
+
+function leaveStatusClass(status) {
+  if (status === 'Approved') return 'badge-approved';
+  if (status?.startsWith('Pending')) return 'badge-pending';
+  return 'badge-draft';
+}
 
 export default function ServicesView() {
   const { showToast } = useToast();
@@ -19,155 +36,200 @@ export default function ServicesView() {
   const [fromDate, setFromDate] = useState('2026-11-04');
   const [toDate, setToDate] = useState('2026-11-05');
   const [reason, setReason] = useState('Personal family event');
+  const [leaveError, setLeaveError] = useState('');
+  const [leaveResult, setLeaveResult] = useState(null);
 
   const [chatInput, setChatInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useState([
-    { id: 1, text: '👋 Hello! I am your AI HR Policy Assistant. Ask me anything about Leave rules, Payslips, Health insurance, or Employee benefits!', sender: 'bot' },
+    { id: 1, text: 'Hello! I am your HR policy assistant. Ask me about leave rules, laptops, email accounts or employee benefits.', sender: 'bot' },
   ]);
+  const chatEndRef = useRef(null);
+
+  const requestedDays = daysBetween(fromDate, toDate);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [messages, isTyping]);
 
   const handleApplyLeave = (e) => {
     e.preventDefault();
+    if (!requestedDays) {
+      setLeaveError('The end date must be on or after the start date.');
+      document.getElementById('leave-to')?.focus();
+      return;
+    }
+    setLeaveError('');
     const newReq = {
       id: 'LR-' + Math.floor(100 + Math.random() * 900),
       type: leaveType,
       from: fromDate,
       to: toDate,
-      days: 2,
+      days: requestedDays,
       status: 'Pending Manager Approval',
     };
     setLeaveRequests((prev) => [newReq, ...prev]);
-    showToast(`✓ Leave request submitted (${fromDate} to ${toDate}).`, 'success');
+    setLeaveResult(`${leaveType} for ${requestedDays} day(s) sent to your manager for approval.`);
+    showToast(`Leave request submitted (${fromDate} to ${toDate}).`, 'success');
   };
 
-  const handleSendMessage = () => {
-    if (!chatInput.trim()) return;
-    const userMsg = chatInput.trim();
+  const sendMessage = (text) => {
+    const userMsg = text.trim();
+    if (!userMsg) return;
     setMessages((prev) => [...prev, { id: Date.now(), text: userMsg, sender: 'user' }]);
     setChatInput('');
+    setIsTyping(true);
 
     setTimeout(() => {
-      let botReply = 'I can help answer questions regarding OrangeHRM attendance, ServiceNow asset requests, and standard leave policies.';
+      let botReply = 'I can help with OrangeHRM attendance, ServiceNow asset requests and standard leave policies.';
       const lower = userMsg.toLowerCase();
       if (lower.includes('leave') || lower.includes('holiday')) {
-        botReply = '🌴 Full-time employees are entitled to 18 Privilege Leaves, 12 Casual Leaves, and 10 Sick Leaves annually with rollover options.';
+        botReply = 'Full-time employees get 18 privilege leaves, 12 casual leaves and 10 sick leaves a year, with rollover options.';
       } else if (lower.includes('laptop') || lower.includes('asset') || lower.includes('hardware')) {
-        botReply = '💻 Workstations are standard Apple MacBook Pro M3 Max or Dell XPS models dispatched automatically via ServiceNow ITSM upon onboarding approval.';
+        botReply = 'Workstations (Apple MacBook Pro M3 Max or Dell XPS) are dispatched automatically through ServiceNow ITSM once onboarding is approved.';
       } else if (lower.includes('email') || lower.includes('office') || lower.includes('365')) {
-        botReply = '📧 Corporate Microsoft 365 accounts are provisioned under @automationedge.ai domain and synchronized directly with your OrangeHRM profile.';
+        botReply = 'Microsoft 365 accounts are created under the @automationedge.ai domain and synced to your OrangeHRM profile.';
       }
+      setIsTyping(false);
       setMessages((prev) => [...prev, { id: Date.now() + 1, text: botReply, sender: 'bot' }]);
     }, 600);
   };
 
+  const handleChatSubmit = (e) => {
+    e.preventDefault();
+    sendMessage(chatInput);
+  };
+
   return (
-    <section className="view-section active">
-      <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
-        <h2><i className="fa-solid fa-headset text-accent"></i> Employee Self-Service & AI Support</h2>
-        <p style={{ color: 'var(--text-muted)' }}>Leave balance tracking, requests submission, and AI HR Policy Assistant.</p>
-      </div>
+    <section className="view-section active page">
+      <PageHeader
+        icon="fa-solid fa-headset"
+        title="Self-service & AI assistant"
+        description="Check leave balances, request time off and get instant answers to HR policy questions."
+      />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
-        {/* Leave Balances & Form */}
-        <div className="glass-card">
-          <h3 style={{ marginBottom: '1rem' }}><i className="fa-solid fa-calendar-days text-accent"></i> Apply for Leave</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1.25rem' }}>
-            <div style={{ background: 'var(--bg-primary)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-text)' }}>{leaveBalances.casual}</div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Casual Leaves</span>
-            </div>
-            <div style={{ background: 'var(--bg-primary)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#10b981' }}>{leaveBalances.sick}</div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sick Leaves</span>
-            </div>
-            <div style={{ background: 'var(--bg-primary)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#c2410c' }}>{leaveBalances.privilege}</div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Privilege Leaves</span>
-            </div>
-          </div>
+      <motion.div className="kpi-grid kpi-grid-3" variants={staggerContainer} initial="hidden" animate="show">
+        {[
+          { label: 'Casual leave', value: leaveBalances.casual, tone: 'accent', icon: 'fa-mug-hot' },
+          { label: 'Sick leave', value: leaveBalances.sick, tone: 'success', icon: 'fa-briefcase-medical' },
+          { label: 'Privilege leave', value: leaveBalances.privilege, tone: 'warning', icon: 'fa-umbrella-beach' },
+        ].map((b) => (
+          <motion.div
+            key={b.label}
+            className="ui-card kpi-tile"
+            variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT } } }}
+          >
+            <span className="kpi-label"><i className={`fa-solid ${b.icon} text-accent`} aria-hidden="true"></i> {b.label}</span>
+            <div className={`kpi-value tone-${b.tone}`}>{b.value}</div>
+            <span className="kpi-note">days available</span>
+          </motion.div>
+        ))}
+      </motion.div>
 
-          <form onSubmit={handleApplyLeave} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-            <div className="form-group">
-              <label>Leave Type</label>
+      <motion.div className="panel-grid" variants={staggerContainer} initial="hidden" animate="show">
+        {/* Leave request */}
+        <Card title="Request leave" icon="fa-solid fa-calendar-plus">
+          <AnimatePresence>
+            {leaveResult && (
+              <StatusBanner tone="success" title="Leave request submitted" onDismiss={() => setLeaveResult(null)}>
+                {leaveResult}
+              </StatusBanner>
+            )}
+          </AnimatePresence>
+
+          <form onSubmit={handleApplyLeave} className="stack-form" noValidate>
+            <Field id="leave-type" label="Leave type" required>
               <select className="form-control" value={leaveType} onChange={(e) => setLeaveType(e.target.value)}>
                 <option>Casual Leave</option>
                 <option>Sick Leave</option>
                 <option>Privilege Leave</option>
               </select>
+            </Field>
+            <div className="form-grid-2">
+              <Field id="leave-from" label="From" required>
+                <input type="date" className="form-control" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setLeaveError(''); }} required />
+              </Field>
+              <Field id="leave-to" label="To" required error={leaveError}>
+                <input type="date" className="form-control" min={fromDate} value={toDate} onChange={(e) => { setToDate(e.target.value); setLeaveError(''); }} required />
+              </Field>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div className="form-group">
-                <label>From Date</label>
-                <input type="date" className="form-control" value={fromDate} onChange={(e) => setFromDate(e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label>To Date</label>
-                <input type="date" className="form-control" value={toDate} onChange={(e) => setToDate(e.target.value)} required />
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Reason</label>
+            <Field id="leave-reason" label="Reason" required hint="Visible to your manager.">
               <textarea className="form-control" rows="2" value={reason} onChange={(e) => setReason(e.target.value)} required></textarea>
+            </Field>
+            <div className="form-submit-row">
+              <span className="kpi-note" aria-live="polite">
+                {requestedDays ? `${requestedDays} day(s) requested` : 'Choose a valid date range'}
+              </span>
+              <button type="submit" className="btn btn-primary">
+                <i className="fa-solid fa-paper-plane" aria-hidden="true"></i> Submit request
+              </button>
             </div>
-            <button type="submit" className="btn btn-primary" style={{ background: 'var(--button-gradient)', borderColor: 'transparent', fontWeight: 800 }}>
-              <i className="fa-solid fa-paper-plane"></i> Submit Leave Request
-            </button>
           </form>
-        </div>
+
+          <h3 className="subsection-title">Recent requests</h3>
+          <ul className="request-list">
+            {leaveRequests.map((r) => (
+              <li key={r.id}>
+                <div>
+                  <strong>{r.type}</strong>
+                  <div className="cell-sub">{r.from === r.to ? r.from : `${r.from} → ${r.to}`} · {r.days} day(s)</div>
+                </div>
+                <span className={`badge ${leaveStatusClass(r.status)}`}>{r.status}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
 
         {/* AI HR Policy Assistant */}
-        <div className="glass-card" style={{ display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ marginBottom: '1rem' }}><i className="fa-solid fa-robot text-accent"></i> AI HR Policy Assistant</h3>
-          <div
-            style={{
-              flex: 1,
-              background: 'var(--bg-primary)',
-              borderRadius: 'var(--radius-md)',
-              padding: '1rem',
-              minHeight: '220px',
-              maxHeight: '300px',
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.65rem',
-              marginBottom: '1rem',
-              border: '1px solid var(--border-color)',
-            }}
-          >
-            {messages.map((m) => (
-              <div
-                key={m.id}
-                style={{
-                  alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
-                  background: m.sender === 'user' ? 'var(--button-gradient)' : 'var(--bg-card)',
-                  color: m.sender === 'user' ? '#fff' : 'var(--text-main)',
-                  padding: '0.65rem 0.9rem',
-                  borderRadius: '12px',
-                  maxWidth: '85%',
-                  fontSize: '0.85rem',
-                  border: m.sender === 'user' ? 'none' : '1px solid var(--border-color)',
-                  boxShadow: '0 2px 5px rgba(0,0,0,0.03)',
-                }}
-              >
-                {m.text}
+        <Card title="HR policy assistant" icon="fa-solid fa-robot" className="chat-card">
+          <div className="chat-log" role="log" aria-live="polite" aria-label="Conversation with HR assistant">
+            <AnimatePresence initial={false}>
+              {messages.map((m) => (
+                <motion.div
+                  key={m.id}
+                  className={`chat-msg chat-msg-${m.sender}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.22, ease: EASE_OUT }}
+                >
+                  <span className="sr-only">{m.sender === 'user' ? 'You said:' : 'Assistant said:'}</span>
+                  {m.text}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            {isTyping && (
+              <div className="chat-msg chat-msg-bot chat-typing" aria-label="Assistant is typing">
+                <span></span><span></span><span></span>
               </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          <div className="chat-suggestions">
+            {SUGGESTED_QUESTIONS.map((q) => (
+              <button key={q} type="button" className="chip" onClick={() => sendMessage(q)} disabled={isTyping}>
+                {q}
+              </button>
             ))}
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <form className="chat-input-row" onSubmit={handleChatSubmit}>
+            <label htmlFor="chat-input" className="sr-only">Ask an HR policy question</label>
             <input
+              id="chat-input"
               type="text"
               className="form-control"
-              placeholder="Ask HR policy question (e.g. leave, laptop, insurance)..."
+              placeholder="Ask about leave, laptops, insurance…"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+              autoComplete="off"
             />
-            <button className="btn btn-primary" onClick={handleSendMessage} style={{ padding: '0 1rem' }}>
-              <i className="fa-solid fa-paper-plane"></i>
+            <button type="submit" className="btn btn-primary" disabled={!chatInput.trim() || isTyping} aria-label="Send question">
+              <i className="fa-solid fa-paper-plane" aria-hidden="true"></i>
             </button>
-          </div>
-        </div>
-      </div>
+          </form>
+        </Card>
+      </motion.div>
     </section>
   );
 }

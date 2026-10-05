@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '../context/ToastContext';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
+import { PageHeader, Card, EmptyState, StatusBanner, staggerContainer } from './ui';
 
 // Flow steps in execution order: ServiceNow -> AD -> Office 365 -> OrangeHRM -> Laptop Incident
 const FLOW_STEPS = ['step1', 'step2', 'step3', 'step4', 'step5'];
@@ -83,6 +84,8 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
   const { showToast } = useToast();
   const [approvingId, setApprovingId] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   // Right-side line flow drawer state
   const [activeFlowCandidate, setActiveFlowCandidate] = useState(null);
@@ -168,11 +171,13 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
       const res = await fetch('/api/employees/clear-approved', { method: 'POST' });
       if (res.ok) {
         if (onRefreshEmployees) onRefreshEmployees();
-        showToast('✓ Approved onboarding history & multi-engine logs cleared.', 'success');
+        setSyncResult({ tone: 'success', title: 'Approved history cleared' });
+      } else {
+        setSyncResult({ tone: 'error', title: 'Could not clear history', message: `The server returned HTTP ${res.status}.` });
       }
-    } catch (e) {
-      if (onRefreshEmployees) onRefreshEmployees();
-      showToast('Cleared approval history.', 'info');
+    } catch (err) {
+      console.warn('Clear history error:', err);
+      setSyncResult({ tone: 'error', title: 'Could not reach the HRMS server', message: 'History was not cleared.' });
     }
   };
 
@@ -291,20 +296,23 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
 
   const handleSyncServiceNow = async () => {
     setIsSyncing(true);
-    showToast('🔄 Synchronizing approval records with ServiceNow PDI (ven04528)...', 'info');
+    setSyncResult(null);
     try {
       const res = await fetch('/api/servicenow/sync-approvals');
       if (res.ok) {
         const data = await res.json();
         if (data.syncedCount > 0) {
-          showToast(`⚡ Synchronized ${data.syncedCount} approved candidate(s) from ServiceNow!`, 'success');
           confetti({ particleCount: 50 });
+          setSyncResult({ tone: 'success', title: `Synced ${data.syncedCount} candidate(s) approved in ServiceNow`, message: 'Their provisioning has been started.' });
         } else {
-          showToast('✓ All records up to date with ServiceNow PDI.', 'info');
+          setSyncResult({ tone: 'info', title: 'Already up to date', message: 'No new approvals were found in ServiceNow.' });
         }
+      } else {
+        setSyncResult({ tone: 'error', title: 'ServiceNow sync failed', message: `The server returned HTTP ${res.status}.` });
       }
     } catch (err) {
       console.warn('Sync error:', err);
+      setSyncResult({ tone: 'error', title: 'Could not reach the HRMS server', message: 'Check that "python server.py" is running.' });
     } finally {
       setIsSyncing(false);
       if (onRefreshEmployees) onRefreshEmployees();
@@ -312,410 +320,288 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
   };
 
   return (
-    <section className="view-section active" style={{ position: 'relative' }}>
-      {/* Main Approvals Content */}
-      <div style={{ marginBottom: '2.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem', margin: 0 }}>
-            <i className="fa-solid fa-folder-open text-accent"></i> Pending Onboarding Submissions (Action Required)
-          </h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="badge badge-pending">{pendingApprovals.length} Pending</span>
-            <button
-              className="btn btn-secondary"
-              onClick={onRefreshEmployees}
-              style={{ padding: '0.3rem 0.7rem', fontSize: '0.78rem' }}
-              title="Refresh Approvals list"
-            >
-              <i className="fa-solid fa-rotate"></i> Refresh
+    <section className="view-section active page" style={{ position: 'relative' }}>
+      <PageHeader
+        icon="fa-solid fa-clipboard-check"
+        title="HR approvals"
+        description="Review submitted candidates. Approving provisions ServiceNow, Active Directory, Microsoft 365, OrangeHRM and a laptop ticket in sequence."
+        actions={
+          <>
+            <button className="btn btn-secondary" onClick={handleSyncServiceNow} disabled={isSyncing} aria-busy={isSyncing}>
+              <i className={`fa-solid fa-cloud-arrow-down ${isSyncing ? 'fa-bounce' : ''}`} aria-hidden="true"></i>
+              {isSyncing ? 'Syncing…' : 'Sync from ServiceNow'}
             </button>
-          </div>
-        </div>
+            <button className="btn btn-secondary" onClick={onRefreshEmployees} aria-label="Refresh approvals list">
+              <i className="fa-solid fa-rotate" aria-hidden="true"></i> Refresh
+            </button>
+          </>
+        }
+      />
 
-        {pendingApprovals.length === 0 ? (
-          <div className="glass-card" style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)' }}>
-            <i className="fa-solid fa-circle-check" style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '1rem', display: 'block' }}></i>
-            <h3 style={{ color: 'var(--text-main)', marginBottom: '0.5rem' }}>All Caught Up!</h3>
-            <p>No candidate submissions currently pending verification or approval.</p>
-          </div>
-        ) : (
-          pendingApprovals.map((cand) => (
-            <div
-              key={cand.id}
-              className="glass-card"
-              style={{
-                marginBottom: '1.5rem',
-                border: '1px solid var(--border-orange)',
-                boxShadow: '0 8px 24px rgba(248, 121, 23, 0.08)',
-                padding: '1.5rem',
-              }}
-            >
-              {/* Header Row */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  flexWrap: 'wrap',
-                  gap: '1rem',
-                  borderBottom: '1px solid var(--border-color)',
-                  paddingBottom: '1rem',
-                  marginBottom: '1rem',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div
-                    className="avatar"
-                    style={{
-                      width: '48px',
-                      height: '48px',
-                      fontSize: '1.2rem',
-                      fontWeight: 800,
-                      background: 'var(--button-gradient)',
-                      color: '#fff',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {cand.fullName ? cand.fullName.charAt(0).toUpperCase() : 'C'}
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                      <h3 style={{ margin: 0 }}>{cand.fullName}</h3>
-                      <span className="badge badge-pending" style={{ fontSize: '0.72rem' }}>
-                        ● Pending HR Verification
-                      </span>
-                      <span className="badge badge-draft" style={{ fontSize: '0.72rem' }}>
-                        {cand.department || 'Engineering'}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '3px' }}>
-                      <i className="fa-solid fa-envelope"></i> {cand.email} • <i className="fa-solid fa-phone"></i> {cand.phone || '+91 98230 45670'}
+      <AnimatePresence>
+        {syncResult && (
+          <StatusBanner tone={syncResult.tone} title={syncResult.title} onDismiss={() => setSyncResult(null)}>
+            {syncResult.message}
+          </StatusBanner>
+        )}
+      </AnimatePresence>
+
+      {/* Pending submissions */}
+      <div className="section-heading">
+        <h2>
+          Pending review <span className="count-pill">{pendingApprovals.length}</span>
+        </h2>
+      </div>
+
+      {pendingApprovals.length === 0 ? (
+        <Card animated={false}>
+          <EmptyState icon="fa-solid fa-circle-check" title="All caught up">
+            No candidate submissions are waiting for review. New submissions from Onboarding appear here.
+          </EmptyState>
+        </Card>
+      ) : (
+        <motion.div variants={staggerContainer} initial="hidden" animate="show">
+          {pendingApprovals.map((cand) => {
+            const docs = [
+              { label: 'Government ID / Aadhaar', icon: 'fa-id-badge', file: cand.idDocumentName },
+              { label: 'Degree certificate', icon: 'fa-graduation-cap', file: cand.educationDocName },
+              { label: 'Tax form (W-4 / Form 16)', icon: 'fa-file-invoice-dollar', file: cand.taxDocumentName },
+              { label: 'Signed offer letter', icon: 'fa-file-signature', file: cand.offerDocumentName },
+            ];
+            const missingDocs = docs.filter((d) => !d.file).length;
+            const isApproving = approvingId === cand.id;
+
+            return (
+              <Card key={cand.id} className="candidate-card">
+                {/* Header Row */}
+                <div className="candidate-head">
+                  <div className="candidate-identity">
+                    <span className="candidate-avatar" aria-hidden="true">
+                      {cand.fullName ? cand.fullName.charAt(0).toUpperCase() : 'C'}
+                    </span>
+                    <div className="candidate-meta">
+                      <div className="candidate-name-row">
+                        <h3>{cand.fullName}</h3>
+                        <span className="badge badge-pending">Pending review</span>
+                        <span className="badge badge-draft">{cand.department || 'Engineering'}</span>
+                      </div>
+                      <div className="candidate-contact">
+                        <span><i className="fa-solid fa-envelope" aria-hidden="true"></i> {cand.email}</span>
+                        <span><i className="fa-solid fa-phone" aria-hidden="true"></i> {cand.phone || '—'}</span>
+                        <span><i className="fa-solid fa-hashtag" aria-hidden="true"></i> {cand.id}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Direct Links */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <div className="candidate-links">
                     <a
                       href={cand.reqUrl || `https://ven04528.service-now.com/nav_to.do?uri=sc_request_list.do?sysparm_query=number=${cand.serviceNowReq || 'REQ0010042'}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn btn-secondary"
-                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: 'var(--border-orange)', color: 'var(--accent-text)', background: '#fff7ed', fontWeight: 700, textDecoration: 'none', borderRadius: '6px' }}
+                      className="btn btn-secondary btn-sm"
                     >
-                      <i className="fa-solid fa-ticket"></i> ServiceNow Request
+                      <i className="fa-solid fa-ticket text-accent" aria-hidden="true"></i> {cand.serviceNowReq || 'ServiceNow request'}
+                      <span className="sr-only"> (opens in a new tab)</span>
                     </a>
                     <a
                       href={cand.ritmUrl || `https://ven04528.service-now.com/nav_to.do?uri=sc_req_item_list.do?sysparm_query=number=${cand.serviceNowRitm || 'RITM0010076'}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn btn-secondary"
-                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: '#fed7aa', color: '#c2410c', background: '#fff7ed', fontWeight: 700, textDecoration: 'none', borderRadius: '6px' }}
+                      className="btn btn-secondary btn-sm"
                     >
-                      <i className="fa-solid fa-box"></i> Catalog Item
+                      <i className="fa-solid fa-box text-accent" aria-hidden="true"></i> Catalog item
+                      <span className="sr-only"> (opens in a new tab)</span>
                     </a>
                   </div>
                 </div>
-              </div>
 
-              {/* 2-Column Details Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
-                {/* Column 1: Candidate Info */}
-                <div style={{ background: 'var(--bg-accent-soft)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-orange)' }}>
-                  <h4 style={{ fontSize: '0.88rem', color: 'var(--accent-text)', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    <i className="fa-solid fa-id-card"></i> Candidate Information
-                  </h4>
-                  <div style={{ fontSize: '0.86rem', lineHeight: 1.8, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-briefcase" style={{ width: '16px' }}></i> Role & Dept:</span>
-                      <strong style={{ color: 'var(--text-main)' }}>{cand.jobTitle || 'Staff Engineer'} • {cand.department || 'Engineering'}</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-cake-candles" style={{ width: '16px' }}></i> Date of Birth:</span>
-                      <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{cand.dob || '1994-06-15'}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-phone" style={{ width: '16px' }}></i> Emergency Contact:</span>
-                      <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{cand.emergencyName || 'Family Contact'} ({cand.emergencyPhone || cand.phone || '+91 98230 45670'})</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '0.35rem' }}>
-                      <span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-location-dot" style={{ width: '16px' }}></i> Address:</span>
-                      <span style={{ color: 'var(--text-main)', fontWeight: 500, textAlign: 'right', maxWidth: '60%' }}>{cand.address || 'Candidate Residential Address'}</span>
-                    </div>
+                {/* Details */}
+                <div className="candidate-body">
+                  <div className="detail-panel">
+                    <h4 className="detail-panel-title"><i className="fa-solid fa-id-card" aria-hidden="true"></i> Candidate information</h4>
+                    <dl className="detail-list">
+                      <div><dt>Role</dt><dd>{cand.jobTitle || '—'}</dd></div>
+                      <div><dt>Department</dt><dd>{cand.department || '—'}</dd></div>
+                      <div><dt>Date of birth</dt><dd>{cand.dob || '—'}</dd></div>
+                      <div><dt>Emergency contact</dt><dd>{cand.emergencyName || '—'}{cand.emergencyPhone ? ` (${cand.emergencyPhone})` : ''}</dd></div>
+                      <div><dt>Address</dt><dd>{cand.address || '—'}</dd></div>
+                      <div><dt>Workstation</dt><dd>{cand.hardware || '—'}</dd></div>
+                    </dl>
+                  </div>
+
+                  <div className="detail-panel">
+                    <h4 className="detail-panel-title">
+                      <i className="fa-solid fa-file-shield" aria-hidden="true"></i> Documents
+                      <span className={`badge ${missingDocs ? 'badge-pending' : 'badge-approved'}`}>
+                        {missingDocs ? `${missingDocs} missing` : 'All received'}
+                      </span>
+                    </h4>
+                    <ul className="doc-list">
+                      {docs.map((d) => (
+                        <li key={d.label}>
+                          <span className="doc-list-label">
+                            <i className={`fa-solid ${d.icon} text-accent`} aria-hidden="true"></i>
+                            <span>
+                              {d.label}
+                              {d.file && <small title={d.file}>{d.file}</small>}
+                            </span>
+                          </span>
+                          {d.file ? (
+                            <span className="badge badge-approved"><i className="fa-solid fa-check" aria-hidden="true"></i> Received</span>
+                          ) : (
+                            <span className="badge badge-pending">Missing</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
 
-                {/* Column 2: Uploaded Documents */}
-                <div style={{ background: 'var(--bg-card)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                  <h4 style={{ fontSize: '0.88rem', color: 'var(--text-main)', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    <i className="fa-solid fa-file-shield text-accent"></i> Verification Documents
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.83rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.35rem 0.6rem', background: 'var(--bg-primary)', borderRadius: '6px' }}>
-                      <span><i className="fa-solid fa-id-badge text-accent" style={{ marginRight: '6px' }}></i> Government ID / Aadhaar</span>
-                      <span className="badge badge-verified" style={{ fontSize: '0.7rem' }}><i className="fa-solid fa-check"></i> Verified</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.35rem 0.6rem', background: 'var(--bg-primary)', borderRadius: '6px' }}>
-                      <span><i className="fa-solid fa-graduation-cap text-accent" style={{ marginRight: '6px' }}></i> Degree / Educational Certificate</span>
-                      <span className="badge badge-verified" style={{ fontSize: '0.7rem' }}><i className="fa-solid fa-check"></i> Verified</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.35rem 0.6rem', background: 'var(--bg-primary)', borderRadius: '6px' }}>
-                      <span><i className="fa-solid fa-file-invoice-dollar text-accent" style={{ marginRight: '6px' }}></i> Tax Compliance Form (W-4 / Form 16)</span>
-                      <span className="badge badge-verified" style={{ fontSize: '0.7rem' }}><i className="fa-solid fa-check"></i> Verified</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.35rem 0.6rem', background: 'var(--bg-primary)', borderRadius: '6px' }}>
-                      <span><i className="fa-solid fa-file-signature text-accent" style={{ marginRight: '6px' }}></i> Signed Offer Letter</span>
-                      <span className="badge badge-verified" style={{ fontSize: '0.7rem' }}><i className="fa-solid fa-check"></i> Verified</span>
-                    </div>
-                  </div>
-                  <div style={{ marginTop: '0.65rem', paddingTop: '0.65rem', borderTop: '1px dashed var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                    <span><i className="fa-solid fa-laptop text-accent"></i> <strong>Workstation Requested:</strong></span>
-                    <span className="badge badge-pending" style={{ fontWeight: 700, fontSize: '0.78rem' }}>{cand.hardware || 'Apple MacBook Pro M3 Max'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Bar with Single Approve Button */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: '0.75rem',
-                  background: 'var(--bg-primary)',
-                  padding: '0.9rem 1.25rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-color)',
-                }}
-              >
-                <div style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 600 }}>
-                  <i className="fa-solid fa-circle-check text-emerald" style={{ fontSize: '1.15rem' }}></i>
-                  <span>Documents verified. Click Approve to provision AD, O365, OrangeHRM, Laptop asset & email Offer Letter.</span>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <button
-                    className="btn btn-primary"
-                    disabled={approvingId === cand.id}
-                    onClick={() => handleApprove(cand)}
-                    style={{
-                      padding: '0.65rem 1.75rem',
-                      fontSize: '0.92rem',
-                      background: 'var(--button-gradient)',
-                      borderColor: 'transparent',
-                      fontWeight: 800,
-                      boxShadow: '0 4px 14px rgba(248, 121, 23, 0.3)',
-                      borderRadius: '8px',
-                    }}
-                  >
-                    {approvingId === cand.id ? (
-                      <>
-                        <i className="fa-solid fa-spinner fa-spin"></i> Provisioning...
-                      </>
+                {/* Action Bar */}
+                <div className="candidate-actions">
+                  <p>
+                    <i className="fa-solid fa-circle-info text-accent" aria-hidden="true"></i>
+                    Approving runs: ServiceNow → Active Directory → Microsoft 365 → OrangeHRM → laptop ticket, then emails the offer letter.
+                  </p>
+                  <button className="btn btn-primary" disabled={isApproving} aria-busy={isApproving} onClick={() => handleApprove(cand)}>
+                    {isApproving ? (
+                      <><i className="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Provisioning…</>
                     ) : (
-                      <>
-                        <i className="fa-solid fa-circle-check"></i> Approve & Provision
-                      </>
+                      <><i className="fa-solid fa-circle-check" aria-hidden="true"></i> Approve & provision</>
                     )}
                   </button>
                 </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+              </Card>
+            );
+          })}
+        </motion.div>
+      )}
 
       {/* Approved History Table */}
-      <div className="glass-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <i className="fa-solid fa-clock-rotate-left text-accent"></i> Approved Onboarding History & Multi-Engine Logs ({approvedHistory.length})
-          </h3>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {approvedHistory.length > 0 && (
-              <button
-                className="btn btn-secondary"
-                onClick={handleClearApprovalHistory}
-                style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem', color: '#e11d48', borderColor: 'rgba(225, 29, 72, 0.3)' }}
-                title="Clear all completed onboarding history and logs"
-              >
-                <i className="fa-solid fa-trash-can"></i> Clear History Logs
-              </button>
-            )}
-            <button className="btn btn-secondary" onClick={onRefreshEmployees} style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>
-              <i className="fa-solid fa-arrows-rotate"></i> Refresh
-            </button>
-          </div>
-        </div>
-
-        <div className="table-responsive">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Candidate Name & Email</th>
-                <th>Role & Department</th>
-                <th>ServiceNow Request</th>
-                <th>HR & System Status</th>
-                <th>IT Asset / Laptop Ticket</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {approvedHistory.length === 0 ? (
-                <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
-                    No approved onboarding records yet.
-                  </td>
-                </tr>
-              ) : (
-                paginatedApprovedHistory.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <strong>{item.fullName}</strong>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{item.email}</div>
-                    </td>
-                    <td>{item.jobTitle} • {item.department}</td>
-                    <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span className="badge badge-verified" style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <i className="fa-solid fa-check"></i> {item.serviceNowReq || 'REQ0010042'}
-                        </span>
-                        {item.serviceNowRitm && (
-                          <span style={{ fontSize: '0.7rem', color: '#c2410c', marginTop: '2px' }}>
-                            Item: <code>{item.serviceNowRitm}</code>
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span className="badge badge-approved" style={{ fontSize: '0.72rem' }}>
-                          <i className="fa-solid fa-check-double"></i> Verified
-                        </span>
-                        {item.orangeHrmEmpNumber && (
-                          <span className="badge badge-verified" style={{ fontSize: '0.72rem', borderColor: '#93c5fd', color: '#c2410c', background: '#fff7ed' }}>
-                            <i className="fa-solid fa-user-check"></i> OrangeHRM #{item.orangeHrmEmpNumber}
-                          </span>
-                        )}
-                        {item.o365Email && (
-                          <span className="badge" style={{ fontSize: '0.72rem', border: '1px solid #93c5fd', color: '#1d4ed8', background: '#eff6ff' }}>
-                            <i className="fa-brands fa-microsoft"></i> {item.o365Email.split('@')[0]}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <i className="fa-solid fa-laptop text-accent"></i>
-                        <span style={{ color: 'var(--accent-text)', fontWeight: 700, fontSize: '0.85rem' }}>
-                          {item.laptopTicket || 'INC0040420'}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{item.hardware || 'Apple MacBook Pro M3 Max'}</div>
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => inspectApprovalFlow(item)}
-                        style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', color: 'var(--accent-text)', borderColor: 'var(--border-orange)' }}
-                        title="View Live Execution Line Flow"
-                      >
-                        <i className="fa-solid fa-timeline"></i> View Flow
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination Bar - 10 Employees Per Page */}
-        {approvedHistory.length > 0 && (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '0.75rem',
-              marginTop: '1rem',
-              paddingTop: '0.75rem',
-              borderTop: '1px solid var(--border-subtle)',
-              fontSize: '0.82rem',
-              color: 'var(--text-muted)',
-            }}
-          >
-            <div>
-              Showing <strong style={{ color: 'var(--text-main)' }}>{approvedHistory.length === 0 ? 0 : startIndex + 1}</strong> to{' '}
-              <strong style={{ color: 'var(--text-main)' }}>{Math.min(startIndex + ITEMS_PER_PAGE, approvedHistory.length)}</strong> of{' '}
-              <strong style={{ color: 'var(--text-main)' }}>{approvedHistory.length}</strong> employees (10 per page)
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <button
-                className="btn btn-secondary"
-                disabled={validCurrentPage === 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                style={{
-                  padding: '0.3rem 0.65rem',
-                  fontSize: '0.78rem',
-                  opacity: validCurrentPage === 1 ? 0.5 : 1,
-                  cursor: validCurrentPage === 1 ? 'not-allowed' : 'pointer',
-                }}
-                title="Previous Page"
-              >
-                <i className="fa-solid fa-chevron-left"></i> Prev
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                <button
-                  key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
-                  style={{
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: 'var(--radius-xs)',
-                    border: pageNum === validCurrentPage ? '1px solid transparent' : '1px solid var(--border-color)',
-                    background: pageNum === validCurrentPage ? 'var(--button-gradient)' : 'var(--bg-card)',
-                    color: pageNum === validCurrentPage ? '#fff' : 'var(--text-main)',
-                    fontWeight: 700,
-                    fontSize: '0.8rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'var(--transition-fast)',
-                    boxShadow: pageNum === validCurrentPage ? '0 2px 6px rgba(248, 121, 23, 0.25)' : 'none',
-                  }}
-                >
-                  {pageNum}
+      <Card
+        animated={false}
+        title={`Approved history (${approvedHistory.length})`}
+        icon="fa-solid fa-clock-rotate-left"
+        actions={
+          approvedHistory.length > 0 && (
+            confirmClear ? (
+              <>
+                <span className="confirm-text">Delete all {approvedHistory.length} records?</span>
+                <button className="btn btn-danger btn-sm" onClick={() => { setConfirmClear(false); handleClearApprovalHistory(); }}>
+                  Yes, delete
                 </button>
-              ))}
-
-              <button
-                className="btn btn-secondary"
-                disabled={validCurrentPage === totalPages}
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                style={{
-                  padding: '0.3rem 0.65rem',
-                  fontSize: '0.78rem',
-                  opacity: validCurrentPage === totalPages ? 0.5 : 1,
-                  cursor: validCurrentPage === totalPages ? 'not-allowed' : 'pointer',
-                }}
-                title="Next Page"
-              >
-                Next <i className="fa-solid fa-chevron-right"></i>
+                <button className="btn btn-secondary btn-sm" onClick={() => setConfirmClear(false)}>Cancel</button>
+              </>
+            ) : (
+              <button className="btn btn-secondary btn-sm btn-danger-outline" onClick={() => setConfirmClear(true)}>
+                <i className="fa-solid fa-trash-can" aria-hidden="true"></i> Clear history
               </button>
+            )
+          )
+        }
+      >
+        {approvedHistory.length === 0 ? (
+          <EmptyState icon="fa-solid fa-clock-rotate-left" title="No approvals yet">
+            Approved candidates and their provisioning results will be listed here.
+          </EmptyState>
+        ) : (
+          <>
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Candidate</th>
+                    <th scope="col">Role & department</th>
+                    <th scope="col">ServiceNow</th>
+                    <th scope="col">Provisioned accounts</th>
+                    <th scope="col">Laptop ticket</th>
+                    <th scope="col"><span className="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedApprovedHistory.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <strong>{item.fullName}</strong>
+                        <div className="cell-sub">{item.email}</div>
+                      </td>
+                      <td>
+                        {item.jobTitle || '—'}
+                        <div className="cell-sub">{item.department || '—'}</div>
+                      </td>
+                      <td>
+                        <span className="badge badge-approved"><i className="fa-solid fa-check" aria-hidden="true"></i> {item.serviceNowReq || '—'}</span>
+                        {item.serviceNowRitm && <div className="cell-sub">Item {item.serviceNowRitm}</div>}
+                      </td>
+                      <td>
+                        <div className="badge-stack">
+                          {item.o365Email ? (
+                            <span className="badge badge-ms"><i className="fa-brands fa-microsoft" aria-hidden="true"></i> {item.o365Email.split('@')[0]}</span>
+                          ) : (
+                            <span className="badge badge-draft">No O365 account</span>
+                          )}
+                          {item.orangeHrmEmpNumber ? (
+                            <span className="badge badge-verified"><i className="fa-solid fa-user-check" aria-hidden="true"></i> OrangeHRM #{item.orangeHrmEmpNumber}</span>
+                          ) : (
+                            <span className="badge badge-draft">No OrangeHRM profile</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <strong className="cell-accent">{item.laptopTicket || '—'}</strong>
+                        <div className="cell-sub">{item.hardware || '—'}</div>
+                      </td>
+                      <td className="cell-actions">
+                        <button className="btn btn-secondary btn-sm" onClick={() => inspectApprovalFlow(item)}>
+                          <i className="fa-solid fa-timeline text-accent" aria-hidden="true"></i> View flow
+                          <span className="sr-only"> for {item.fullName}</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
+
+            {/* Pagination */}
+            <nav className="pagination" aria-label="Approved history pages">
+              <span className="pagination-summary">
+                Showing <strong>{startIndex + 1}</strong>–<strong>{Math.min(startIndex + ITEMS_PER_PAGE, approvedHistory.length)}</strong> of{' '}
+                <strong>{approvedHistory.length}</strong>
+              </span>
+              <div className="pagination-controls">
+                <button
+                  className="btn btn-secondary btn-sm"
+                  disabled={validCurrentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  aria-label="Previous page"
+                >
+                  <i className="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    className={`page-btn ${pageNum === validCurrentPage ? 'is-current' : ''}`}
+                    onClick={() => setCurrentPage(pageNum)}
+                    aria-label={`Page ${pageNum}`}
+                    aria-current={pageNum === validCurrentPage ? 'page' : undefined}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+                <button
+                  className="btn btn-secondary btn-sm"
+                  disabled={validCurrentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  aria-label="Next page"
+                >
+                  <i className="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
+              </div>
+            </nav>
+          </>
         )}
-      </div>
+      </Card>
 
       {/* ========================================================================= */}
       {/* RIGHT-SIDE LINE FLOW DRAWER (Shows triggered workflows & changes) */}

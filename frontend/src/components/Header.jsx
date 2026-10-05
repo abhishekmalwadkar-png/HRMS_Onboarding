@@ -1,20 +1,17 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
 
+// Short breadcrumb names; each page renders its own full title via <PageHeader>
 const VIEW_TITLES = {
-  approvals: 'HR Approvals & IT Hardware Provisioning',
-  recruitment: 'Candidate Recruitment Pipeline',
-  dashboard: 'Employee Directory & Master Records',
-  wizard: 'Digital Onboarding & Offer Letter Acceptance',
-  services: 'Employee Self-Service & Leave Management',
-  exit: 'Employee Offboarding & Exit Management',
-  analytics: 'Executive HR Analytics & Compliance',
+  approvals: 'Approvals',
+  recruitment: 'Recruitment',
+  dashboard: 'Directory',
+  wizard: 'Onboarding',
+  services: 'Services & AI',
+  exit: 'Offboarding',
+  analytics: 'HR Analytics',
 };
 
-export default function Header({ currentView, toggleSidebar, onAutoFill }) {
-  const { currentUser } = useAuth();
-  const isHR = currentUser?.role === 'hr';
-
+export default function Header({ currentView, toggleSidebar }) {
   return (
     <header className="top-header">
       <div className="top-header-left">
@@ -25,35 +22,13 @@ export default function Header({ currentView, toggleSidebar, onAutoFill }) {
           title="Toggle Sidebar"
           aria-label="Toggle navigation menu"
         >
-          <i className="fa-solid fa-bars"></i>
+          <i className="fa-solid fa-bars" aria-hidden="true"></i>
         </button>
-        <div className="breadcrumb-container" id="currentViewBreadcrumb">
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Enterprise Portal</span>
-          <span style={{ color: 'var(--border-orange-strong)', margin: '0 5px' }}>/</span>
-          <strong style={{ color: 'var(--text-main)', fontSize: '0.95rem' }}>
-            {VIEW_TITLES[currentView] || 'Overview'}
-          </strong>
-        </div>
-      </div>
-
-      <div className="top-header-right">
-        {currentView === 'wizard' && (
-          <button
-            className="btn btn-secondary"
-            onClick={onAutoFill}
-            style={{
-              padding: '0.4rem 0.85rem',
-              fontSize: '0.8rem',
-              borderColor: 'var(--border-orange)',
-              background: 'var(--bg-accent-soft)',
-              fontWeight: 700,
-              color: 'var(--accent-text)',
-            }}
-            title="Pre-fill candidate profile data into Onboarding Wizard"
-          >
-            <i className="fa-solid fa-wand-magic-sparkles text-accent"></i> Auto-Fill
-          </button>
-        )}
+        <nav className="breadcrumb-container" id="currentViewBreadcrumb" aria-label="Breadcrumb">
+          <span className="breadcrumb-root">Enterprise Portal</span>
+          <i className="fa-solid fa-chevron-right breadcrumb-sep" aria-hidden="true"></i>
+          <strong className="breadcrumb-current" aria-current="page">{VIEW_TITLES[currentView] || 'Overview'}</strong>
+        </nav>
       </div>
     </header>
   );

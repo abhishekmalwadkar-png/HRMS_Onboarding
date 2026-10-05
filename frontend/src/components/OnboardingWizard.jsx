@@ -1,13 +1,54 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import confetti from 'canvas-confetti';
+import { PageHeader, Card, Field, StatusBanner, EASE_OUT } from './ui';
 
-export default function OnboardingWizard({ onRefreshEmployees }) {
+const STEPS = [
+  { num: 1, title: 'Personal details', subtitle: 'Identity & emergency contact' },
+  { num: 2, title: 'Documents & signature', subtitle: 'Verification files & sign-off' },
+];
+
+const PERSONAL_FIELDS = [
+  { id: 'fullName', label: 'Full legal name', type: 'text', autoComplete: 'name' },
+  { id: 'email', label: 'Personal email', type: 'email', autoComplete: 'email' },
+  { id: 'phone', label: 'Phone number', type: 'tel', autoComplete: 'tel' },
+  { id: 'dob', label: 'Date of birth', type: 'date', autoComplete: 'bday' },
+  { id: 'emergencyName', label: 'Emergency contact name', type: 'text' },
+  { id: 'emergencyPhone', label: 'Emergency contact phone', type: 'tel' },
+  { id: 'address', label: 'Current residential address', type: 'text', autoComplete: 'street-address', full: true },
+];
+
+const DOCUMENTS = [
+  { key: 'idDoc', title: 'Government ID / Aadhaar', icon: 'fa-id-badge', hint: 'Aadhaar, Passport or PAN card' },
+  { key: 'degreeDoc', title: 'Degree certificate', icon: 'fa-graduation-cap', hint: 'B.Tech / M.Tech / degree certificate' },
+  { key: 'taxDoc', title: 'Tax Form 16 / W-4', icon: 'fa-file-invoice-dollar', hint: 'Form 16, tax declaration or salary slips' },
+  { key: 'offerDoc', title: 'Signed offer letter', icon: 'fa-file-signature', hint: 'Signed copy of the employment offer' },
+];
+
+const HARDWARE_OPTIONS = [
+  'Apple MacBook Pro M3 Max',
+  'Apple MacBook Pro 16" M3 Pro',
+  'Dell XPS 15 9530 (i9 64GB RTX)',
+  'Lenovo ThinkPad P1 Gen 6',
+];
+
+// Field-level validation, run on blur and before leaving step 1 (design system: validate on blur, error next to field)
+function validateField(id, value) {
+  const v = (value || '').trim();
+  if (!v) return 'This field is required.';
+  if (id === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'Enter a valid email address, e.g. name@example.com.';
+  if ((id === 'phone' || id === 'emergencyPhone') && v.replace(/\D/g, '').length < 10) return 'Enter at least 10 digits.';
+  return '';
+}
+
+export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
   const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [submitResult, setSubmitResult] = useState(null); // { tone, title, message }
   const canvasRef = useRef(null);
-  const [isDrawing, setIsDrawing] = useState(false);
   const lastIndexRef = useRef(-1);
 
   // Form State
@@ -65,11 +106,11 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.font = "italic bold 32px 'Caveat', cursive, 'Brush Script MT', sans-serif";
-      ctx.fillStyle = '#f87917';
+      ctx.fillStyle = '#c2410c';
       ctx.fillText(formData.fullName || 'Aarav Sharma', 40, canvas.height / 2 + 10);
 
       ctx.beginPath();
-      ctx.strokeStyle = '#f87917';
+      ctx.strokeStyle = '#c2410c';
       ctx.lineWidth = 2.5;
       ctx.moveTo(35, canvas.height / 2 + 25);
       ctx.quadraticCurveTo(canvas.width / 2, canvas.height / 2 + 40, canvas.width - 60, canvas.height / 2 + 20);
@@ -83,6 +124,34 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
       ...prev,
       [id]: type === 'checkbox' ? checked : value,
     }));
+    // Clear a field's error as soon as the user fixes it
+    if (errors[id] && !validateField(id, value)) {
+      setErrors((prev) => ({ ...prev, [id]: '' }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { id, value } = e.target;
+    setErrors((prev) => ({ ...prev, [id]: validateField(id, value) }));
+  };
+
+  const validateStep1 = () => {
+    const next = {};
+    PERSONAL_FIELDS.forEach((f) => {
+      const msg = validateField(f.id, formData[f.id]);
+      if (msg) next[f.id] = msg;
+    });
+    setErrors(next);
+    if (Object.keys(next).length) {
+      document.getElementById(Object.keys(next)[0])?.focus();
+      return false;
+    }
+    return true;
+  };
+
+  const goToStep = (step) => {
+    if (step === 2 && !validateStep1()) return;
+    setCurrentStep(step);
   };
 
   const handleAutoFill = async () => {
@@ -92,7 +161,7 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
         const data = await res.json();
         const profiles = data.autofillProfiles || (Array.isArray(data) ? data : [data]);
         let profile = data;
-        
+
         if (profiles.length > 0) {
           let nextIdx;
           if (profiles.length === 1) {
@@ -142,6 +211,8 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
           taxDoc: { name: profile.taxDocumentName || 'Form16_Tax_Compliance_2026.pdf', size: '1.2 MB' },
           offerDoc: { name: profile.offerDocumentName || `Signed_Offer_Letter_${(profile.fullName || 'Candidate').replace(/\s+/g, '_')}.pdf`, size: '1.8 MB' },
         });
+        setErrors({});
+        setSubmitResult(null);
       }
     } catch (err) {
       console.warn('AutoFill fetch failed:', err);
@@ -158,7 +229,12 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateStep1()) {
+      setCurrentStep(1);
+      return;
+    }
     setIsSubmitting(true);
+    setSubmitResult(null);
     showToast('Submitting candidate profile to ServiceNow...', 'info');
 
     const newCandidate = {
@@ -200,309 +276,235 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
 
       if (res.ok) {
         confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
-        showToast(`🎉 Onboarding submitted successfully for ${formData.fullName}! ServiceNow REQ created.`, 'success');
+        showToast(`Onboarding submitted for ${formData.fullName}.`, 'success');
+        setSubmitResult({
+          tone: 'success',
+          title: `Application submitted for ${formData.fullName}`,
+          message: 'The candidate is now waiting for HR review in Approvals.',
+        });
+      } else {
+        setSubmitResult({
+          tone: 'error',
+          title: 'Submission failed',
+          message: `The server returned an error (HTTP ${res.status}). Nothing was saved. Please try again.`,
+        });
       }
     } catch (err) {
       console.warn('Submit error:', err);
-      showToast('Onboarding details submitted successfully!', 'success');
+      setSubmitResult({
+        tone: 'error',
+        title: 'Could not reach the HRMS server',
+        message: 'Check that "python server.py" is running, then submit again.',
+      });
     } finally {
       setIsSubmitting(false);
       if (onRefreshEmployees) onRefreshEmployees();
     }
   };
 
+  const step1Done = currentStep > 1;
+
   return (
-    <section className="view-section active">
-      <div className="glass-card" style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
-        {/* Wizard Header */}
-        <div className="wizard-header" style={{ marginBottom: '2rem' }}>
-          <div className="wizard-title-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div className="wizard-title-group">
-              <h1 style={{ fontSize: '1.6rem', color: 'var(--text-main)' }}>Employee Onboarding & Candidate Registration</h1>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                Add candidate details and upload documents to trigger AutomationEdge T4 (<code>HR Demo Req getEMPDetails</code>) and ServiceNow Service Catalog workflows.
-              </p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleAutoFill}
-                style={{ padding: '0.45rem 0.9rem', fontSize: '0.85rem' }}
-                title="Fetch candidate profile data"
+    <section className="view-section active page-narrow">
+      <PageHeader
+        icon="fa-solid fa-user-plus"
+        title="Employee onboarding"
+        description="Register a candidate and upload verification documents. Submitting creates a ServiceNow catalog request and queues the candidate for HR approval."
+        actions={
+          <button type="button" className="btn btn-secondary" onClick={handleAutoFill} title="Fill the form with a sample candidate profile">
+            <i className="fa-solid fa-wand-magic-sparkles text-accent" aria-hidden="true"></i> Auto-fill sample
+          </button>
+        }
+      />
+
+      <AnimatePresence>
+        {submitResult && (
+          <StatusBanner tone={submitResult.tone} title={submitResult.title} onDismiss={() => setSubmitResult(null)}>
+            {submitResult.message}
+            {submitResult.tone === 'success' && onNavigate && (
+              <>
+                {' '}
+                <button type="button" className="link-btn" onClick={() => onNavigate('approvals')}>
+                  Go to Approvals <i className="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                </button>
+              </>
+            )}
+          </StatusBanner>
+        )}
+      </AnimatePresence>
+
+      {/* Step indicator (buttons, so it is keyboard reachable) */}
+      <nav aria-label="Onboarding progress">
+        <ol className="wizard-steps">
+          {STEPS.map((s) => {
+            const isCurrent = currentStep === s.num;
+            const isDone = s.num === 1 && step1Done;
+            return (
+              <li key={s.num}>
+                <button
+                  type="button"
+                  className={`wizard-step ${isCurrent ? 'is-current' : ''} ${isDone ? 'is-done' : ''}`}
+                  onClick={() => goToStep(s.num)}
+                  aria-current={isCurrent ? 'step' : undefined}
+                >
+                  <span className="wizard-step-num" aria-hidden="true">
+                    {isDone ? <i className="fa-solid fa-check"></i> : s.num}
+                  </span>
+                  <span className="wizard-step-text">
+                    <strong>Step {s.num} of {STEPS.length}: {s.title}</strong>
+                    <span>{s.subtitle}</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+
+      <Card animated={false}>
+        <form onSubmit={handleSubmit} noValidate>
+          <AnimatePresence mode="wait" initial={false}>
+            {/* STEP 1: PERSONAL DETAILS */}
+            {currentStep === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -12 }}
+                transition={{ duration: 0.25, ease: EASE_OUT }}
               >
-                <i className="fa-solid fa-wand-magic-sparkles text-accent"></i> Auto-Fill
-              </button>
-              <div className="badge badge-pending" id="currentStepBadge">Step {currentStep} of 2</div>
-            </div>
-          </div>
+                <h2 className="wizard-section-title">
+                  <i className="fa-solid fa-id-card text-accent" aria-hidden="true"></i> Personal details
+                </h2>
+                <div className="form-grid-2">
+                  {PERSONAL_FIELDS.map((f) => (
+                    <Field key={f.id} id={f.id} label={f.label} required error={errors[f.id]} full={f.full}>
+                      <input
+                        type={f.type}
+                        className="form-control"
+                        value={formData[f.id]}
+                        onChange={handleInputChange}
+                        onBlur={handleBlur}
+                        autoComplete={f.autoComplete}
+                        required
+                      />
+                    </Field>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
-          {/* Stepper Progress */}
-          <div className="stepper" style={{ maxWidth: '500px', margin: '0 auto 1.5rem auto' }}>
-            <div className="stepper-progress" style={{ width: currentStep === 1 ? '50%' : '100%' }}></div>
-            <div className={`step-item ${currentStep >= 1 ? 'active' : ''}`} onClick={() => setCurrentStep(1)}>
-              <div className="step-circle"><i className="fa-solid fa-user"></i></div>
-              <span className="step-label">Personal Details</span>
-            </div>
-            <div className={`step-item ${currentStep >= 2 ? 'active' : ''}`} onClick={() => setCurrentStep(2)}>
-              <div className="step-circle"><i className="fa-solid fa-folder-open"></i></div>
-              <span className="step-label">Documents & Signature</span>
-            </div>
-          </div>
-        </div>
+            {/* STEP 2: DOCUMENTS & DIGITAL SIGNATURE */}
+            {currentStep === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 12 }}
+                transition={{ duration: 0.25, ease: EASE_OUT }}
+              >
+                <h2 className="wizard-section-title">
+                  <i className="fa-solid fa-folder-open text-accent" aria-hidden="true"></i> Verification documents
+                </h2>
 
-        {/* Wizard Form */}
-        <form onSubmit={handleSubmit}>
-          {/* STEP 1: PERSONAL DETAILS */}
-          {currentStep === 1 && (
-            <div className="step-content active">
-              <h3 style={{ marginBottom: '1.25rem' }}><i className="fa-solid fa-id-card text-accent"></i> Personal Details</h3>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Full Legal Name <span className="required">*</span></label>
-                  <input type="text" id="fullName" className="form-control" value={formData.fullName} onChange={handleInputChange} required />
-                </div>
-                <div className="form-group">
-                  <label>Personal Email <span className="required">*</span></label>
-                  <input type="email" id="email" className="form-control" value={formData.email} onChange={handleInputChange} required />
-                </div>
-                <div className="form-group">
-                  <label>Phone Number <span className="required">*</span></label>
-                  <input type="tel" id="phone" className="form-control" value={formData.phone} onChange={handleInputChange} required />
-                </div>
-                <div className="form-group">
-                  <label>Date of Birth <span className="required">*</span></label>
-                  <input type="date" id="dob" className="form-control" value={formData.dob} onChange={handleInputChange} required />
-                </div>
-                <div className="form-group">
-                  <label>Emergency Contact Name <span className="required">*</span></label>
-                  <input type="text" id="emergencyName" className="form-control" value={formData.emergencyName} onChange={handleInputChange} required />
-                </div>
-                <div className="form-group">
-                  <label>Emergency Contact Phone <span className="required">*</span></label>
-                  <input type="tel" id="emergencyPhone" className="form-control" value={formData.emergencyPhone} onChange={handleInputChange} required />
-                </div>
-                <div className="form-group full-width">
-                  <label>Current Residential Address <span className="required">*</span></label>
-                  <input type="text" id="address" className="form-control" value={formData.address} onChange={handleInputChange} required />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2: DOCUMENTS & DIGITAL SIGNATURE */}
-          {currentStep === 2 && (
-            <div className="step-content active">
-              <h3 style={{ marginBottom: '1.25rem' }}><i className="fa-solid fa-folder-open text-accent"></i> Verification Documents & Signature</h3>
-
-              {/* Document Checklist & Upload Controls */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-                {[
-                  {
-                    key: 'idDoc',
-                    title: '1. Government ID / Aadhaar',
-                    icon: 'fa-id-badge',
-                    hint: 'Aadhaar, Passport, PAN Card (PDF, PNG, JPG)',
-                    accept: '.pdf,.png,.jpg,.jpeg',
-                  },
-                  {
-                    key: 'degreeDoc',
-                    title: '2. Degree Certificate',
-                    icon: 'fa-graduation-cap',
-                    hint: 'B.Tech / M.Tech / Degree Certificate (PDF)',
-                    accept: '.pdf,.png,.jpg,.jpeg',
-                  },
-                  {
-                    key: 'taxDoc',
-                    title: '3. Tax Form 16 / W-4',
-                    icon: 'fa-file-invoice-dollar',
-                    hint: 'Form 16 / Tax Declaration / Salary Slips',
-                    accept: '.pdf,.png,.jpg,.jpeg',
-                  },
-                  {
-                    key: 'offerDoc',
-                    title: '4. Signed Offer Letter',
-                    icon: 'fa-file-signature',
-                    hint: 'Signed copy of your employment offer',
-                    accept: '.pdf,.png,.jpg,.jpeg',
-                  },
-                ].map((doc) => {
-                  const docInfo = documents[doc.key];
-                  const isUploaded = Boolean(docInfo?.name);
-                  return (
-                    <div
-                      key={doc.key}
-                      className="glass-card"
-                      style={{
-                        padding: '1.1rem',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: 'var(--radius-md)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        gap: '0.75rem',
-                        background: 'var(--bg-primary)',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                          <div
-                            style={{
-                              width: '32px',
-                              height: '32px',
-                              borderRadius: '6px',
-                              background: 'var(--bg-accent-soft)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'var(--accent-text)',
-                              fontSize: '0.95rem',
-                            }}
-                          >
-                            <i className={`fa-solid ${doc.icon}`}></i>
+                <div className="doc-grid">
+                  {DOCUMENTS.map((doc) => {
+                    const docInfo = documents[doc.key];
+                    const isUploaded = Boolean(docInfo?.name);
+                    const inputId = `upload-${doc.key}`;
+                    return (
+                      <div key={doc.key} className={`doc-card ${isUploaded ? 'is-uploaded' : ''}`}>
+                        <div className="doc-card-head">
+                          <div className="doc-card-title">
+                            <span className="doc-card-icon" aria-hidden="true"><i className={`fa-solid ${doc.icon}`}></i></span>
+                            <div>
+                              <strong>{doc.title}</strong>
+                              <span>{doc.hint} (PDF, PNG, JPG)</span>
+                            </div>
                           </div>
-                          <div>
-                            <strong style={{ fontSize: '0.86rem', color: 'var(--text-main)', display: 'block' }}>{doc.title}</strong>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{doc.hint}</span>
-                          </div>
-                        </div>
-                        {isUploaded ? (
-                          <span className="badge badge-verified" style={{ fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
-                            <i className="fa-solid fa-check"></i> Uploaded
-                          </span>
-                        ) : (
-                          <span className="badge badge-pending" style={{ fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
-                            Pending
-                          </span>
-                        )}
-                      </div>
-
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          flexWrap: 'wrap',
-                          gap: '0.5rem',
-                          paddingTop: '0.6rem',
-                          borderTop: '1px dashed var(--border-color)',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: '0', flex: '1 1 auto' }}>
-                          <i className="fa-solid fa-file-pdf" style={{ color: 'var(--accent-text)', fontSize: '1rem' }}></i>
-                          <div style={{ minWidth: '0' }}>
-                            <span
-                              style={{
-                                fontSize: '0.78rem',
-                                fontWeight: 600,
-                                color: 'var(--text-main)',
-                                display: 'block',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '170px',
-                              }}
-                              title={docInfo?.name || 'No file chosen'}
-                            >
-                              {docInfo?.name || 'No file chosen'}
-                            </span>
-                            {docInfo?.size && (
-                              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{docInfo.size}</span>
-                            )}
-                          </div>
+                          {isUploaded ? (
+                            <span className="badge badge-approved"><i className="fa-solid fa-check" aria-hidden="true"></i> Uploaded</span>
+                          ) : (
+                            <span className="badge badge-pending">Missing</span>
+                          )}
                         </div>
 
-                        <label
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.35rem',
-                            padding: '0.35rem 0.65rem',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            borderRadius: 'var(--radius-sm)',
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-color)',
-                            color: 'var(--text-main)',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <i className="fa-solid fa-cloud-arrow-up" style={{ color: 'var(--accent-text)' }}></i>
-                          <span>{isUploaded ? 'Change' : 'Upload'}</span>
-                          <input
-                            type="file"
-                            accept={doc.accept}
-                            style={{ display: 'none' }}
-                            onChange={(e) => handleFileChange(doc.key, e)}
-                          />
-                        </label>
+                        <div className="doc-card-file">
+                          <div className="doc-file-name">
+                            <i className="fa-solid fa-file-pdf text-accent" aria-hidden="true"></i>
+                            <span title={docInfo?.name || 'No file chosen'}>{docInfo?.name || 'No file chosen'}</span>
+                            {docInfo?.size && <small>{docInfo.size}</small>}
+                          </div>
+                          <label htmlFor={inputId} className="btn btn-secondary btn-sm upload-btn">
+                            <i className="fa-solid fa-cloud-arrow-up text-accent" aria-hidden="true"></i>
+                            {isUploaded ? 'Replace' : 'Upload'}
+                            <span className="sr-only"> {doc.title}</span>
+                            <input
+                              id={inputId}
+                              type="file"
+                              accept=".pdf,.png,.jpg,.jpeg"
+                              onChange={(e) => handleFileChange(doc.key, e)}
+                            />
+                          </label>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Workstation Hardware */}
-              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-                <label>Preferred Workstation Hardware <span className="required">*</span></label>
-                <select id="hardware" className="form-control" value={formData.hardware} onChange={handleInputChange}>
-                  <option>Apple MacBook Pro M3 Max</option>
-                  <option>Apple MacBook Pro 16" M3 Pro</option>
-                  <option>Dell XPS 15 9530 (i9 64GB RTX)</option>
-                  <option>Lenovo ThinkPad P1 Gen 6</option>
-                </select>
-              </div>
-
-              {/* Digital Signature Canvas */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.88rem' }}>
-                  Candidate Digital Sign-Off <span className="required">*</span>
-                </label>
-                <div style={{ border: '1px dashed var(--border-orange)', borderRadius: 'var(--radius-md)', padding: '1rem', background: '#fff' }}>
-                  <canvas ref={canvasRef} width={600} height={100} style={{ width: '100%', height: '100px', display: 'block' }} />
+                    );
+                  })}
                 </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
-                  Legally verified digital signature for offer acceptance and background verification.
-                </span>
-              </div>
-            </div>
-          )}
+
+                <div className="form-grid-2" style={{ marginBottom: '1.25rem' }}>
+                  <Field id="hardware" label="Preferred workstation hardware" required full>
+                    <select className="form-control" value={formData.hardware} onChange={handleInputChange}>
+                      {HARDWARE_OPTIONS.map((opt) => <option key={opt}>{opt}</option>)}
+                    </select>
+                  </Field>
+                </div>
+
+                <div className="field">
+                  <span className="field-label" id="signature-label">
+                    Candidate digital sign-off <span className="required" aria-hidden="true">*</span>
+                  </span>
+                  <div className="signature-box">
+                    <canvas
+                      ref={canvasRef}
+                      width={600}
+                      height={100}
+                      role="img"
+                      aria-label={`Signature of ${formData.fullName}`}
+                    />
+                  </div>
+                  <span className="field-hint">Generated from the candidate's legal name for offer acceptance and background verification.</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Footer Controls */}
-          <div className="wizard-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-color)' }}>
+          <div className="wizard-footer">
             {currentStep === 2 && (
               <button type="button" className="btn btn-secondary" onClick={() => setCurrentStep(1)}>
-                <i className="fa-solid fa-arrow-left"></i> Previous (Personal Info)
+                <i className="fa-solid fa-arrow-left" aria-hidden="true"></i> Back
               </button>
             )}
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
+            <div className="wizard-footer-end">
               {currentStep === 1 && (
-                <button type="button" className="btn btn-primary" onClick={() => setCurrentStep(2)}>
-                  Proceed to Document Upload <i className="fa-solid fa-arrow-right"></i>
+                <button type="button" className="btn btn-primary" onClick={() => goToStep(2)}>
+                  Continue to documents <i className="fa-solid fa-arrow-right" aria-hidden="true"></i>
                 </button>
               )}
               {currentStep === 2 && (
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={isSubmitting}
-                  style={{ background: 'var(--button-gradient)', borderColor: 'transparent', fontWeight: 800 }}
-                >
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting} aria-busy={isSubmitting}>
                   {isSubmitting ? (
-                    <>
-                      <i className="fa-solid fa-spinner fa-spin"></i> Submitting...
-                    </>
+                    <><i className="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Submitting…</>
                   ) : (
-                    <>
-                      <i className="fa-solid fa-paper-plane"></i> Submit Onboarding Application
-                    </>
+                    <><i className="fa-solid fa-paper-plane" aria-hidden="true"></i> Submit application</>
                   )}
                 </button>
               )}
             </div>
           </div>
         </form>
-      </div>
+      </Card>
     </section>
   );
 }
