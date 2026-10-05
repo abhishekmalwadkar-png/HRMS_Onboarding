@@ -104,16 +104,21 @@ export default function OffboardingView() {
     }
   };
 
+  const [checkingClearanceId, setCheckingClearanceId] = useState(null);
+
   const toggleITClearance = async (item) => {
+    setCheckingClearanceId(item.id);
     try {
-      const res = await fetch('/api/exit/check-clearance', {
+      const res = await fetch('/api/exit/toggle-clearance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: item.id, laptopTicket: item.laptopTicket }),
       });
       const result = await res.json();
       const isCleared = result?.clearance?.isCleared;
+      const stateLabel = result?.clearance?.stateLabel || (isCleared ? 'Resolved' : 'In Progress');
       const uiMsg = result?.clearance?.uiMessage || (isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department');
+      const assignedTo = result?.clearance?.assignedTo || item.assignedTo;
 
       setExitRequests((prev) =>
         prev.map((it) => {
@@ -122,7 +127,8 @@ export default function OffboardingView() {
               ...it,
               itClearance: isCleared,
               itClearanceStatus: uiMsg,
-              laptopIncidentState: result?.clearance?.stateLabel,
+              laptopIncidentState: stateLabel,
+              assignedTo: assignedTo,
             };
           }
           return it;
@@ -132,10 +138,10 @@ export default function OffboardingView() {
       if (isCleared) {
         showToast(`✓ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) is Resolved/Closed: User Submitted Laptop.`, 'success');
       } else {
-        showToast(`⏳ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) status: Clearance waiting from IT department.`, 'info');
+        showToast(`⏳ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) status is In Progress: Clearance waiting from IT department.`, 'info');
       }
     } catch (e) {
-      console.error('Failed to check IT clearance from ServiceNow:', e);
+      console.error('Failed to toggle IT clearance in ServiceNow:', e);
       // Fallback toggle
       setExitRequests((prev) =>
         prev.map((it) => {
@@ -145,12 +151,57 @@ export default function OffboardingView() {
               ...it,
               itClearance: nextVal,
               itClearanceStatus: nextVal ? 'User Submitted Laptop' : 'Clearance waiting from IT department',
+              laptopIncidentState: nextVal ? 'Resolved' : 'In Progress',
             };
           }
           return it;
         })
       );
-      showToast('IT Asset Clearance status checked.', 'info');
+      showToast('IT Asset Clearance status updated.', 'info');
+    } finally {
+      setCheckingClearanceId(null);
+    }
+  };
+
+  const checkLiveClearance = async (item) => {
+    setCheckingClearanceId(item.id);
+    try {
+      const res = await fetch('/api/exit/check-clearance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, laptopTicket: item.laptopTicket }),
+      });
+      const result = await res.json();
+      const isCleared = result?.clearance?.isCleared;
+      const stateLabel = result?.clearance?.stateLabel || (isCleared ? 'Resolved' : 'In Progress');
+      const uiMsg = result?.clearance?.uiMessage || (isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department');
+      const assignedTo = result?.clearance?.assignedTo || item.assignedTo;
+
+      setExitRequests((prev) =>
+        prev.map((it) => {
+          if (it.id === item.id) {
+            return {
+              ...it,
+              itClearance: isCleared,
+              itClearanceStatus: uiMsg,
+              laptopIncidentState: stateLabel,
+              assignedTo: assignedTo,
+            };
+          }
+          return it;
+        })
+      );
+
+      if (isCleared) {
+        showToast(`✓ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) is ${stateLabel}: User Submitted Laptop.`, 'success');
+      } else {
+        showToast(`⏳ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) is ${stateLabel}: Clearance waiting from IT department.`, 'info');
+      }
+    } catch (e) {
+      console.error('Failed to check IT clearance from ServiceNow:', e);
+      showToast('Checked IT clearance status from ServiceNow.', 'info');
+    } finally {
+      setCheckingClearanceId(null);
     }
   };
 
@@ -388,77 +439,178 @@ export default function OffboardingView() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {exitRequests.map((item) => (
-            <div key={item.id} className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div>
-                  <h4 style={{ margin: 0 }}>{item.empName} ({item.department})</h4>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    Last Working Day: <strong>{item.lastWorkingDay}</strong>
-                  </span>
-                </div>
-                <span className={`badge ${item.accessRevoked ? 'badge-draft' : 'badge-pending'}`}>
-                  {item.accessRevoked ? 'Deprovisioned' : 'Clearance Active'}
-                </span>
-              </div>
+          {exitRequests.map((item) => {
+            const isCleared = !!(item.itClearance || item.itClearanceStatus === 'User Submitted Laptop');
+            const isChecking = checkingClearanceId === item.id;
+            const incState = item.laptopIncidentState || (isCleared ? 'Resolved' : 'In Progress');
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
-                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                  <div style={{ color: 'var(--text-muted)' }}>Manager Approval</div>
-                  <span style={{ color: '#10b981', fontWeight: 700 }}><i className="fa-solid fa-circle-check"></i> Approved</span>
-                </div>
-                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                  <div style={{ color: 'var(--text-muted)' }}>IT Asset Recovery</div>
-                  <span style={{ color: (item.itClearance || item.itClearanceStatus === 'User Submitted Laptop') ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
-                    <i className={`fa-solid ${(item.itClearance || item.itClearanceStatus === 'User Submitted Laptop') ? 'fa-circle-check' : 'fa-clock'}`}></i>{' '}
-                    {(item.itClearance || item.itClearanceStatus === 'User Submitted Laptop') ? 'User Submitted Laptop' : 'Clearance waiting from IT department'}
+            return (
+              <div key={item.id} className="glass-card" style={{ padding: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div>
+                    <h4 style={{ margin: 0 }}>{item.empName} ({item.department})</h4>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      Last Working Day: <strong>{item.lastWorkingDay}</strong>
+                    </span>
+                  </div>
+                  <span className={`badge ${item.accessRevoked ? 'badge-draft' : 'badge-pending'}`}>
+                    {item.accessRevoked ? 'Deprovisioned' : 'Clearance Active'}
                   </span>
                 </div>
-                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                  <div style={{ color: 'var(--text-muted)' }}>FnF Settlement</div>
-                  <span style={{ color: item.financeClearance ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
-                    <i className={`fa-solid ${item.financeClearance ? 'fa-circle-check' : 'fa-clock'}`}></i> {item.fnfStatus}
-                  </span>
-                </div>
-                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                  <div style={{ color: 'var(--text-muted)' }}>Active Directory</div>
-                  <span style={{ color: item.accessRevoked ? '#e11d48' : '#10b981', fontWeight: 700 }}>
-                    <i className={`fa-solid ${item.accessRevoked ? 'fa-user-slash' : 'fa-user-check'}`}></i> {item.accessRevoked ? 'Disabled' : 'Active'}
-                  </span>
-                </div>
-                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                  <div style={{ color: 'var(--text-muted)' }}>Office 365 (Cloud)</div>
-                  <span style={{ color: item.o365Deleted ? '#e11d48' : '#10b981', fontWeight: 700 }}>
-                    <i className={`fa-brands fa-microsoft`}></i> {item.o365Deleted ? 'User Deleted' : 'Active'}
-                  </span>
-                </div>
-                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                  <div style={{ color: 'var(--text-muted)' }}>OrangeHRM PIM</div>
-                  <span style={{ color: item.orangeHrmDeleted ? '#e11d48' : '#10b981', fontWeight: 700 }}>
-                    <i className={`fa-solid ${item.orangeHrmDeleted ? 'fa-trash-can' : 'fa-database'}`}></i> {item.orangeHrmDeleted ? 'Profile Deleted' : 'Active'}
-                  </span>
-                </div>
-                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                  <div style={{ color: 'var(--text-muted)' }}>HR Notification</div>
-                  <span style={{ color: item.emailSent ? '#10b981' : 'var(--text-muted)', fontWeight: 700 }}>
-                    <i className={`fa-solid ${item.emailSent ? 'fa-envelope-circle-check' : 'fa-envelope'}`}></i> {item.emailSent ? 'Dispatched' : 'Pending Offboard'}
-                  </span>
-                </div>
-              </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }} onClick={() => toggleITClearance(item)}>
-                  <i className="fa-solid fa-laptop"></i> Toggle IT Clearance
-                </button>
-                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }} onClick={() => triggerAccessRevocation(item.id, item.empName)}>
-                  <i className="fa-solid fa-user-xmark"></i> Offboard (Revoke AD, O365 & OrangeHRM)
-                </button>
-                <button className="btn btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'var(--accent-gradient)', borderColor: 'transparent' }} onClick={() => issueRelievingLetter(item.empName)}>
-                  <i className="fa-solid fa-file-export"></i> Issue Relieving Letter
-                </button>
+                {/* IT Asset Recovery & ServiceNow Ticket Details Box */}
+                <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem 1rem', marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.6rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                      <i className="fa-solid fa-laptop text-accent" style={{ fontSize: '1.1rem' }}></i>
+                      <strong style={{ fontSize: '0.88rem' }}>IT Hardware & Laptop Clearance:</strong>
+                      {item.laptopTicket ? (
+                        <a
+                          href={item.laptopTicketUrl || `https://ven04528.service-now.com/nav_to.do?uri=incident_list.do`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="badge"
+                          style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', textDecoration: 'none', border: '1px solid rgba(59, 130, 246, 0.3)' }}
+                          title="Click to view ServiceNow Incident"
+                        >
+                          <i className="fa-solid fa-arrow-up-right-from-square"></i> ServiceNow: <strong>{item.laptopTicket}</strong>
+                        </a>
+                      ) : (
+                        <span className="badge" style={{ background: 'rgba(255,255,255,0.05)' }}>Hardware Category</span>
+                      )}
+                      {item.assignedTo && (
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                          <i className="fa-solid fa-user-gear"></i> Assigned: <strong style={{ color: 'var(--text-main)' }}>{item.assignedTo}</strong>
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      style={{
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        padding: '0.3rem 0.65rem',
+                        borderRadius: '20px',
+                        background: isCleared ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                        color: isCleared ? '#10b981' : '#f59e0b',
+                        border: `1px solid ${isCleared ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
+                      }}
+                    >
+                      <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-clock'}`}></i>{' '}
+                      {isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department'}
+                    </span>
+                  </div>
+
+                  {/* Explicit message whether IT department has closed/resolved ticket */}
+                  <div
+                    style={{
+                      fontSize: '0.84rem',
+                      borderRadius: '6px',
+                      padding: '0.6rem 0.85rem',
+                      background: isCleared ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                      borderLeft: `3px solid ${isCleared ? '#10b981' : '#f59e0b'}`,
+                      color: isCleared ? '#10b981' : '#f59e0b',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.6rem'
+                    }}
+                  >
+                    <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-triangle-exclamation'}`} style={{ fontSize: '1rem' }}></i>
+                    <div>
+                      {isCleared ? (
+                        <span>
+                          <strong>ServiceNow Status ({incState}):</strong> IT Department has <strong>resolved/closed</strong> the ticket ({item.laptopTicket || 'Hardware'}). <strong>User Submitted Laptop</strong>.
+                        </span>
+                      ) : (
+                        <span>
+                          <strong>ServiceNow Status ({incState}):</strong> Ticket ({item.laptopTicket || 'Hardware'}) is currently <strong>in progress</strong> with {item.assignedTo || 'IT'}. <strong>Clearance waiting from IT department</strong>.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                    <div style={{ color: 'var(--text-muted)' }}>Manager Approval</div>
+                    <span style={{ color: '#10b981', fontWeight: 700 }}><i className="fa-solid fa-circle-check"></i> Approved</span>
+                  </div>
+                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                    <div style={{ color: 'var(--text-muted)' }}>IT Asset Recovery</div>
+                    <span style={{ color: isCleared ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
+                      <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-clock'}`}></i>{' '}
+                      {isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department'}
+                    </span>
+                  </div>
+                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                    <div style={{ color: 'var(--text-muted)' }}>FnF Settlement</div>
+                    <span style={{ color: item.financeClearance ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
+                      <i className={`fa-solid ${item.financeClearance ? 'fa-circle-check' : 'fa-clock'}`}></i> {item.fnfStatus}
+                    </span>
+                  </div>
+                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                    <div style={{ color: 'var(--text-muted)' }}>Active Directory</div>
+                    <span style={{ color: item.accessRevoked ? '#e11d48' : '#10b981', fontWeight: 700 }}>
+                      <i className={`fa-solid ${item.accessRevoked ? 'fa-user-slash' : 'fa-user-check'}`}></i> {item.accessRevoked ? 'Disabled' : 'Active'}
+                    </span>
+                  </div>
+                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                    <div style={{ color: 'var(--text-muted)' }}>Office 365 (Cloud)</div>
+                    <span style={{ color: item.o365Deleted ? '#e11d48' : '#10b981', fontWeight: 700 }}>
+                      <i className={`fa-brands fa-microsoft`}></i> {item.o365Deleted ? 'User Deleted' : 'Active'}
+                    </span>
+                  </div>
+                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                    <div style={{ color: 'var(--text-muted)' }}>OrangeHRM PIM</div>
+                    <span style={{ color: item.orangeHrmDeleted ? '#e11d48' : '#10b981', fontWeight: 700 }}>
+                      <i className={`fa-solid ${item.orangeHrmDeleted ? 'fa-trash-can' : 'fa-database'}`}></i> {item.orangeHrmDeleted ? 'Profile Deleted' : 'Active'}
+                    </span>
+                  </div>
+                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                    <div style={{ color: 'var(--text-muted)' }}>HR Notification</div>
+                    <span style={{ color: item.emailSent ? '#10b981' : 'var(--text-muted)', fontWeight: 700 }}>
+                      <i className={`fa-solid ${item.emailSent ? 'fa-envelope-circle-check' : 'fa-envelope'}`}></i> {item.emailSent ? 'Dispatched' : 'Pending Offboard'}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                    onClick={() => toggleITClearance(item)}
+                    disabled={isChecking}
+                    title="Toggle ServiceNow Hardware Incident State between In Progress and Resolved"
+                  >
+                    <i className={`fa-solid ${isChecking ? 'fa-spinner fa-spin' : 'fa-laptop'}`}></i>{' '}
+                    {isChecking ? 'Updating ServiceNow...' : 'Toggle IT Clearance'}
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                    onClick={() => checkLiveClearance(item)}
+                    disabled={isChecking}
+                    title="Check live status from ServiceNow ITSM"
+                  >
+                    <i className="fa-solid fa-arrows-rotate"></i> Check Live Status
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                    onClick={() => triggerAccessRevocation(item.id, item.empName)}
+                  >
+                    <i className="fa-solid fa-user-xmark"></i> Offboard (Revoke AD, O365 & OrangeHRM)
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'var(--accent-gradient)', borderColor: 'transparent' }}
+                    onClick={() => issueRelievingLetter(item.empName)}
+                  >
+                    <i className="fa-solid fa-file-export"></i> Issue Relieving Letter
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

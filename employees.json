@@ -794,7 +794,7 @@
       "emergencyPhone": "+91 95555 44330",
       "address": "Tower 3, Flat 1102, Blue Ridge, Hinjewadi, Pune, Maharashtra 411057",
       "hardware": "Apple MacBook Pro M3 Max",
-      "status": "Approved",
+      "status": "Offboarded & Deprovisioned",
       "serviceNowReq": "REQ0852254",
       "serviceNowRitm": "RITM0852288",
       "serviceNowReqId": "sn_1790852254",
@@ -810,7 +810,10 @@
       "orangeHrmProfileUrl": "http://10.41.5.39/orangehrm/web/index.php/pim/viewPersonalDetails/empNumber/7",
       "orangeHrmEmpNumber": 7,
       "orangeHrmStatus": "Profile Created in OrangeHRM PIM",
-      "approvalSource": "HR Portal"
+      "approvalSource": "HR Portal",
+      "o365Deleted": true,
+      "orangeHrmDeleted": true,
+      "accessRevoked": true
     },
     {
       "id": "EMP-9968",
@@ -1870,6 +1873,29 @@
   ],
   "exitRequests": [
     {
+      "id": "EXIT-907",
+      "empName": "Amit Deshmukh",
+      "department": "Engineering",
+      "resignationDate": "2026-10-05",
+      "lastWorkingDay": "2026-11-30",
+      "reason": "Pursuing new professional opportunity.",
+      "itClearance": false,
+      "itClearanceStatus": "Clearance waiting from IT department",
+      "financeClearance": false,
+      "accessRevoked": true,
+      "o365Deleted": true,
+      "orangeHrmDeleted": true,
+      "emailSent": true,
+      "fnfStatus": "Pending Initiation",
+      "serviceNowReq": "REQ0011930",
+      "serviceNowRitm": "RITM0015074",
+      "laptopTicket": "INC0040464",
+      "laptopTicketSysId": "07636cbc33bf83105e900e570e5c7bef",
+      "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident.do?sys_id=07636cbc33bf83105e900e570e5c7bef",
+      "assignedTo": "AE Plugin Test",
+      "laptopIncidentState": "In Progress"
+    },
+    {
       "empName": "Aditya Verma",
       "department": "Engineering",
       "lastWorkingDay": "2026-11-30",
@@ -1963,7 +1989,9 @@
         "deleted": true,
         "targetUser": "aarav.sharma@automationedge.ai",
         "message": "Successfully deleted Office 365 user account aarav.sharma@automationedge.ai from Microsoft Entra ID."
-      }
+      },
+      "itClearanceStatus": "Clearance waiting from IT department",
+      "laptopIncidentState": "In Progress"
     },
     {
       "id": "EXIT-344",

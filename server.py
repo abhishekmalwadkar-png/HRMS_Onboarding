@@ -285,7 +285,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "serviceNow": sn_offboarding_res
             }).encode('utf-8'))
 
-        elif self.path == '/api/exit/check-clearance' or self.path == '/api/exit/toggle-clearance':
+        elif self.path == '/api/exit/check-clearance':
             target_id = payload.get('id')
             laptop_ticket = payload.get('laptopTicket') or payload.get('ticketNumber')
             exits = db.get('exitRequests', [])
@@ -306,6 +306,45 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 target_item['itClearance'] = check_res.get('isCleared', False)
                 target_item['itClearanceStatus'] = check_res.get('uiMessage', 'Clearance waiting from IT department')
                 target_item['laptopIncidentState'] = check_res.get('stateLabel', 'In Progress')
+                if check_res.get('assignedTo') and check_res.get('assignedTo') != "IT Asset Specialist":
+                    target_item['assignedTo'] = check_res.get('assignedTo')
+                self.write_db(db)
+
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "clearance": check_res,
+                "data": target_item
+            }).encode('utf-8'))
+
+        elif self.path == '/api/exit/toggle-clearance' or self.path == '/api/exit/resolve-incident':
+            target_id = payload.get('id')
+            laptop_ticket = payload.get('laptopTicket') or payload.get('ticketNumber')
+            resolve_flag = payload.get('resolve')
+            exits = db.get('exitRequests', [])
+            target_item = None
+
+            for item in exits:
+                if item.get('id') == target_id or (laptop_ticket and item.get('laptopTicket') == laptop_ticket):
+                    target_item = item
+                    break
+
+            if not target_item and exits:
+                target_item = exits[0]
+
+            check_res = {}
+            if target_item:
+                ticket_to_check = target_item.get('laptopTicket') or laptop_ticket
+                # If resolve_flag is not explicitly provided, toggle based on current status
+                if resolve_flag is None:
+                    resolve_flag = not target_item.get('itClearance', False)
+                
+                check_res = sn_client.resolve_laptop_incident(ticket_to_check, resolve=resolve_flag)
+                target_item['itClearance'] = check_res.get('isCleared', False)
+                target_item['itClearanceStatus'] = check_res.get('uiMessage', 'Clearance waiting from IT department')
+                target_item['laptopIncidentState'] = check_res.get('stateLabel', 'Resolved' if resolve_flag else 'In Progress')
+                if check_res.get('assignedTo') and check_res.get('assignedTo') != "IT Asset Specialist":
+                    target_item['assignedTo'] = check_res.get('assignedTo')
                 self.write_db(db)
 
             self.end_headers()

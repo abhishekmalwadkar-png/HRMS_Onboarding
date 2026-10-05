@@ -789,6 +789,9 @@ class ServiceNowClient:
             return {
                 "status": "success",
                 "incidentNumber": inc_ident,
+                "sysId": "",
+                "assignedTo": "IT Asset Desk",
+                "category": "Hardware",
                 "stateCode": "2",
                 "stateLabel": "In Progress",
                 "isCleared": False,
@@ -798,22 +801,46 @@ class ServiceNowClient:
         state_code = "2"
         is_cleared = False
         state_label = "In Progress"
+        assigned_name = "IT Asset Specialist"
+        inc_sys_id = ""
+        inc_number = inc_ident
 
         if self.is_configured():
             try:
                 query = f"number={inc_ident}^ORsys_id={inc_ident}"
-                url = f"{self.instance_url}/api/now/table/incident?sysparm_query={query}&sysparm_fields=sys_id,number,state,incident_state,assigned_to,short_description"
+                url = f"{self.instance_url}/api/now/table/incident?sysparm_query={query}&sysparm_display_value=all&sysparm_fields=sys_id,number,state,incident_state,assigned_to,category,short_description"
                 req = urllib.request.Request(url, headers=self._get_headers())
                 with urllib.request.urlopen(req, timeout=10, context=self.ctx) as resp:
                     data = json.loads(resp.read().decode('utf-8'))
                     res = data.get('result', [])
                     if res:
                         inc_data = res[0]
-                        state_code = str(inc_data.get('state') or inc_data.get('incident_state') or '2')
+                        inc_sys_id = inc_data.get('sys_id', {}).get('value') if isinstance(inc_data.get('sys_id'), dict) else (inc_data.get('sys_id') or "")
+                        
+                        num_obj = inc_data.get('number', {})
+                        inc_number = num_obj.get('display_value') if isinstance(num_obj, dict) else (num_obj or inc_ident)
+
+                        # Assigned To
+                        assign_obj = inc_data.get('assigned_to', {})
+                        if isinstance(assign_obj, dict):
+                            assigned_name = assign_obj.get('display_value') or assign_obj.get('value') or assigned_name
+                        elif assign_obj:
+                            assigned_name = str(assign_obj)
+
+                        # State
+                        st_obj = inc_data.get('state', {})
+                        if isinstance(st_obj, dict):
+                            state_code = str(st_obj.get('value', '2'))
+                            state_label = st_obj.get('display_value') or ('Resolved' if state_code == '6' else 'Closed' if state_code == '7' else 'In Progress')
+                        else:
+                            state_code = str(st_obj or '2')
+                            state_label = 'In Progress'
+
                         # In ServiceNow: 6=Resolved, 7=Closed
                         if state_code in ['6', '7', 'Resolved', 'Closed', 'resolved', 'closed']:
                             is_cleared = True
-                            state_label = "Closed" if state_code in ['7', 'Closed', 'closed'] else "Resolved"
+                            if not state_label or state_label in ['6', '7']:
+                                state_label = "Closed" if state_code in ['7', 'Closed', 'closed'] else "Resolved"
                         elif state_code in ['1', 'New', 'new']:
                             state_label = "New"
                         elif state_code in ['2', 'In Progress']:
@@ -826,12 +853,63 @@ class ServiceNowClient:
         ui_message = "User Submitted Laptop" if is_cleared else "Clearance waiting from IT department"
         return {
             "status": "success",
-            "incidentNumber": inc_ident,
+            "incidentNumber": inc_number,
+            "sysId": inc_sys_id,
+            "assignedTo": assigned_name,
+            "category": "Hardware",
             "stateCode": state_code,
             "stateLabel": state_label,
             "isCleared": is_cleared,
             "uiMessage": ui_message
         }
+
+    def resolve_laptop_incident(self, incident_number_or_sys_id, resolve=True):
+        """
+        Updates the ServiceNow incident state:
+        resolve=True -> State 6 (Resolved), close_code="Solved (Permanently)", close_notes="Laptop returned by employee and verified by IT"
+        resolve=False -> State 2 (In Progress), work_notes="Clearance reopened by IT"
+        """
+        self.reload_config()
+        inc_ident = str(incident_number_or_sys_id or "").strip()
+        target_sys_id = inc_ident
+        inc_number = inc_ident
+
+        if self.is_configured() and inc_ident:
+            try:
+                # 1. Look up sys_id if incident number provided
+                if not (len(inc_ident) == 32 and not inc_ident.startswith('INC')):
+                    query = f"number={inc_ident}^ORsys_id={inc_ident}"
+                    url = f"{self.instance_url}/api/now/table/incident?sysparm_query={query}&sysparm_fields=sys_id,number"
+                    req = urllib.request.Request(url, headers=self._get_headers())
+                    with urllib.request.urlopen(req, timeout=10, context=self.ctx) as resp:
+                        res = json.loads(resp.read().decode('utf-8')).get('result', [])
+                        if res:
+                            target_sys_id = res[0].get('sys_id')
+                            inc_number = res[0].get('number')
+
+                if target_sys_id:
+                    put_url = f"{self.instance_url}/api/now/table/incident/{target_sys_id}"
+                    if resolve:
+                        body = {
+                            "state": "6",
+                            "incident_state": "6",
+                            "close_code": "Solved (Permanently)",
+                            "close_notes": "Employee hardware & laptop submitted and verified by IT asset management department."
+                        }
+                    else:
+                        body = {
+                            "state": "2",
+                            "incident_state": "2",
+                            "work_notes": "IT clearance status marked as waiting from IT department."
+                        }
+                    put_req = urllib.request.Request(put_url, data=json.dumps(body).encode('utf-8'), headers=self._get_headers(), method="PUT")
+                    with urllib.request.urlopen(put_req, timeout=12, context=self.ctx) as p_resp:
+                        pass
+                    print(f"[ServiceNow LIVE SUCCESS] Updated Incident {inc_number} state to {'Resolved (6)' if resolve else 'In Progress (2)'}")
+            except Exception as e:
+                print(f"[ServiceNow Incident Resolve Error]: {e}")
+
+        return self.check_incident_clearance(inc_ident)
 
 # Global singleton
 sn_client = ServiceNowClient()
