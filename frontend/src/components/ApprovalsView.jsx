@@ -325,7 +325,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
               </div>
 
               {/* 2-Column Details Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '125rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
                 {/* Column 1: Candidate Info */}
                 <div style={{ background: 'var(--bg-accent-soft)', padding: '1.15rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-orange)' }}>
                   <h4 style={{ fontSize: '0.88rem', color: 'var(--brand-orange)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
