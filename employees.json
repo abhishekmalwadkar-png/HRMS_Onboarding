@@ -1,430 +1,63 @@
 {
-  "employees": [],
-  "recruitment": [
+  "employees": [
     {
-      "id": "CAND-362",
-      "name": "Vikram Adve",
-      "candidateName": "Vikram Adve",
-      "email": "vikram.adve@valuedx.com",
-      "phone": "+91 98230 45678",
-      "experienceYears": 4.5,
-      "skills": [
-        "Python",
-        "PyTorch",
-        "Generative AI",
-        "LLMs",
-        "LangChain",
-        "RAG",
-        "FastAPI",
-        "Docker",
-        "Machine Learning",
-        "Transformers",
-        "NLP",
-        "Vector Databases",
-        "Prompt Engineering",
-        "Cloud Architecture",
-        "Kubernetes",
-        "AWS"
-      ],
-      "role": "Senior AI Engineer",
-      "appliedRole": "Senior AI Engineer",
+      "id": "EMP-2116",
+      "fullName": "Aarav Sharma",
+      "email": "aarav.sharma@example.com",
+      "phone": "+91 98230 45671",
+      "dob": "1994-06-15",
+      "pan": "ABCDE1234F",
+      "aadhaar": "4532 8901 2345",
+      "emergencyName": "Sunita Sharma (Mother)",
+      "emergencyPhone": "+91 98230 45670",
+      "address": "Flat 402, Marvel Palms, Baner, Pune, Maharashtra 411045",
+      "bankName": "HDFC Bank Ltd",
+      "accountNumber": "918230491029",
+      "routingCode": "HDFC0001234",
+      "hardware": "Apple MacBook Pro M3 Max",
+      "idDocumentName": "Aadhaar_Card_Aarav_Sharma_Verified.pdf",
+      "educationDocName": "BTech_Computer_Science_Degree.pdf",
+      "taxDocumentName": "Form16_Tax_Compliance_2026.pdf",
+      "offerDocumentName": "Signed_Offer_Letter_Aarav_Sharma.pdf",
       "department": "Engineering",
-      "score": "98%",
-      "matchScore": "98%",
-      "stage": "AI Screened & Qualified",
-      "status": "Screened",
-      "recommendation": "Highly Recommended",
-      "matchedSkills": [
-        "Python",
-        "PyTorch",
-        "Generative AI",
-        "LLMs",
-        "LangChain",
-        "RAG",
-        "FastAPI",
-        "Docker",
-        "Machine Learning",
-        "Transformers",
-        "NLP",
-        "Vector Databases",
-        "Prompt Engineering",
-        "Cloud Architecture"
-      ],
-      "missingSkills": [
-        "TensorFlow"
-      ],
-      "allJobMatches": [
-        {
-          "jobId": "JOB-201",
-          "jobTitle": "Senior AI Engineer",
-          "dept": "Engineering",
-          "matchPercentage": "98%",
-          "matchScoreNum": 98,
-          "matchedSkills": [
-            "Python",
-            "PyTorch",
-            "Generative AI",
-            "LLMs",
-            "LangChain",
-            "RAG",
-            "FastAPI",
-            "Docker",
-            "Machine Learning",
-            "Transformers",
-            "NLP",
-            "Vector Databases",
-            "Prompt Engineering",
-            "Cloud Architecture"
-          ],
-          "missingSkills": [
-            "TensorFlow"
-          ],
-          "recommendation": "Highly Recommended"
-        },
-        {
-          "jobId": "JOB-204",
-          "jobTitle": "Senior Cloud & DevOps Engineer",
-          "dept": "Infrastructure",
-          "matchPercentage": "53%",
-          "matchScoreNum": 53,
-          "matchedSkills": [
-            "Python",
-            "Docker",
-            "Kubernetes",
-            "AWS"
-          ],
-          "missingSkills": [
-            "Azure",
-            "Terraform",
-            "CI/CD",
-            "Linux"
-          ],
-          "recommendation": "Potential Fit"
-        },
-        {
-          "jobId": "JOB-202",
-          "jobTitle": "Lead Product Manager",
-          "dept": "Product",
-          "matchPercentage": "45%",
-          "matchScoreNum": 45,
-          "matchedSkills": [],
-          "missingSkills": [
-            "Product Strategy",
-            "Agile",
-            "Scrum",
-            "Roadmapping"
-          ],
-          "recommendation": "Potential Fit"
-        },
-        {
-          "jobId": "JOB-203",
-          "jobTitle": "Enterprise ServiceNow Architect",
-          "dept": "IT Systems",
-          "matchPercentage": "45%",
-          "matchScoreNum": 45,
-          "matchedSkills": [],
-          "missingSkills": [
-            "ServiceNow",
-            "ITSM",
-            "Service Catalog",
-            "Workflow Design"
-          ],
-          "recommendation": "Potential Fit"
-        }
-      ],
-      "screenedAt": "2026-10-05 18:04:22",
-      "rawTextSnippet": "\n                Vikram Adve\n                Email: vikram.adve@valuedx.com | Phone: +91 98451 22345 | Bangalore, India\n                Senior AI Engineer & LLM Architect\n                Summary: Over 5.5 years of progressive experience building production-grade Generative AI pipelines, LangChain agents, PyTorch model fine-tuning, RAG frameworks, Vector Databases (Pinecone, ChromaDB), FastAPI micr",
-      "t4RecruitmentPipeline": {
-        "status": "success",
-        "jobName": "Senior AI Engineer",
-        "candidateName": "Vikram Adve",
-        "steps": [
-          {
-            "step": 1,
-            "workflow": "HR Demo Recruitment Get JD",
-            "params": {
-              "job_name": "Senior AI Engineer"
-            },
-            "result": {
-              "status": "success",
-              "mode": "live_t4_rpa",
-              "workflowName": "HR Demo Recruitment Get JD",
-              "automationRequestId": 3296204,
-              "sourceId": "SID_1791203663170_853bd6381cda",
-              "executionStatus": "Complete",
-              "agentName": "mahesh@mspevent-win-1",
-              "message": "JD extracted from portal",
-              "errorDetails": null,
-              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296204",
-              "serverUrl": "https://t4.automationedge.com/aeengine",
-              "params": {
-                "job_name": "Senior AI Engineer"
-              }
-            }
-          },
-          {
-            "step": 2,
-            "workflow": "HR Demo Recruitment Match JD",
-            "params": {
-              "job_name": "Senior AI Engineer"
-            },
-            "result": {
-              "status": "success",
-              "mode": "live_t4_rpa",
-              "workflowName": "HR Demo Recruitment Match JD",
-              "automationRequestId": 3296206,
-              "sourceId": "SID_1791203670028_a505ff63c92b",
-              "executionStatus": "Complete",
-              "agentName": "mahesh@mspevent-win-1",
-              "message": "JD matched with candidate",
-              "errorDetails": null,
-              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296206",
-              "serverUrl": "https://t4.automationedge.com/aeengine",
-              "params": {
-                "job_name": "Senior AI Engineer"
-              }
-            }
-          }
-        ],
-        "getJd": {
-          "status": "success",
-          "mode": "live_t4_rpa",
-          "workflowName": "HR Demo Recruitment Get JD",
-          "automationRequestId": 3296204,
-          "sourceId": "SID_1791203663170_853bd6381cda",
-          "executionStatus": "Complete",
-          "agentName": "mahesh@mspevent-win-1",
-          "message": "JD extracted from portal",
-          "errorDetails": null,
-          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296204",
-          "serverUrl": "https://t4.automationedge.com/aeengine",
-          "params": {
-            "job_name": "Senior AI Engineer"
-          }
-        },
-        "matchJd": {
-          "status": "success",
-          "mode": "live_t4_rpa",
-          "workflowName": "HR Demo Recruitment Match JD",
-          "automationRequestId": 3296206,
-          "sourceId": "SID_1791203670028_a505ff63c92b",
-          "executionStatus": "Complete",
-          "agentName": "mahesh@mspevent-win-1",
-          "message": "JD matched with candidate",
-          "errorDetails": null,
-          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296206",
-          "serverUrl": "https://t4.automationedge.com/aeengine",
-          "params": {
-            "job_name": "Senior AI Engineer"
-          }
-        }
-      },
-      "getJdResult": {
-        "status": "success",
-        "mode": "live_t4_rpa",
-        "workflowName": "HR Demo Recruitment Get JD",
-        "automationRequestId": 3296204,
-        "sourceId": "SID_1791203663170_853bd6381cda",
-        "executionStatus": "Complete",
-        "agentName": "mahesh@mspevent-win-1",
-        "message": "JD extracted from portal",
-        "errorDetails": null,
-        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296204",
-        "serverUrl": "https://t4.automationedge.com/aeengine",
-        "params": {
-          "job_name": "Senior AI Engineer"
-        }
-      },
-      "matchJdResult": {
-        "status": "success",
-        "mode": "live_t4_rpa",
-        "workflowName": "HR Demo Recruitment Match JD",
-        "automationRequestId": 3296206,
-        "sourceId": "SID_1791203670028_a505ff63c92b",
-        "executionStatus": "Complete",
-        "agentName": "mahesh@mspevent-win-1",
-        "message": "JD matched with candidate",
-        "errorDetails": null,
-        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296206",
-        "serverUrl": "https://t4.automationedge.com/aeengine",
-        "params": {
-          "job_name": "Senior AI Engineer"
-        }
-      }
+      "jobTitle": "Staff AI Systems Engineer",
+      "manager": "Amit Deshmukh (VP of Engineering)",
+      "startDate": "2026-10-15",
+      "salary": "$185,000 / annum",
+      "status": "Approved",
+      "serviceNowReq": "REQ0011941",
+      "serviceNowRitm": "RITM0011921",
+      "submittedAt": "10/5/2026, 6:35:58 PM",
+      "serviceNowReqId": "160399bceb770710b02df1b4cad0cd24",
+      "serviceNowRitmId": "de0399bceb770710b02df1b4cad0cd24",
+      "reqUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_request.do?sys_id=160399bceb770710b02df1b4cad0cd24",
+      "ritmUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_req_item.do?sys_id=de0399bceb770710b02df1b4cad0cd24",
+      "serviceNowStatus": "Approved",
+      "serviceNowStage": "HR Document Verification",
+      "aeGetEmpDetailsReqId": 3296483,
+      "aeGetEmpDetailsStatus": "Complete",
+      "hardwareDispatched": true,
+      "laptopTicket": "INC0040475",
+      "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident.do?sys_id=4f53517c33f3c3105e900e570e5c7bfc",
+      "approvedAt": "2026-10-05 18:37:25",
+      "orangeHrmProfileUrl": "http://10.41.5.39/orangehrm/web/index.php/pim/viewPersonalDetails/empNumber/40",
+      "orangeHrmEmpNumber": 40,
+      "orangeHrmStatus": "Profile Created in OrangeHRM PIM",
+      "o365UserId": "33cb362e-c582-48eb-8f00-5747afd108f0",
+      "o365Email": "aarav.sharma@automationedge.ai",
+      "o365UserPrincipalName": "aarav.sharma@automationedge.ai",
+      "o365DisplayName": "Aarav Sharma",
+      "o365InitialPassword": "Welcome@2026!Onboard",
+      "o365AdminUrl": "https://portal.azure.com/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/33cb362e-c582-48eb-8f00-5747afd108f0",
+      "o365Status": "Account Active in Office 365",
+      "aeT4RequestId": 3296487,
+      "aeT4Workflow": "AD-Create User and Assin Role",
+      "offerLetterEmailed": true,
+      "offerLetterRecipient": "abhishek.malwadkar@valuedx.com",
+      "offerLetterPdf": "Offer_Letter_Aarav_Sharma_MNG-OFR-5644.pdf"
     }
   ],
+  "recruitment": [],
   "leaveRequests": [],
-  "exitRequests": [
-    {
-      "id": "EXIT-717",
-      "empId": "EMP-8871",
-      "empName": "Sarah Jenkins",
-      "department": "Engineering",
-      "resignationDate": "2026-10-05",
-      "lastWorkingDay": "2026-11-04",
-      "reason": "Accepting an executive leadership offer.",
-      "itClearance": true,
-      "itClearanceStatus": "User Submitted Laptop",
-      "financeClearance": false,
-      "accessRevoked": true,
-      "o365Deleted": true,
-      "orangeHrmDeleted": true,
-      "emailSent": true,
-      "fnfStatus": "Pending Initiation",
-      "aeSnReqWorkflow": {
-        "status": "success",
-        "mode": "live_t4_rpa",
-        "workflowName": "HR Demo Offboarding SN Req",
-        "automationRequestId": 3296121,
-        "sourceId": "SID_1791203147259_f2812a3f994c",
-        "executionStatus": "Complete",
-        "agentName": "mahesh@mspevent-win-1",
-        "message": "Employee EMP-8871 Offboarding initiated and request submitted on ServiceNow",
-        "errorDetails": null,
-        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296121",
-        "serverUrl": "https://t4.automationedge.com/aeengine",
-        "params": {
-          "EmpID": "EMP-8871"
-        }
-      },
-      "serviceNowReq": "REQ0011937",
-      "serviceNowRitm": "RITM0016155",
-      "laptopTicket": "INC0040471",
-      "laptopTicketSysId": "d8e94d3ceb370710b02df1b4cad0cdce",
-      "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident.do?sys_id=d8e94d3ceb370710b02df1b4cad0cdce",
-      "assignedTo": "Alene Rabeck",
-      "laptopIncidentState": "Resolved",
-      "t4RevokePipeline": {
-        "status": "success",
-        "employeeId": "EMP-8871",
-        "employeeName": "Sarah Jenkins",
-        "adUsername": "Sarah.Jenkins",
-        "steps": [
-          {
-            "step": 1,
-            "workflow": "HR Demo OffboardingRemoveADUser",
-            "params": {
-              "AD username": "Sarah.Jenkins"
-            },
-            "result": {
-              "status": "success",
-              "mode": "live_t4_rpa",
-              "workflowName": "HR Demo OffboardingRemoveADUser",
-              "automationRequestId": 3296127,
-              "sourceId": "SID_1791203179216_5c475c8851b1",
-              "executionStatus": "Complete",
-              "agentName": "mahesh@mspevent-win-1",
-              "message": "AD User Sarah.Jenkins Removed",
-              "errorDetails": null,
-              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296127",
-              "serverUrl": "https://t4.automationedge.com/aeengine",
-              "params": {
-                "ADUserName": "Sarah.Jenkins"
-              }
-            }
-          },
-          {
-            "step": 2,
-            "workflow": "HR DEMO offboarding Delete O365 user",
-            "params": {
-              "emp_id": "EMP-8871",
-              "emp_name": "Sarah Jenkins"
-            },
-            "result": {
-              "status": "success",
-              "mode": "live_t4_rpa",
-              "workflowName": "HR DEMO offboarding Delete O365 user",
-              "automationRequestId": 3296129,
-              "sourceId": "SID_1791203188081_544eeb99a829",
-              "executionStatus": "Complete",
-              "agentName": "mahesh@mspevent-win-1",
-              "message": "User deleted from O365",
-              "errorDetails": null,
-              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296129",
-              "serverUrl": "https://t4.automationedge.com/aeengine",
-              "params": {
-                "emp_id": "EMP-8871",
-                "emp_name": "Sarah Jenkins"
-              }
-            }
-          },
-          {
-            "step": 3,
-            "workflow": "HR DEMO Offboarding Delete OrangeHRM User",
-            "params": {
-              "emp_id": "EMP-8871",
-              "emp_name": "Sarah Jenkins"
-            },
-            "result": {
-              "status": "success",
-              "mode": "live_t4_rpa",
-              "workflowName": "HR DEMO Offboarding Delete OrangeHRM User",
-              "automationRequestId": 3296130,
-              "sourceId": "SID_1791203194869_461ce82bb906",
-              "executionStatus": "Complete",
-              "agentName": "mahesh@mspevent-win-1",
-              "message": "User data deleted from OrangeHRM",
-              "errorDetails": null,
-              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296130",
-              "serverUrl": "https://t4.automationedge.com/aeengine",
-              "params": {
-                "emp_id": "EMP-8871",
-                "emp_name": "Sarah Jenkins"
-              }
-            }
-          }
-        ],
-        "adRemoval": {
-          "status": "success",
-          "mode": "live_t4_rpa",
-          "workflowName": "HR Demo OffboardingRemoveADUser",
-          "automationRequestId": 3296127,
-          "sourceId": "SID_1791203179216_5c475c8851b1",
-          "executionStatus": "Complete",
-          "agentName": "mahesh@mspevent-win-1",
-          "message": "AD User Sarah.Jenkins Removed",
-          "errorDetails": null,
-          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296127",
-          "serverUrl": "https://t4.automationedge.com/aeengine",
-          "params": {
-            "ADUserName": "Sarah.Jenkins"
-          }
-        },
-        "o365Delete": {
-          "status": "success",
-          "mode": "live_t4_rpa",
-          "workflowName": "HR DEMO offboarding Delete O365 user",
-          "automationRequestId": 3296129,
-          "sourceId": "SID_1791203188081_544eeb99a829",
-          "executionStatus": "Complete",
-          "agentName": "mahesh@mspevent-win-1",
-          "message": "User deleted from O365",
-          "errorDetails": null,
-          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296129",
-          "serverUrl": "https://t4.automationedge.com/aeengine",
-          "params": {
-            "emp_id": "EMP-8871",
-            "emp_name": "Sarah Jenkins"
-          }
-        },
-        "orangeHrmDelete": {
-          "status": "success",
-          "mode": "live_t4_rpa",
-          "workflowName": "HR DEMO Offboarding Delete OrangeHRM User",
-          "automationRequestId": 3296130,
-          "sourceId": "SID_1791203194869_461ce82bb906",
-          "executionStatus": "Complete",
-          "agentName": "mahesh@mspevent-win-1",
-          "message": "User data deleted from OrangeHRM",
-          "errorDetails": null,
-          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3296130",
-          "serverUrl": "https://t4.automationedge.com/aeengine",
-          "params": {
-            "emp_id": "EMP-8871",
-            "emp_name": "Sarah Jenkins"
-          }
-        }
-      }
-    }
-  ]
+  "exitRequests": []
 }
