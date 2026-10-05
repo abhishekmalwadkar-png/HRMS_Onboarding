@@ -5,11 +5,13 @@ import os
 import time
 import random
 import threading
+import base64
 from ae_rpa_client import ae_client
 from generate_offer_letter import create_and_email_offer_letter
 from servicenow_client import sn_client
 from office365_client import office365_client
 from orangehrm_client import orangehrm_client
+import resume_screener
 
 PORT = int(os.environ.get('PORT', 8081))
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'employees.json')
@@ -71,8 +73,19 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 if changed:
                     self.write_db(db)
                 self.wfile.write(json.dumps({"status": "success", "syncedCount": len(synced), "synced": synced}).encode('utf-8'))
+            elif self.path.startswith('/api/recruitment/jobs'):
+                self.wfile.write(json.dumps(resume_screener.JOB_DESCRIPTIONS).encode('utf-8'))
             elif self.path.startswith('/api/recruitment'):
-                self.wfile.write(json.dumps(db.get('recruitment', [])).encode('utf-8'))
+                rec_list = db.get('recruitment', [])
+                if not rec_list:
+                    rec_list = [
+                        { "id": "CAND-901", "name": "Aarav Sharma", "candidateName": "Aarav Sharma", "email": "aarav.sharma@example.com", "role": "Senior AI Engineer", "appliedRole": "Senior AI Engineer", "department": "Engineering", "score": "94%", "matchScore": "94%", "stage": "Offer Accepted", "skills": ["Python", "PyTorch", "Generative AI", "LangChain", "FastAPI"], "experienceYears": 5.5 },
+                        { "id": "CAND-902", "name": "Priya Iyer", "candidateName": "Priya Iyer", "email": "priya.iyer@example.com", "role": "Lead Product Manager", "appliedRole": "Lead Product Manager", "department": "Product", "score": "89%", "matchScore": "89%", "stage": "Technical Interview", "skills": ["Product Strategy", "Agile", "Roadmapping", "Scrum", "User Stories"], "experienceYears": 6.0 },
+                        { "id": "CAND-903", "name": "Rohan Mehta", "candidateName": "Rohan Mehta", "email": "rohan.mehta@example.com", "role": "Enterprise ServiceNow Architect", "appliedRole": "Enterprise ServiceNow Architect", "department": "IT Systems", "score": "91%", "matchScore": "91%", "stage": "HR Screening", "skills": ["ServiceNow", "ITSM", "Workflow Design", "Service Catalog", "IntegrationHub"], "experienceYears": 5.0 }
+                    ]
+                    db['recruitment'] = rec_list
+                    self.write_db(db)
+                self.wfile.write(json.dumps(rec_list).encode('utf-8'))
             elif self.path.startswith('/api/leaves'):
                 self.wfile.write(json.dumps(db.get('leaveRequests', [])).encode('utf-8'))
             elif self.path.startswith('/api/exit'):
@@ -242,6 +255,176 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.write_db(db)
             self.end_headers()
             self.wfile.write(json.dumps({"status": "updated", "data": employees}).encode('utf-8'))
+
+        elif self.path == '/api/recruitment/screen-resume' or self.path == '/api/recruitment/upload':
+            file_data_b64 = payload.get('fileData') or payload.get('file') or ""
+            file_name = payload.get('fileName') or payload.get('name') or "resume.pdf"
+            raw_text = payload.get('rawText') or payload.get('resumeText') or ""
+            sample_type = payload.get('sampleType')
+
+            # Pre-built realistic sample resumes for fast screening tests
+            if sample_type == 'ai-engineer' and not raw_text and not file_data_b64:
+                raw_text = """
+                Vikram Adve
+                Email: vikram.adve@valuedx.com | Phone: +91 98451 22345 | Bangalore, India
+                Senior AI Engineer & LLM Architect
+                Summary: Over 5.5 years of progressive experience building production-grade Generative AI pipelines, LangChain agents, PyTorch model fine-tuning, RAG frameworks, Vector Databases (Pinecone, ChromaDB), FastAPI microservices, and multi-agent systems.
+                Skills: Python, PyTorch, Generative AI, LLMs, LangChain, RAG, FastAPI, Docker, Machine Learning, Transformers, NLP, Vector Databases, Prompt Engineering, Cloud Architecture, AWS, Kubernetes.
+                Experience:
+                - Lead AI Engineer at NeuralTech Solutions (2022 - Present): Designed end-to-end Enterprise RAG pipeline processing 2M+ docs with sub-second latency.
+                - Machine Learning Engineer at DataVortex Labs (2019 - 2022): Trained custom BERT models, deployed FastAPI prediction servers with 99.9% uptime.
+                Education: B.Tech in Computer Science, IIT Bombay (2019)
+                """
+            elif sample_type == 'servicenow-architect' and not raw_text and not file_data_b64:
+                raw_text = """
+                Sameer Kulkarni
+                Email: sameer.kulkarni@valuedx.com | Phone: +91 97654 33210 | Pune, India
+                Enterprise ServiceNow Architect & Lead Consultant
+                Summary: 6 years of expertise architecting ServiceNow ITSM, Service Catalog, ITIL processes, Workflow Automation, IntegrationHub REST APIs, CMDB, and Service Portal UI customization.
+                Skills: ServiceNow, ITSM, Service Catalog, Workflow Design, GlideScript, JavaScript, REST APIs, IntegrationHub, CMDB, ITIL Certified, Incident Management, Change Management.
+                Experience:
+                - Senior ServiceNow Architect at CloudApex Systems (2021 - Present): Implemented Service Catalog automation across 15 global business units.
+                - ServiceNow Developer at InfoEdge Global (2018 - 2021): Built custom scoped applications and REST IntegrationHub flows.
+                """
+            elif sample_type == 'product-manager' and not raw_text and not file_data_b64:
+                raw_text = """
+                Ananya Sen
+                Email: ananya.sen@valuedx.com | Phone: +91 98112 44556 | Mumbai, India
+                Lead Product Manager - Enterprise SaaS & HR Tech
+                Summary: 6+ years driving cross-functional product lifecycle, Agile roadmapping, customer discovery, PRDs, UX wireframing, and Go-To-Market strategies for B2B SaaS platforms.
+                Skills: Product Strategy, Agile, Scrum, Roadmapping, User Stories, Stakeholder Management, Data Analytics, UX/UI Design, Market Research, Go-To-Market, Jira, SaaS Metrics.
+                Experience:
+                - Principal Product Manager at WorkPulse (2022 - Present): Scaled HR Tech enterprise suite from $2M to $12M ARR.
+                """
+
+            if file_data_b64 and not raw_text:
+                try:
+                    if ',' in file_data_b64:
+                        file_data_b64 = file_data_b64.split(',', 1)[1]
+                    file_bytes = base64.b64decode(file_data_b64)
+                    raw_text = resume_screener.extract_text_from_file_bytes(file_bytes, file_name)
+                except Exception as ex:
+                    print(f"[Resume Screen Error decoding base64]: {ex}")
+                    raw_text = ""
+
+            if not raw_text:
+                raw_text = "Experienced Professional with strong software engineering and technical background."
+
+            # Parse candidate & match against all Job Descriptions
+            candidate_data = resume_screener.parse_resume_details(raw_text, file_name)
+
+            # Optional AutomationEdge T4 Resume Screening trigger
+            ae_screening_res = {}
+            try:
+                ae_screening_res = ae_client.trigger_resume_screening(candidate_data)
+                candidate_data['aeScreeningRequestId'] = ae_screening_res.get('requestId')
+            except Exception as ae_err:
+                print(f"[AE Resume Screening Warning]: {ae_err}")
+
+            # Store in DB recruitment pipeline
+            rec_list = db.get('recruitment', [])
+            rec_list.insert(0, candidate_data)
+            db['recruitment'] = rec_list
+            self.write_db(db)
+
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "candidate": candidate_data,
+                "data": rec_list,
+                "aeScreening": ae_screening_res
+            }).encode('utf-8'))
+
+        elif self.path == '/api/recruitment/schedule-interview':
+            cand_id = payload.get('candidateId') or payload.get('id')
+            cand_name = payload.get('candidateName') or payload.get('name') or "Candidate"
+            role = payload.get('appliedRole') or payload.get('role') or payload.get('jobTitle') or "Senior Engineer"
+            dept = payload.get('department') or payload.get('dept') or "Engineering"
+            int_date = payload.get('interviewDate') or time.strftime("%A, %B %d, %Y")
+            int_time = payload.get('interviewTime') or "03:00 PM - 03:45 PM IST"
+            int_type = payload.get('interviewType') or "Technical & AI Architecture Screening"
+            panel = payload.get('panel') or "Lead Technical Architect & Talent Acquisition Team"
+            
+            # Generate Google Meet link
+            chars = "abcdefghijklmnopqrstuvwxyz"
+            meet_code = f"{''.join(random.choice(chars) for _ in range(3))}-{''.join(random.choice(chars) for _ in range(4))}-{''.join(random.choice(chars) for _ in range(3))}"
+            meet_link = payload.get('meetingLink') or f"https://meet.google.com/{meet_code}"
+
+            interview_payload = {
+                "id": cand_id,
+                "candidateId": cand_id,
+                "candidateName": cand_name,
+                "appliedRole": role,
+                "role": role,
+                "department": dept,
+                "interviewDate": int_date,
+                "interviewTime": int_time,
+                "interviewType": int_type,
+                "panel": panel,
+                "meetingLink": meet_link,
+                "score": payload.get('score') or payload.get('matchScore') or "94%",
+                "skills": payload.get('skills') or ["Python", "Cloud Architecture", "Generative AI"]
+            }
+
+            # 1. Send Google Meet Interview Email via Microsoft Graph API to abhishek.malwadkar@valuedx.com
+            email_res = {}
+            try:
+                print(f"[RECRUITMENT] Sending Google Meet Interview Invitation for {cand_name} to abhishek.malwadkar@valuedx.com...")
+                email_res = office365_client.send_interview_email(
+                    candidate_data=interview_payload,
+                    meeting_link=meet_link,
+                    recipient_email="abhishek.malwadkar@valuedx.com"
+                )
+            except Exception as mail_err:
+                print(f"[RECRUITMENT] Email Dispatch Error: {mail_err}")
+                email_res = {"status": "error", "message": str(mail_err)}
+
+            # 2. AutomationEdge T4 Interview Scheduling & Candidate Communication
+            ae_sched_res = {}
+            try:
+                ae_sched_res = ae_client.trigger_interview_scheduling(interview_payload)
+            except Exception as ae_err:
+                print(f"[AE Interview Sched Warning]: {ae_err}")
+
+            # 3. Update candidate in recruitment database
+            rec_list = db.get('recruitment', [])
+            matched = False
+            for cand in rec_list:
+                if cand.get('id') == cand_id or cand.get('name') == cand_name or cand.get('candidateName') == cand_name:
+                    cand['stage'] = 'Interview Scheduled (Google Meet)'
+                    cand['meetingLink'] = meet_link
+                    cand['interviewDate'] = int_date
+                    cand['interviewTime'] = int_time
+                    cand['interviewType'] = int_type
+                    cand['interviewScheduled'] = True
+                    cand['emailSent'] = True
+                    cand['emailRecipient'] = "abhishek.malwadkar@valuedx.com"
+                    matched = True
+                    break
+            
+            if not matched:
+                interview_payload['stage'] = 'Interview Scheduled (Google Meet)'
+                interview_payload['interviewScheduled'] = True
+                interview_payload['emailSent'] = True
+                rec_list.insert(0, interview_payload)
+
+            db['recruitment'] = rec_list
+            self.write_db(db)
+
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "meetingLink": meet_link,
+                "emailResult": email_res,
+                "aeScheduling": ae_sched_res,
+                "data": rec_list
+            }).encode('utf-8'))
+
+        elif self.path == '/api/recruitment/clear':
+            db['recruitment'] = []
+            self.write_db(db)
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "success", "message": "Recruitment candidate records cleared", "data": []}).encode('utf-8'))
 
         elif self.path == '/api/recruitment':
             rec = db.get('recruitment', [])

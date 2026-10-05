@@ -548,5 +548,169 @@ class Office365Client:
                 "message": str(e)
             }
 
+    def send_interview_email(self, candidate_data: dict, meeting_link: str, recipient_email: str = "abhishek.malwadkar@valuedx.com") -> dict:
+        """
+        Sends an automated Google Meet Interview Schedule Email via Microsoft Graph API.
+        Default recipient is set to abhishek.malwadkar@valuedx.com.
+        """
+        try:
+            token = self.get_access_token()
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+
+            candidate_name = candidate_data.get('candidateName') or candidate_data.get('fullName') or candidate_data.get('name') or "Candidate"
+            role = candidate_data.get('appliedRole') or candidate_data.get('role') or candidate_data.get('jobTitle') or "Senior Engineer"
+            dept = candidate_data.get('department') or candidate_data.get('dept') or "Engineering"
+            match_score = candidate_data.get('matchScore') or candidate_data.get('score') or "94%"
+            interview_date = candidate_data.get('interviewDate') or time.strftime("%A, %B %d, %Y")
+            interview_time = candidate_data.get('interviewTime') or "03:00 PM - 03:45 PM IST"
+            interview_type = candidate_data.get('interviewType') or "Technical & AI Architecture Screening"
+            panel = candidate_data.get('panel') or "Lead Technical Architect & Talent Acquisition Team"
+            skills = candidate_data.get('skills') or ["Python", "Cloud Architecture", "Generative AI", "APIs"]
+            skills_str = ", ".join(skills) if isinstance(skills, list) else str(skills)
+
+            subject = f"Interview Scheduled: {candidate_name} for {role} (Google Meet)"
+
+            html_body = f"""
+            <html>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; background-color: #f8fafc; padding: 24px; margin: 0;">
+                <div style="max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 28px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);">
+                    
+                    <!-- Header -->
+                    <div style="display: flex; align-items: center; border-bottom: 2px solid #0284c7; padding-bottom: 16px; margin-bottom: 20px;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td>
+                                    <h2 style="color: #0284c7; margin: 0; font-size: 20px; font-weight: 700;">MangoHRMS Talent Acquisition</h2>
+                                    <p style="margin: 3px 0 0 0; color: #64748b; font-size: 13px;">AI-Powered Candidate Recruitment & Screening Pipeline</p>
+                                </td>
+                                <td style="text-align: right;">
+                                    <span style="background: #e0f2fe; color: #0284c7; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid #bae6fd;">Match: {match_score}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <p style="font-size: 14.5px; line-height: 1.6; color: #334155; margin-bottom: 16px;">
+                        Dear <strong>Hiring Team & Candidate</strong>,
+                    </p>
+
+                    <p style="font-size: 14px; line-height: 1.6; color: #334155;">
+                        We are pleased to confirm that following automated AI Resume Screening, an interview has been officially scheduled for <strong>{candidate_name}</strong> for the <strong>{role}</strong> position.
+                    </p>
+
+                    <!-- Google Meet Bridge Card -->
+                    <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center; color: #ffffff;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 17px; color: #ffffff;">Google Meet Video Conference</h3>
+                        <p style="margin: 0 0 16px 0; font-size: 13px; color: #e0f2fe;">Join on your computer, tablet, or mobile device</p>
+                        <a href="{meeting_link}" target="_blank" style="display: inline-block; background: #ffffff; color: #0284c7; font-size: 14px; font-weight: 700; padding: 10px 24px; border-radius: 6px; text-decoration: none; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+                            🎥 Join Google Meet
+                        </a>
+                        <p style="margin: 12px 0 0 0; font-size: 12px; color: #bae6fd;">Meeting Link: <a href="{meeting_link}" style="color: #ffffff; text-decoration: underline;">{meeting_link}</a></p>
+                    </div>
+
+                    <!-- Interview Details Table -->
+                    <div style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 16px; margin: 18px 0; font-size: 13.5px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b; width: 40%;"><strong>Candidate:</strong></td>
+                                <td style="padding: 6px 0; font-weight: 600; color: #0f172a;">{candidate_name}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b;"><strong>Target Position:</strong></td>
+                                <td style="padding: 6px 0; font-weight: 600; color: #0f172a;">{role} ({dept})</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b;"><strong>Interview Type:</strong></td>
+                                <td style="padding: 6px 0; color: #0f172a;">{interview_type}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b;"><strong>Date:</strong></td>
+                                <td style="padding: 6px 0; font-weight: 600; color: #0284c7;">{interview_date}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b;"><strong>Time Slot:</strong></td>
+                                <td style="padding: 6px 0; font-weight: 600; color: #0f172a;">{interview_time}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b;"><strong>Evaluation Panel:</strong></td>
+                                <td style="padding: 6px 0; color: #0f172a;">{panel}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b;"><strong>Verified Skills:</strong></td>
+                                <td style="padding: 6px 0; color: #059669; font-weight: 500;">{skills_str}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Instructions -->
+                    <h4 style="color: #0f172a; font-size: 13.5px; margin: 16px 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Preparation Guidelines:
+                    </h4>
+                    <ul style="padding-left: 20px; font-size: 13px; color: #475569; line-height: 1.6; margin: 0 0 16px 0;">
+                        <li>Please join 5 minutes prior to the scheduled start time.</li>
+                        <li>Ensure a stable internet connection and active camera/microphone.</li>
+                        <li>Have your updated resume and code repository/portfolio ready for discussion.</li>
+                    </ul>
+
+                    <!-- Footer -->
+                    <p style="font-size: 12.5px; color: #94a3b8; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+                        This interview invite was automatically generated and dispatched by MangoHRMS.<br/>
+                        Recipient: <strong>{recipient_email}</strong>
+                    </p>
+                </div>
+            </body>
+            </html>
+            """
+
+            mail_payload = {
+                "message": {
+                    "subject": subject,
+                    "body": {
+                        "contentType": "HTML",
+                        "content": html_body
+                    },
+                    "toRecipients": [
+                        {"emailAddress": {"address": recipient_email}}
+                    ]
+                },
+                "saveToSentItems": "false"
+            }
+
+            sender_upn = "vishal.kekare@automationedge.ai"
+            send_url = f"{self.graph_base_url}/users/{sender_upn}/sendMail"
+            resp = requests.post(send_url, headers=headers, json=mail_payload, timeout=25)
+
+            if resp.status_code in [200, 202]:
+                print(f"[Interview Email LIVE SUCCESS] Dispatched Google Meet invite to {recipient_email} for {candidate_name}")
+                return {
+                    "status": "success",
+                    "sent": True,
+                    "recipient": recipient_email,
+                    "subject": subject,
+                    "meetingLink": meeting_link,
+                    "message": f"Interview invitation with Google Meet link sent successfully to {recipient_email}."
+                }
+            else:
+                print(f"[Interview Email Warning]: {resp.status_code} - {resp.text}")
+                return {
+                    "status": "warning",
+                    "statusCode": resp.status_code,
+                    "recipient": recipient_email,
+                    "meetingLink": meeting_link,
+                    "message": f"Graph API returned {resp.status_code}: {resp.text}"
+                }
+
+        except Exception as e:
+            print(f"[Interview Email Exception]: {e}")
+            return {
+                "status": "error",
+                "recipient": recipient_email,
+                "meetingLink": meeting_link,
+                "message": str(e)
+            }
+
 # Singleton instance
 office365_client = Office365Client()

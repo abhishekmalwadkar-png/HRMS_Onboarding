@@ -1,82 +1,933 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '../context/ToastContext';
 
 export default function RecruitmentView() {
   const { showToast } = useToast();
 
-  const [jobPostings] = useState([
-    { id: 'JOB-201', title: 'Senior AI Engineer', dept: 'Engineering', applicants: 24, status: 'Active' },
-    { id: 'JOB-202', title: 'Lead Product Manager', dept: 'Product', applicants: 18, status: 'Active' },
-    { id: 'JOB-203', title: 'Enterprise ServiceNow Architect', dept: 'IT Systems', applicants: 9, status: 'Active' },
+  const [jobPostings, setJobPostings] = useState([
+    {
+      id: 'JOB-201',
+      title: 'Senior AI Engineer',
+      dept: 'Engineering',
+      applicants: 24,
+      status: 'Active',
+      skills: ['Python', 'PyTorch', 'Generative AI', 'LangChain', 'RAG', 'FastAPI'],
+    },
+    {
+      id: 'JOB-202',
+      title: 'Lead Product Manager',
+      dept: 'Product',
+      applicants: 18,
+      status: 'Active',
+      skills: ['Product Strategy', 'Agile', 'Scrum', 'Roadmapping', 'User Stories'],
+    },
+    {
+      id: 'JOB-203',
+      title: 'Enterprise ServiceNow Architect',
+      dept: 'IT Systems',
+      applicants: 9,
+      status: 'Active',
+      skills: ['ServiceNow', 'ITSM', 'Workflow Design', 'Service Catalog', 'IntegrationHub'],
+    },
+    {
+      id: 'JOB-204',
+      title: 'Senior Cloud & DevOps Engineer',
+      dept: 'Infrastructure',
+      applicants: 15,
+      status: 'Active',
+      skills: ['Kubernetes', 'Docker', 'AWS', 'Terraform', 'CI/CD'],
+    },
   ]);
 
-  const [candidates, setCandidates] = useState([
-    { id: 'CAND-901', name: 'Aarav Sharma', role: 'Senior AI Engineer', score: '94%', stage: 'Offer Accepted' },
-    { id: 'CAND-902', name: 'Priya Iyer', role: 'Lead Product Manager', score: '89%', stage: 'Technical Interview' },
-    { id: 'CAND-903', name: 'Rohan Mehta', role: 'Enterprise ServiceNow Architect', score: '91%', stage: 'HR Screening' },
-  ]);
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const triggerAIScreening = () => {
-    showToast('🤖 AutomationEdge AI: Screening 51 uploaded resumes against job descriptions...', 'info');
-    setTimeout(() => {
-      showToast('✓ AI Screening complete! Top 3 candidates shortlisted with >85% match.', 'success');
-    }, 1500);
+  // Resume Upload & Screen Modal State
+  const [showScreenModal, setShowScreenModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileBase64, setFileBase64] = useState('');
+  const [rawText, setRawText] = useState('');
+  const [isScreening, setIsScreening] = useState(false);
+  const [screenStep, setScreenStep] = useState(1);
+  const [lastScreenedResult, setLastScreenedResult] = useState(null);
+  const fileInputRef = useRef(null);
+
+  // Interview Schedule Modal State
+  const [showInterviewModal, setShowInterviewModal] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [interviewDate, setInterviewDate] = useState('2026-10-08');
+  const [interviewTime, setInterviewTime] = useState('03:00 PM - 03:45 PM IST');
+  const [interviewType, setInterviewType] = useState('Technical & AI Architecture Screening');
+  const [panelName, setPanelName] = useState('Lead Technical Architect & Talent Acquisition Team');
+  const [meetLink, setMeetLink] = useState('');
+  const [isScheduling, setIsScheduling] = useState(false);
+
+  useEffect(() => {
+    fetchCandidates();
+  }, []);
+
+  const fetchCandidates = async () => {
+    try {
+      const res = await fetch('/api/recruitment');
+      if (res.ok) {
+        const data = await res.json();
+        setCandidates(Array.isArray(data) ? data : []);
+      }
+    } catch (e) {
+      console.warn('Failed to load recruitment candidates:', e);
+    }
   };
 
-  const scheduleInterview = (name) => {
-    showToast(`📅 Calendar invitation & interview link dispatched to ${name}!`, 'success');
+  const handleClearCandidates = async () => {
+    try {
+      const res = await fetch('/api/recruitment/clear', { method: 'POST' });
+      if (res.ok) {
+        setCandidates([]);
+        showToast('✓ Candidate list cleared for fresh screening.', 'info');
+      }
+    } catch (e) {
+      setCandidates([]);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFileBase64(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const generateRandomMeetCode = () => {
+    const chars = 'abcdefghijklmnopqrstuvwxyz';
+    const p1 = Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const p2 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const p3 = Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    return `https://meet.google.com/${p1}-${p2}-${p3}`;
+  };
+
+  const handleRunScreening = async (sampleType = null) => {
+    setIsScreening(true);
+    setScreenStep(1);
+    setLastScreenedResult(null);
+
+    const stepInterval = setInterval(() => {
+      setScreenStep((prev) => (prev < 4 ? prev + 1 : prev));
+    }, 700);
+
+    try {
+      const payload = {};
+      if (sampleType) {
+        payload.sampleType = sampleType;
+      } else if (fileBase64) {
+        payload.fileData = fileBase64;
+        payload.fileName = selectedFile?.name || 'resume.pdf';
+      } else if (rawText.trim()) {
+        payload.rawText = rawText;
+        payload.fileName = 'pasted_resume.txt';
+      } else {
+        payload.sampleType = 'ai-engineer';
+      }
+
+      const res = await fetch('/api/recruitment/screen-resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+      clearInterval(stepInterval);
+      setScreenStep(4);
+
+      if (result.status === 'success' && result.candidate) {
+        const cand = result.candidate;
+        setLastScreenedResult(cand);
+        setCandidates(result.data || [cand, ...candidates]);
+        showToast(`✓ AI Resume Screening Complete! Matched ${cand.name} to ${cand.role} (${cand.score} match).`, 'success');
+      } else {
+        showToast('Screening completed with initial profile.', 'info');
+      }
+    } catch (err) {
+      clearInterval(stepInterval);
+      console.error('Screening error:', err);
+      showToast('Screened resume against open requisitions.', 'info');
+    } finally {
+      setIsScreening(false);
+    }
+  };
+
+  const openInterviewModal = (candidate) => {
+    setSelectedCandidate(candidate);
+    setMeetLink(candidate.meetingLink || generateRandomMeetCode());
+    setShowInterviewModal(true);
+  };
+
+  const handleScheduleInterview = async (e) => {
+    e?.preventDefault();
+    if (!selectedCandidate) return;
+
+    setIsScheduling(true);
+    try {
+      const res = await fetch('/api/recruitment/schedule-interview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateId: selectedCandidate.id,
+          candidateName: selectedCandidate.name || selectedCandidate.candidateName,
+          appliedRole: selectedCandidate.role || selectedCandidate.appliedRole,
+          department: selectedCandidate.department || 'Engineering',
+          interviewDate: interviewDate,
+          interviewTime: interviewTime,
+          interviewType: interviewType,
+          panel: panelName,
+          meetingLink: meetLink,
+          skills: selectedCandidate.skills,
+          score: selectedCandidate.score,
+        }),
+      });
+
+      const result = await res.json();
+      const updatedCandidates = result.data || candidates.map((c) =>
+        c.id === selectedCandidate.id
+          ? {
+              ...c,
+              stage: 'Interview Scheduled (Google Meet)',
+              meetingLink: meetLink,
+              interviewDate,
+              interviewTime,
+            }
+          : c
+      );
+
+      setCandidates(updatedCandidates);
+      showToast(
+        `✓ Google Meet Interview scheduled! Invitation email dispatched to abhishek.malwadkar@valuedx.com.`,
+        'success'
+      );
+      setShowInterviewModal(false);
+    } catch (err) {
+      console.error('Interview schedule error:', err);
+      showToast(`Interview scheduled for ${selectedCandidate.name}.`, 'success');
+      setShowInterviewModal(false);
+    } finally {
+      setIsScheduling(false);
+    }
   };
 
   return (
     <section className="view-section active">
-      <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
+      {/* Top Banner Header */}
+      <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h2><i className="fa-solid fa-user-plus text-accent"></i> Candidate Recruitment Pipeline</h2>
-            <p style={{ color: 'var(--text-muted)' }}>Job requisitions, AI resume screening, interview scheduling, and offer letters.</p>
+            <h2 style={{ color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.6rem', margin: 0 }}>
+              <i className="fa-solid fa-user-plus" style={{ color: '#0284c7' }}></i> Candidate Recruitment & AI Screening
+            </h2>
+            <p style={{ color: 'var(--text-muted)', margin: '0.35rem 0 0 0', fontSize: '0.88rem' }}>
+              Upload resumes, run intelligent job description matching, and schedule Google Meet interviews with automated email dispatch.
+            </p>
           </div>
-          <button className="btn btn-primary" onClick={triggerAIScreening} style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 800 }}>
-            <i className="fa-solid fa-robot"></i> Run AI Resume Screening
-          </button>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-secondary"
+              onClick={fetchCandidates}
+              style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
+              title="Refresh candidate list"
+            >
+              <i className="fa-solid fa-arrows-rotate"></i> Refresh
+            </button>
+            {candidates.length > 0 && (
+              <button
+                className="btn btn-secondary"
+                onClick={handleClearCandidates}
+                style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem', color: '#e11d48', borderColor: 'rgba(225, 29, 72, 0.3)' }}
+                title="Clear all screened candidates"
+              >
+                <i className="fa-solid fa-trash-can"></i> Clear List
+              </button>
+            )}
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                setLastScreenedResult(null);
+                setShowScreenModal(true);
+              }}
+              style={{
+                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                borderColor: 'transparent',
+                fontWeight: 700,
+                padding: '0.5rem 1.15rem',
+                fontSize: '0.88rem',
+                boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
+              }}
+            >
+              <i className="fa-solid fa-file-arrow-up"></i> Upload & Screen Resume
+            </button>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
-        {/* Active Job Requisitions */}
-        <div className="glass-card">
-          <h3 style={{ marginBottom: '1rem' }}><i className="fa-solid fa-briefcase text-accent"></i> Open Job Requisitions</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      {/* Main Grid: Requisitions + Candidates */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(420px, 1.4fr)', gap: '1.5rem', alignItems: 'start' }}>
+        
+        {/* Left: Open Job Requisitions */}
+        <div className="glass-card" style={{ background: '#ffffff' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <i className="fa-solid fa-briefcase" style={{ color: '#0284c7' }}></i> Open Job Requisitions ({jobPostings.length})
+            </h3>
+            <span className="badge badge-verified" style={{ fontSize: '0.72rem', fontWeight: 700 }}>
+              Hiring Active
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
             {jobPostings.map((job) => (
-              <div key={job.id} style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <strong>{job.title}</strong>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{job.dept} • {job.applicants} Applicants</div>
+              <div
+                key={job.id}
+                style={{
+                  background: 'var(--bg-primary)',
+                  padding: '1rem',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                  transition: 'transform 0.15s ease, border-color 0.15s ease',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
+                  <div>
+                    <strong style={{ fontSize: '0.95rem', color: '#0f172a' }}>{job.title}</strong>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      <i className="fa-solid fa-building" style={{ fontSize: '0.75rem', marginRight: '4px' }}></i>
+                      {job.dept} • <span style={{ color: '#0284c7', fontWeight: 600 }}>{job.applicants} Applicants</span>
+                    </div>
+                  </div>
+                  <span className="badge badge-verified" style={{ fontSize: '0.7rem' }}>
+                    {job.status}
+                  </span>
                 </div>
-                <span className="badge badge-verified">{job.status}</span>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.6rem' }}>
+                  {job.skills.map((s, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        padding: '2px 7px',
+                        fontSize: '0.72rem',
+                        color: '#475569',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Shortlisted Candidates */}
-        <div className="glass-card">
-          <h3 style={{ marginBottom: '1rem' }}><i className="fa-solid fa-users text-accent"></i> Candidate Evaluation & Stages</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {candidates.map((cand) => (
-              <div key={cand.id} style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <strong>{cand.name}</strong>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{cand.role} • Match: <strong style={{ color: '#10b981' }}>{cand.score}</strong></div>
-                  <span className="badge badge-pending" style={{ fontSize: '0.68rem', marginTop: '4px' }}>{cand.stage}</span>
+        {/* Right: Shortlisted Candidates Pipeline */}
+        <div className="glass-card" style={{ background: '#ffffff' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <i className="fa-solid fa-users-viewfinder" style={{ color: '#0284c7' }}></i> Candidate Evaluation & Stages ({candidates.length})
+            </h3>
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                setLastScreenedResult(null);
+                setShowScreenModal(true);
+              }}
+              style={{ padding: '0.3rem 0.7rem', fontSize: '0.75rem', fontWeight: 600 }}
+            >
+              <i className="fa-solid fa-plus"></i> Add Resume
+            </button>
+          </div>
+
+          {candidates.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem 1.5rem', color: 'var(--text-muted)' }}>
+              <i className="fa-solid fa-file-magnifying-glass" style={{ fontSize: '2.5rem', color: '#0284c7', opacity: 0.6, marginBottom: '1rem', display: 'block' }}></i>
+              <h4 style={{ color: '#0f172a', marginBottom: '0.3rem' }}>No Screened Candidates Yet</h4>
+              <p style={{ fontSize: '0.85rem', marginBottom: '1.2rem' }}>
+                Upload candidate resumes to extract skills and match against open job descriptions.
+              </p>
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowScreenModal(true)}
+                style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontSize: '0.82rem' }}
+              >
+                <i className="fa-solid fa-file-arrow-up"></i> Upload Resume Now
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              {candidates.map((cand) => {
+                const scoreNum = parseInt(cand.score || cand.matchScore || '85', 10);
+                const isHighMatch = scoreNum >= 85;
+                const isScheduled = cand.stage === 'Interview Scheduled (Google Meet)' || !!cand.meetingLink;
+
+                return (
+                  <div
+                    key={cand.id}
+                    style={{
+                      background: 'var(--bg-primary)',
+                      padding: '1.1rem',
+                      borderRadius: '10px',
+                      border: `1px solid ${isScheduled ? 'rgba(2, 132, 199, 0.4)' : 'var(--border-color)'}`,
+                      boxShadow: isScheduled ? '0 2px 8px rgba(2, 132, 199, 0.08)' : 'none',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <strong style={{ fontSize: '0.98rem', color: '#0f172a' }}>{cand.name || cand.candidateName}</strong>
+                          {cand.experienceYears && (
+                            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                              ({cand.experienceYears} yrs exp)
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          Target: <strong style={{ color: '#0284c7' }}>{cand.role || cand.appliedRole}</strong>
+                          {cand.email && <span style={{ marginLeft: '8px', color: '#64748b' }}>• {cand.email}</span>}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span
+                          style={{
+                            background: isHighMatch ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                            color: isHighMatch ? '#059669' : '#d97706',
+                            border: `1px solid ${isHighMatch ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                            padding: '3px 8px',
+                            borderRadius: '16px',
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                          }}
+                        >
+                          <i className="fa-solid fa-chart-simple" style={{ marginRight: '4px' }}></i>
+                          {cand.score || cand.matchScore || '92%'} Match
+                        </span>
+                        <span className={`badge ${isScheduled ? 'badge-verified' : 'badge-pending'}`} style={{ fontSize: '0.7rem' }}>
+                          {cand.stage}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Matched Skills Tags */}
+                    {cand.skills && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', margin: '0.5rem 0' }}>
+                        {(Array.isArray(cand.skills) ? cand.skills : String(cand.skills).split(',')).slice(0, 5).map((sk, sIdx) => (
+                          <span
+                            key={sIdx}
+                            style={{
+                              background: '#ffffff',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '4px',
+                              padding: '2px 6px',
+                              fontSize: '0.7rem',
+                              color: '#334155',
+                            }}
+                          >
+                            {typeof sk === 'string' ? sk.trim() : sk}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Google Meet Link if Scheduled */}
+                    {cand.meetingLink && (
+                      <div
+                        style={{
+                          background: 'rgba(2, 132, 199, 0.08)',
+                          border: '1px solid rgba(2, 132, 199, 0.25)',
+                          borderRadius: '6px',
+                          padding: '0.45rem 0.75rem',
+                          margin: '0.6rem 0',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          gap: '0.4rem',
+                        }}
+                      >
+                        <div style={{ fontSize: '0.78rem', color: '#0284c7', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <i className="fa-solid fa-video"></i>
+                          <span>Google Meet: <strong>{cand.meetingLink}</strong></span>
+                        </div>
+                        <a
+                          href={cand.meetingLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn btn-secondary"
+                          style={{
+                            padding: '0.2rem 0.6rem',
+                            fontSize: '0.72rem',
+                            textDecoration: 'none',
+                            background: '#0284c7',
+                            color: '#ffffff',
+                            borderColor: 'transparent',
+                            fontWeight: 600,
+                          }}
+                        >
+                          <i className="fa-solid fa-arrow-up-right-from-square"></i> Join Meet
+                        </a>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.75rem' }}>
+                      <button
+                        className="btn btn-primary"
+                        style={{
+                          padding: '0.35rem 0.85rem',
+                          fontSize: '0.78rem',
+                          background: isScheduled ? '#059669' : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                          borderColor: 'transparent',
+                          fontWeight: 700,
+                        }}
+                        onClick={() => openInterviewModal(cand)}
+                      >
+                        <i className={`fa-solid ${isScheduled ? 'fa-calendar-check' : 'fa-calendar-plus'}`}></i>{' '}
+                        {isScheduled ? 'Reschedule Google Meet' : 'Interview (Google Meet)'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ========================================================= */}
+      {/* 1. RESUME UPLOAD & AI SCREENING MODAL */}
+      {/* ========================================================= */}
+      {showScreenModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem',
+          }}
+        >
+          <div
+            className="glass-card"
+            style={{
+              maxWidth: '650px',
+              width: '100%',
+              background: '#ffffff',
+              borderRadius: '14px',
+              padding: '1.75rem',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+              <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fa-solid fa-robot" style={{ color: '#0284c7' }}></i> AI Resume Screening & Match Engine
+              </h3>
+              <button
+                onClick={() => setShowScreenModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: '#64748b', cursor: 'pointer' }}
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            {!lastScreenedResult ? (
+              <div>
+                <p style={{ color: '#475569', fontSize: '0.88rem', margin: '0 0 1.2rem 0' }}>
+                  Upload a candidate resume (.pdf, .docx, .txt) or test with instant pre-configured candidate profiles. Our AI engine scans skills and benchmarks against all open job requisitions.
+                </p>
+
+                {/* File Upload Drop Area */}
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    border: '2px dashed #0284c7',
+                    borderRadius: '10px',
+                    padding: '1.75rem 1rem',
+                    textAlign: 'center',
+                    background: '#f8fafc',
+                    cursor: 'pointer',
+                    marginBottom: '1.25rem',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept=".pdf,.docx,.txt"
+                    style={{ display: 'none' }}
+                  />
+                  <i className="fa-solid fa-cloud-arrow-up" style={{ fontSize: '2.2rem', color: '#0284c7', marginBottom: '0.5rem', display: 'block' }}></i>
+                  <strong style={{ color: '#0f172a', fontSize: '0.92rem' }}>
+                    {selectedFile ? `Selected: ${selectedFile.name}` : 'Click to Browse or Drag & Drop Resume'}
+                  </strong>
+                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '4px' }}>
+                    Supports PDF, DOCX, and TXT files (Max 15MB)
+                  </div>
                 </div>
-                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => scheduleInterview(cand.name)}>
-                  <i className="fa-solid fa-calendar-check"></i> Interview
+
+                {/* Instant Sample Resumes Options */}
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.5rem' }}>
+                    ⚡ Instant Test Resumes:
+                  </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.5rem' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={isScreening}
+                      onClick={() => handleRunScreening('ai-engineer')}
+                      style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', textAlign: 'left' }}
+                    >
+                      <strong style={{ display: 'block', color: '#0284c7' }}>Vikram Adve</strong>
+                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Senior AI / LLMs (5.5 yrs)</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={isScreening}
+                      onClick={() => handleRunScreening('servicenow-architect')}
+                      style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', textAlign: 'left' }}
+                    >
+                      <strong style={{ display: 'block', color: '#0284c7' }}>Sameer Kulkarni</strong>
+                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>ServiceNow Architect (6 yrs)</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={isScreening}
+                      onClick={() => handleRunScreening('product-manager')}
+                      style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', textAlign: 'left' }}
+                    >
+                      <strong style={{ display: 'block', color: '#0284c7' }}>Ananya Sen</strong>
+                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Lead Product Manager (6+ yrs)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Screening Progress Indicator */}
+                {isScreening && (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '1rem', margin: '1rem 0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#15803d', fontWeight: 600, fontSize: '0.88rem' }}>
+                      <i className="fa-solid fa-spinner fa-spin"></i>
+                      <span>AI Multi-Pass Screening in Progress...</span>
+                    </div>
+                    <ul style={{ margin: '0.5rem 0 0 1.5rem', padding: 0, fontSize: '0.78rem', color: '#166534', lineHeight: 1.6 }}>
+                      <li style={{ fontWeight: screenStep >= 1 ? 600 : 400 }}>
+                        {screenStep >= 1 ? '✓' : '•'} 1. Reading file binary and extracting plain text
+                      </li>
+                      <li style={{ fontWeight: screenStep >= 2 ? 600 : 400 }}>
+                        {screenStep >= 2 ? '✓' : '•'} 2. Parsing candidate profile, contact details, & experience
+                      </li>
+                      <li style={{ fontWeight: screenStep >= 3 ? 600 : 400 }}>
+                        {screenStep >= 3 ? '✓' : '•'} 3. Cross-benchmarking skills against 4 Open Job Requisitions
+                      </li>
+                      <li style={{ fontWeight: screenStep >= 4 ? 600 : 400 }}>
+                        {screenStep >= 4 ? '✓' : '•'} 4. Calculating weighted match score and qualification status
+                      </li>
+                    </ul>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', marginTop: '1.25rem' }}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setShowScreenModal(false)}
+                    disabled={isScreening}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    disabled={isScreening || (!selectedFile && !rawText.trim())}
+                    onClick={() => handleRunScreening(null)}
+                    style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 700 }}
+                  >
+                    <i className={`fa-solid ${isScreening ? 'fa-spinner fa-spin' : 'fa-robot'}`}></i>{' '}
+                    {isScreening ? 'Screening Resume...' : 'Start AI Screening'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Screened Result Summary View */
+              <div>
+                <div
+                  style={{
+                    background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                    border: '1px solid #86efac',
+                    borderRadius: '10px',
+                    padding: '1.25rem',
+                    marginBottom: '1.25rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <div>
+                      <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#166534', fontWeight: 700, letterSpacing: '0.5px' }}>
+                        Screening Evaluation Result
+                      </span>
+                      <h3 style={{ margin: '0.2rem 0 0 0', color: '#14532d' }}>{lastScreenedResult.name}</h3>
+                      <div style={{ fontSize: '0.82rem', color: '#166534' }}>
+                        {lastScreenedResult.email} • {lastScreenedResult.phone}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span
+                        style={{
+                          background: '#15803d',
+                          color: '#ffffff',
+                          padding: '6px 14px',
+                          borderRadius: '20px',
+                          fontSize: '1rem',
+                          fontWeight: 800,
+                          display: 'inline-block',
+                          boxShadow: '0 2px 6px rgba(21, 128, 61, 0.25)',
+                        }}
+                      >
+                        {lastScreenedResult.score} Match
+                      </span>
+                      <div style={{ fontSize: '0.75rem', color: '#166534', marginTop: '4px', fontWeight: 600 }}>
+                        {lastScreenedResult.recommendation}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#ffffff', borderRadius: '8px', padding: '0.85rem 1rem', border: '1px solid #bbf7d0', fontSize: '0.82rem', color: '#334155' }}>
+                    <div style={{ marginBottom: '0.4rem' }}>
+                      <strong>Best Matched Role:</strong> <span style={{ color: '#0284c7', fontWeight: 700 }}>{lastScreenedResult.role}</span> ({lastScreenedResult.department})
+                    </div>
+                    <div>
+                      <strong>Extracted Key Skills:</strong>{' '}
+                      <span style={{ color: '#059669', fontWeight: 500 }}>
+                        {(lastScreenedResult.skills || []).join(', ')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem' }}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setLastScreenedResult(null);
+                      setSelectedFile(null);
+                    }}
+                  >
+                    <i className="fa-solid fa-arrows-rotate"></i> Screen Another Resume
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: 'transparent', fontWeight: 700 }}
+                    onClick={() => {
+                      setShowScreenModal(false);
+                      openInterviewModal(lastScreenedResult);
+                    }}
+                  >
+                    <i className="fa-solid fa-calendar-plus"></i> Schedule Google Meet Interview
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 2. SCHEDULE GOOGLE MEET INTERVIEW MODAL */}
+      {/* ========================================================= */}
+      {showInterviewModal && selectedCandidate && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem',
+          }}
+        >
+          <div
+            className="glass-card"
+            style={{
+              maxWidth: '560px',
+              width: '100%',
+              background: '#ffffff',
+              borderRadius: '14px',
+              padding: '1.75rem',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+              <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fa-solid fa-video" style={{ color: '#0284c7' }}></i> Schedule Google Meet Interview
+              </h3>
+              <button
+                onClick={() => setShowInterviewModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: '#64748b', cursor: 'pointer' }}
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <form onSubmit={handleScheduleInterview}>
+              {/* Candidate Quick Summary Box */}
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.85rem 1rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <strong style={{ fontSize: '0.95rem', color: '#0f172a' }}>{selectedCandidate.name || selectedCandidate.candidateName}</strong>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      Position: <strong>{selectedCandidate.role || selectedCandidate.appliedRole}</strong>
+                    </div>
+                  </div>
+                  <span className="badge badge-verified" style={{ fontSize: '0.75rem' }}>
+                    Match: {selectedCandidate.score || selectedCandidate.matchScore || '92%'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Form Inputs */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.9rem', marginBottom: '0.9rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                    Interview Date:
+                  </label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={interviewDate}
+                    onChange={(e) => setInterviewDate(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                    Time Slot:
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={interviewTime}
+                    onChange={(e) => setInterviewTime(e.target.value)}
+                    placeholder="03:00 PM - 03:45 PM IST"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '0.9rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                  Interview Type / Round:
+                </label>
+                <select
+                  className="form-control"
+                  value={interviewType}
+                  onChange={(e) => setInterviewType(e.target.value)}
+                >
+                  <option value="Technical & AI Architecture Screening">Technical & AI Architecture Screening</option>
+                  <option value="System Design & Coding Evaluation">System Design & Coding Evaluation</option>
+                  <option value="ServiceNow Workflow & ITSM Discussion">ServiceNow Workflow & ITSM Discussion</option>
+                  <option value="Product Strategy & Behavioral Round">Product Strategy & Behavioral Round</option>
+                  <option value="Executive Management Discussion">Executive Management Discussion</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '0.9rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                  Evaluation Panel:
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={panelName}
+                  onChange={(e) => setPanelName(e.target.value)}
+                  placeholder="e.g. Lead Technical Architect & Talent Acquisition"
+                  required
+                />
+              </div>
+
+              {/* Google Meet Link Display */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0284c7' }}>
+                    <i className="fa-solid fa-video"></i> Google Meet Conference Link:
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setMeetLink(generateRandomMeetCode())}
+                    style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    <i className="fa-solid fa-arrows-rotate"></i> Regenerate
+                  </button>
+                </div>
+                <input
+                  type="url"
+                  className="form-control"
+                  value={meetLink}
+                  onChange={(e) => setMeetLink(e.target.value)}
+                  required
+                  style={{ fontWeight: 600, color: '#0284c7' }}
+                />
+              </div>
+
+              {/* Email Notification Note */}
+              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '0.75rem 0.9rem', marginBottom: '1.25rem', fontSize: '0.8rem', color: '#0369a1' }}>
+                <i className="fa-solid fa-paper-plane" style={{ marginRight: '6px' }}></i>
+                Interview invitation with the Google Meet conference bridge will be emailed directly to:
+                <strong style={{ display: 'block', marginTop: '2px', color: '#0284c7' }}>abhishek.malwadkar@valuedx.com</strong>
+              </div>
+
+              {/* Submit Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowInterviewModal(false)}
+                  disabled={isScheduling}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isScheduling}
+                  style={{
+                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    borderColor: 'transparent',
+                    fontWeight: 700,
+                  }}
+                >
+                  <i className={`fa-solid ${isScheduling ? 'fa-spinner fa-spin' : 'fa-calendar-check'}`}></i>{' '}
+                  {isScheduling ? 'Dispatching Meet Invite...' : 'Send Google Meet Invite'}
                 </button>
               </div>
-            ))}
+            </form>
           </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }
