@@ -341,46 +341,58 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
               </div>
 
               {/* 2-Column Details Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
                 {/* Column 1: Candidate Info */}
-                <div style={{ background: 'var(--bg-accent-soft)', padding: '1.15rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-orange)' }}>
-                  <h4 style={{ fontSize: '0.88rem', color: 'var(--brand-orange)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <div style={{ background: 'var(--bg-accent-soft)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-orange)' }}>
+                  <h4 style={{ fontSize: '0.88rem', color: 'var(--brand-orange)', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     <i className="fa-solid fa-id-card"></i> Candidate Information
                   </h4>
-                  <div style={{ fontSize: '0.85rem', lineHeight: 1.7, display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                    <div><strong style={{ color: 'var(--text-secondary)' }}>Designation & Dept:</strong> <span>{cand.jobTitle || 'Lead Product Manager'} • {cand.department || 'Product'}</span></div>
-                    <div><strong style={{ color: 'var(--text-secondary)' }}>Date of Birth:</strong> <span>{cand.dob || '1994-07-22'}</span></div>
-                    <div><strong style={{ color: 'var(--text-secondary)' }}>Emergency Contact:</strong> <span>{cand.emergencyName || 'Arun Rao'} ({cand.emergencyPhone || cand.phone || '+91 97777 66550'})</span></div>
-                    <div><strong style={{ color: 'var(--text-secondary)' }}>Residential Address:</strong> <span>{cand.address || 'Villa 14, Palm Meadows, Hinjewadi, Pune'}</span></div>
+                  <div style={{ fontSize: '0.86rem', lineHeight: 1.8, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-briefcase" style={{ width: '16px' }}></i> Role & Dept:</span>
+                      <strong style={{ color: 'var(--text-main)' }}>{cand.jobTitle || 'Staff Engineer'} • {cand.department || 'Engineering'}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-cake-candles" style={{ width: '16px' }}></i> Date of Birth:</span>
+                      <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{cand.dob || '1994-06-15'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-phone" style={{ width: '16px' }}></i> Emergency Contact:</span>
+                      <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{cand.emergencyName || 'Family Contact'} ({cand.emergencyPhone || cand.phone || '+91 98230 45670'})</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '0.35rem' }}>
+                      <span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-location-dot" style={{ width: '16px' }}></i> Address:</span>
+                      <span style={{ color: 'var(--text-main)', fontWeight: 500, textAlign: 'right', maxWidth: '60%' }}>{cand.address || 'Candidate Residential Address'}</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Column 2: Uploaded Documents */}
-                <div style={{ background: 'var(--bg-card)', padding: '1.15rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                  <h4 style={{ fontSize: '0.88rem', color: 'var(--text-main)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    <i className="fa-solid fa-file-shield text-accent"></i> Uploaded Verification Documents
+                <div style={{ background: 'var(--bg-card)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ fontSize: '0.88rem', color: 'var(--text-main)', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <i className="fa-solid fa-file-shield text-accent"></i> Verification Documents
                   </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.83rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span><i className="fa-solid fa-id-badge text-accent"></i> 1. Government ID / Aadhaar Card</span>
-                      <span className="badge badge-verified" style={{ fontSize: '0.68rem' }}><i className="fa-solid fa-check"></i> Uploaded</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.83rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.35rem 0.6rem', background: 'var(--bg-primary)', borderRadius: '6px' }}>
+                      <span><i className="fa-solid fa-id-badge text-accent" style={{ marginRight: '6px' }}></i> Government ID / Aadhaar</span>
+                      <span className="badge badge-verified" style={{ fontSize: '0.7rem' }}><i className="fa-solid fa-check"></i> Verified</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span><i className="fa-solid fa-graduation-cap text-accent"></i> 2. Degree / Education Certificate</span>
-                      <span className="badge badge-verified" style={{ fontSize: '0.68rem' }}><i className="fa-solid fa-check"></i> Uploaded</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.35rem 0.6rem', background: 'var(--bg-primary)', borderRadius: '6px' }}>
+                      <span><i className="fa-solid fa-graduation-cap text-accent" style={{ marginRight: '6px' }}></i> Degree / Educational Certificate</span>
+                      <span className="badge badge-verified" style={{ fontSize: '0.7rem' }}><i className="fa-solid fa-check"></i> Verified</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span><i className="fa-solid fa-file-invoice-dollar text-accent"></i> 3. Tax Form 16 / W-4</span>
-                      <span className="badge badge-verified" style={{ fontSize: '0.68rem' }}><i className="fa-solid fa-check"></i> Uploaded</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.35rem 0.6rem', background: 'var(--bg-primary)', borderRadius: '6px' }}>
+                      <span><i className="fa-solid fa-file-invoice-dollar text-accent" style={{ marginRight: '6px' }}></i> Tax Compliance Form (W-4 / Form 16)</span>
+                      <span className="badge badge-verified" style={{ fontSize: '0.7rem' }}><i className="fa-solid fa-check"></i> Verified</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span><i className="fa-solid fa-file-signature text-accent"></i> 4. Signed Offer Letter</span>
-                      <span className="badge badge-verified" style={{ fontSize: '0.68rem' }}><i className="fa-solid fa-check"></i> Uploaded</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.35rem 0.6rem', background: 'var(--bg-primary)', borderRadius: '6px' }}>
+                      <span><i className="fa-solid fa-file-signature text-accent" style={{ marginRight: '6px' }}></i> Signed Offer Letter</span>
+                      <span className="badge badge-verified" style={{ fontSize: '0.7rem' }}><i className="fa-solid fa-check"></i> Verified</span>
                     </div>
                   </div>
-                  <div style={{ marginTop: '0.65rem', paddingTop: '0.55rem', borderTop: '1px dashed var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.84rem' }}>
+                  <div style={{ marginTop: '0.65rem', paddingTop: '0.65rem', borderTop: '1px dashed var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                     <span><i className="fa-solid fa-laptop text-accent"></i> <strong>Workstation Requested:</strong></span>
-                    <strong style={{ color: 'var(--brand-orange)' }}>{cand.hardware || 'Apple MacBook Pro M3 Max'}</strong>
+                    <span className="badge badge-pending" style={{ fontWeight: 700, fontSize: '0.78rem' }}>{cand.hardware || 'Apple MacBook Pro M3 Max'}</span>
                   </div>
                 </div>
               </div>
@@ -393,15 +405,15 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                   alignItems: 'center',
                   flexWrap: 'wrap',
                   gap: '0.75rem',
-                  background: 'var(--accent-gradient-subtle)',
-                  padding: '1rem 1.35rem',
+                  background: 'var(--bg-primary)',
+                  padding: '0.9rem 1.25rem',
                   borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-orange)',
+                  border: '1px solid var(--border-color)',
                 }}
               >
-                <div style={{ fontSize: '0.85rem', color: '#9a3412', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700 }}>
-                  <i className="fa-solid fa-wand-magic-sparkles" style={{ color: '#ea580c', fontSize: '1.15rem' }}></i>
-                  <span>Orchestrates 1st ServiceNow ➔ 2nd AD ➔ 3rd Office 365 ➔ 4th OrangeHRM (with O365 mail)</span>
+                <div style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 600 }}>
+                  <i className="fa-solid fa-circle-check text-emerald" style={{ fontSize: '1.15rem' }}></i>
+                  <span>Documents verified. Click Approve to trigger automated provisioning for AD, O365, OrangeHRM, and IT Laptop asset.</span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -410,22 +422,22 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                     disabled={approvingId === cand.id}
                     onClick={() => handleApprove(cand)}
                     style={{
-                      padding: '0.6rem 1.6rem',
+                      padding: '0.65rem 1.75rem',
                       fontSize: '0.92rem',
                       background: 'var(--accent-gradient)',
                       borderColor: 'transparent',
                       fontWeight: 800,
-                      boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)',
+                      boxShadow: '0 4px 14px rgba(234, 88, 12, 0.3)',
                       borderRadius: '8px',
                     }}
                   >
                     {approvingId === cand.id ? (
                       <>
-                        <i className="fa-solid fa-spinner fa-spin"></i> Approving...
+                        <i className="fa-solid fa-spinner fa-spin"></i> Provisioning...
                       </>
                     ) : (
                       <>
-                        <i className="fa-solid fa-circle-check"></i> Approve
+                        <i className="fa-solid fa-circle-check"></i> Approve & Provision
                       </>
                     )}
                   </button>
