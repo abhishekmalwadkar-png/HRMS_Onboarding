@@ -49,8 +49,10 @@ export default function OffboardingView() {
   const handleSubmitResignation = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    const empId = currentUser?.id || currentUser?.empId || ('EMP-' + Math.floor(1000 + Math.random() * 9000));
     const newExit = {
       id: 'EXIT-' + Math.floor(100 + Math.random() * 900),
+      empId: empId,
       empName: formName,
       department: formDept,
       resignationDate: new Date().toISOString().split('T')[0],
@@ -74,7 +76,7 @@ export default function OffboardingView() {
       });
       const data = await res.json();
       const createdItem = data?.data || newExit;
-      showToast(`✓ Resignation submitted for ${formName}. ServiceNow offboarding request and laptop recovery incident created.`, 'success');
+      showToast(`✓ Resignation submitted for ${formName}. T4 RPA workflow (HR Demo Offboarding SN Req) & ServiceNow request created.`, 'success');
       setExitRequests((prev) => [createdItem, ...prev]);
       setSubmittedCandidateData(createdItem);
     } catch (err) {
@@ -89,6 +91,7 @@ export default function OffboardingView() {
   };
 
   const [checkingClearanceId, setCheckingClearanceId] = useState(null);
+  const [revokingId, setRevokingId] = useState(null);
 
   const toggleITClearance = async (item) => {
     setCheckingClearanceId(item.id);
@@ -189,24 +192,36 @@ export default function OffboardingView() {
     }
   };
 
-  const triggerAccessRevocation = async (id, empName) => {
+  const triggerAccessRevocation = async (item) => {
+    const id = item.id;
+    const empName = item.empName;
+    const empId = item.empId || item.id;
+    setRevokingId(id);
     try {
       const res = await fetch('/api/exit/revoke', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, empName }),
+        body: JSON.stringify({
+          id,
+          empName,
+          empId,
+          department: item.department,
+          lastWorkingDay: item.lastWorkingDay,
+        }),
       });
       const data = await res.json();
       setExitRequests((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true } : item))
+        prev.map((it) => (it.id === id ? { ...it, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true } : it))
       );
-      showToast(`🔒 AD revoked, Office 365 & OrangeHRM deleted, and clearance email sent for ${empName}!`, 'success');
+      showToast(`🔒 Dispatched T4 RPA workflows (Remove AD User -> Delete O365 -> Delete OrangeHRM) & sent clearance email for ${empName}!`, 'success');
     } catch (e) {
       console.error('Offboarding revocation error:', e);
       setExitRequests((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true } : item))
+        prev.map((it) => (it.id === id ? { ...it, accessRevoked: true, o365Deleted: true, orangeHrmDeleted: true, emailSent: true } : it))
       );
       showToast(`🔒 Executed offboarding deprovisioning for ${empName}!`, 'success');
+    } finally {
+      setRevokingId(null);
     }
   };
 
@@ -514,9 +529,12 @@ export default function OffboardingView() {
                   <button
                     className="btn btn-secondary"
                     style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
-                    onClick={() => triggerAccessRevocation(item.id, item.empName)}
+                    onClick={() => triggerAccessRevocation(item)}
+                    disabled={revokingId === item.id}
+                    title="Run T4 Offboarding RPA Workflows (AD, O365, OrangeHRM) & send clearance notification"
                   >
-                    <i className="fa-solid fa-user-xmark"></i> Revoke Access
+                    <i className={`fa-solid ${revokingId === item.id ? 'fa-spinner fa-spin' : 'fa-user-xmark'}`}></i>{' '}
+                    {revokingId === item.id ? 'Revoking Access...' : 'Revoke Access'}
                   </button>
                   <button
                     className="btn btn-primary"

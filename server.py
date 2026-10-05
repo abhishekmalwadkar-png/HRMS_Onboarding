@@ -260,11 +260,33 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "success", "data": payload}).encode('utf-8'))
 
         elif self.path == '/api/exit':
-            emp_name = payload.get('empName') or payload.get('name') or payload.get('employeeName') or payload.get('email')
+            emp_name = payload.get('empName') or payload.get('name') or payload.get('employeeName') or payload.get('email') or "Employee"
             if not payload.get('id'):
                 payload['id'] = f"EXIT-{int(time.time()) % 900 + 100}"
             
-            # 1. Create ServiceNow Offboarding Request & Laptop Recovery Incident assigned to a random user
+            # Lookup or determine employee ID
+            emp_id = payload.get('empId') or payload.get('emp_id')
+            if not emp_id:
+                employees = db.get('employees', [])
+                for emp in employees:
+                    if emp.get('fullName') == emp_name or emp.get('name') == emp_name:
+                        emp_id = emp.get('id') or emp.get('empId')
+                        break
+            if not emp_id:
+                emp_id = payload.get('id') or f"EMP-{int(time.time()) % 9000 + 1000}"
+            payload['empId'] = emp_id
+
+            # 1. Trigger AutomationEdge T4 Workflow: "HR Demo Offboarding SN Req" (Input: emp_id)
+            ae_sn_req_res = {}
+            try:
+                print(f"\n[OFFBOARDING] Triggering T4 RPA Workflow 'HR Demo Offboarding SN Req' for emp_id: {emp_id}...")
+                ae_sn_req_res = ae_client.trigger_offboarding_sn_req(emp_id)
+                payload['aeSnReqWorkflow'] = ae_sn_req_res
+            except Exception as ae_err:
+                print(f"[OFFBOARDING] Error triggering T4 'HR Demo Offboarding SN Req': {ae_err}")
+                ae_sn_req_res = {"status": "error", "message": str(ae_err)}
+
+            # 2. Create ServiceNow Offboarding Request & Laptop Recovery Incident assigned to IT
             sn_offboarding_res = sn_client.create_offboarding_request(payload)
             payload['serviceNowReq'] = sn_offboarding_res.get('serviceNowReq')
             payload['serviceNowRitm'] = sn_offboarding_res.get('serviceNowRitm')
@@ -282,7 +304,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             # Update status in employees list if present
             employees = db.get('employees', [])
             for emp in employees:
-                if emp.get('fullName') == emp_name or emp.get('name') == emp_name or emp.get('id') == payload.get('empId'):
+                if emp.get('fullName') == emp_name or emp.get('name') == emp_name or emp.get('id') == emp_id:
                     emp['status'] = 'Resigned / Pending HR Offboarding'
                     break
             db['employees'] = employees
@@ -295,6 +317,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({
                 "status": "success",
                 "data": payload,
+                "aeWorkflow": ae_sn_req_res,
                 "serviceNow": sn_offboarding_res
             }).encode('utf-8'))
 
@@ -388,35 +411,79 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "success", "data": exits}).encode('utf-8'))
 
         elif self.path == '/api/exit/revoke' or self.path == '/api/o365/delete-user':
-            emp_ident = payload.get('identifier') or payload.get('email') or payload.get('employeeName') or payload.get('empName') or payload.get('fullName')
+            emp_ident = payload.get('empName') or payload.get('employeeName') or payload.get('fullName') or payload.get('identifier') or payload.get('email') or "Employee"
             target_id = payload.get('id')
+            emp_id = payload.get('empId') or payload.get('emp_id')
 
-            # 1. Delete Office 365 User Account
+            exits = db.get('exitRequests', [])
+            target_exit = None
+            for item in exits:
+                if item.get('id') == target_id or item.get('empName') == emp_ident:
+                    target_exit = item
+                    if not emp_id and item.get('empId'):
+                        emp_id = item.get('empId')
+                    break
+
+            employees = db.get('employees', [])
+            for emp in employees:
+                if emp.get('fullName') == emp_ident or emp.get('name') == emp_ident or (emp_id and emp.get('id') == emp_id):
+                    if not emp_id and emp.get('id'):
+                        emp_id = emp.get('id')
+                    break
+
+            if not emp_id:
+                emp_id = target_id or f"EMP-{int(time.time()) % 9000 + 1000}"
+
+            ad_username = payload.get('adUsername') or payload.get('ad_username') or payload.get('AD username')
+            if not ad_username:
+                name_parts = emp_ident.strip().split()
+                if len(name_parts) >= 2:
+                    ad_username = f"{name_parts[0]}.{name_parts[1]}"
+                else:
+                    ad_username = name_parts[0] if name_parts else "Employee"
+
+            # -------------------------------------------------------------------------
+            # 1. Trigger AutomationEdge T4 Deprovisioning Workflows in Sequence:
+            #    1. "HR Demo OffboardingRemoveADUser" (Param: "AD username")
+            #    2. "HR DEMO offboarding Delete O365 user" (Params: "emp_id", "emp_name")
+            #    3. "HR DEMO Offboarding Delete OrangeHRM User" (Params: "emp_id", "emp_name")
+            # -------------------------------------------------------------------------
+            ae_revoke_pipeline = {}
+            try:
+                ae_revoke_pipeline = ae_client.trigger_offboarding_deprovision_pipeline(
+                    emp_id=emp_id,
+                    emp_name=emp_ident,
+                    ad_username=ad_username
+                )
+            except Exception as ae_pipeline_err:
+                print(f"[OFFBOARDING] T4 Deprovisioning Pipeline Error: {ae_pipeline_err}")
+                ae_revoke_pipeline = {"status": "error", "message": str(ae_pipeline_err)}
+
+            # 2. Direct Office 365 Entra ID User Account Deletion
             o365_result = office365_client.delete_user_account(emp_ident)
 
-            # 2. Delete OrangeHRM Employee Profile
+            # 3. Direct OrangeHRM Employee Profile Deletion
             orangehrm_result = orangehrm_client.delete_employee_profile(emp_ident)
 
-            # 3. Send Clearance Email Notification
+            # 4. Send Clearance Email Notification to abhishek.malwadkar@valuedx.com
             email_result = office365_client.send_offboarding_email(
                 {"empName": emp_ident, "department": payload.get("department", "Engineering"), "lastWorkingDay": payload.get("lastWorkingDay", "2026-11-30")},
                 recipient_email="abhishek.malwadkar@valuedx.com"
             )
 
             # Update status in db
-            exits = db.get('exitRequests', [])
             for item in exits:
                 if item.get('id') == target_id or item.get('empName') == emp_ident:
                     item['accessRevoked'] = True
                     item['o365Deleted'] = True
                     item['orangeHrmDeleted'] = True
                     item['emailSent'] = True
+                    item['t4RevokePipeline'] = ae_revoke_pipeline
                     break
             db['exitRequests'] = exits
 
-            employees = db.get('employees', [])
             for emp in employees:
-                if emp.get('fullName') == emp_ident or emp.get('name') == emp_ident:
+                if emp.get('fullName') == emp_ident or emp.get('name') == emp_ident or (emp_id and emp.get('id') == emp_id):
                     emp['status'] = 'Offboarded & Deprovisioned'
                     emp['o365Deleted'] = True
                     emp['orangeHrmDeleted'] = True
@@ -428,6 +495,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({
                 "status": "success",
+                "aeWorkflows": ae_revoke_pipeline,
                 "office365": o365_result,
                 "orangehrm": orangehrm_result,
                 "email": email_result,

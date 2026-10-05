@@ -487,6 +487,108 @@ class AutomationEdgeClient:
         print(f"[AE RPA] Triggering 'HR Demo Create Laptop Request' on T4 for {name} ({laptop})...")
         return self.execute_workflow_sync("HR Demo Create Laptop Request", params, max_wait_seconds=35)
 
+    # -------------------------------------------------------------------------
+    # 7. Offboarding Resignation SN Req Workflow: "HR Demo Offboarding SN Req"
+    # Parameters: emp_id
+    # -------------------------------------------------------------------------
+    def trigger_offboarding_sn_req(self, emp_id):
+        params = {
+            "emp_id": str(emp_id)
+        }
+        print(f"[AE RPA] Triggering 'HR Demo Offboarding SN Req' on T4 for emp_id={emp_id}...")
+        return self.execute_workflow_sync("HR Demo Offboarding SN Req", params, max_wait_seconds=35)
+
+    # -------------------------------------------------------------------------
+    # 8. Offboarding Remove AD User Workflow: "HR Demo OffboardingRemoveADUser"
+    # Parameters: "AD username"
+    # -------------------------------------------------------------------------
+    def trigger_offboarding_remove_ad_user(self, ad_username):
+        params = {
+            "AD username": str(ad_username)
+        }
+        print(f"[AE RPA] Triggering 'HR Demo OffboardingRemoveADUser' on T4 for AD username='{ad_username}'...")
+        return self.execute_workflow_sync("HR Demo OffboardingRemoveADUser", params, max_wait_seconds=35)
+
+    # -------------------------------------------------------------------------
+    # 9. Offboarding Delete O365 User Workflow: "HR DEMO offboarding Delete O365 user"
+    # Parameters: emp_id, emp_name
+    # -------------------------------------------------------------------------
+    def trigger_offboarding_delete_o365_user(self, emp_id, emp_name):
+        params = {
+            "emp_id": str(emp_id),
+            "emp_name": str(emp_name)
+        }
+        print(f"[AE RPA] Triggering 'HR DEMO offboarding Delete O365 user' on T4 for emp_id='{emp_id}', emp_name='{emp_name}'...")
+        return self.execute_workflow_sync("HR DEMO offboarding Delete O365 user", params, max_wait_seconds=35)
+
+    # -------------------------------------------------------------------------
+    # 10. Offboarding Delete OrangeHRM User Workflow: "HR DEMO Offboarding Delete OrangeHRM User"
+    # Parameters: emp_id, emp_name
+    # -------------------------------------------------------------------------
+    def trigger_offboarding_delete_orangehrm_user(self, emp_id, emp_name):
+        params = {
+            "emp_id": str(emp_id),
+            "emp_name": str(emp_name)
+        }
+        print(f"[AE RPA] Triggering 'HR DEMO Offboarding Delete OrangeHRM User' on T4 for emp_id='{emp_id}', emp_name='{emp_name}'...")
+        return self.execute_workflow_sync("HR DEMO Offboarding Delete OrangeHRM User", params, max_wait_seconds=35)
+
+    # -------------------------------------------------------------------------
+    # Deprovisioning Pipeline Orchestrator (AD -> O365 -> OrangeHRM)
+    # -------------------------------------------------------------------------
+    def trigger_offboarding_deprovision_pipeline(self, emp_id, emp_name, ad_username=None):
+        if not ad_username:
+            parts = (emp_name or "Employee").strip().split()
+            if len(parts) >= 2:
+                ad_username = f"{parts[0]}.{parts[1]}"
+            else:
+                ad_username = parts[0] if parts else "Employee"
+
+        print(f"\n[AE RPA] >>> Starting Offboarding Deprovisioning Sequence for {emp_name} (ID: {emp_id}, AD: {ad_username}) <<<")
+        results = []
+
+        # Step 1: HR Demo OffboardingRemoveADUser
+        print(f"[AE RPA] Step 1/3: Executing 'HR Demo OffboardingRemoveADUser'...")
+        ad_res = self.trigger_offboarding_remove_ad_user(ad_username)
+        results.append({
+            "step": 1,
+            "workflow": "HR Demo OffboardingRemoveADUser",
+            "params": {"AD username": ad_username},
+            "result": ad_res
+        })
+
+        # Step 2: HR DEMO offboarding Delete O365 user
+        print(f"[AE RPA] Step 2/3: Executing 'HR DEMO offboarding Delete O365 user'...")
+        o365_res = self.trigger_offboarding_delete_o365_user(emp_id, emp_name)
+        results.append({
+            "step": 2,
+            "workflow": "HR DEMO offboarding Delete O365 user",
+            "params": {"emp_id": emp_id, "emp_name": emp_name},
+            "result": o365_res
+        })
+
+        # Step 3: HR DEMO Offboarding Delete OrangeHRM User
+        print(f"[AE RPA] Step 3/3: Executing 'HR DEMO Offboarding Delete OrangeHRM User'...")
+        orange_res = self.trigger_offboarding_delete_orangehrm_user(emp_id, emp_name)
+        results.append({
+            "step": 3,
+            "workflow": "HR DEMO Offboarding Delete OrangeHRM User",
+            "params": {"emp_id": emp_id, "emp_name": emp_name},
+            "result": orange_res
+        })
+
+        print(f"[AE RPA] [OK] Completed all 3 Offboarding Deprovisioning RPA Workflows on T4!\n")
+        return {
+            "status": "success",
+            "employeeId": emp_id,
+            "employeeName": emp_name,
+            "adUsername": ad_username,
+            "steps": results,
+            "adRemoval": ad_res,
+            "o365Delete": o365_res,
+            "orangeHrmDelete": orange_res
+        }
+
     def trigger_create_ad_account(self, data):
         full_name = data.get("fullName") or data.get("candidateName") or "New Employee"
         parts = full_name.strip().split(None, 1)
