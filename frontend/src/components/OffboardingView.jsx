@@ -842,16 +842,6 @@ export default function OffboardingView() {
                       <i className="fa-solid fa-arrows-rotate"></i> Check Live Status
                     </button>
                     
-                    {/* View Offboarding Steps Button */}
-                    <button
-                      className="btn btn-secondary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', color: '#0284c7', borderColor: 'rgba(2, 132, 199, 0.3)' }}
-                      onClick={() => inspectOffboardingFlow(item)}
-                      title="View sequential step execution flow window"
-                    >
-                      <i className="fa-solid fa-network-wired"></i> View Offboarding Steps
-                    </button>
-
                     {/* Revoke Access Button */}
                     <button
                       className="btn btn-secondary"
