@@ -36,79 +36,61 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, togg
         <div className="sidebar-section-title">Main Navigation</div>
 
         <nav className="sidebar-nav">
-          {/* HR ONLY TABS */}
-          {isHR && (
-            <>
-              <button
-                className={`nav-tab-btn ${currentView === 'approvals' ? 'active' : ''}`}
-                onClick={() => setCurrentView('approvals')}
-              >
-                <i className="fa-solid fa-clipboard-check"></i>
-                <span className="nav-label">Approvals</span>
-              </button>
+          <button
+            className={`nav-tab-btn ${currentView === 'wizard' ? 'active' : ''}`}
+            onClick={() => setCurrentView('wizard')}
+          >
+            <i className="fa-solid fa-wand-magic-sparkles"></i>
+            <span className="nav-label">Add Candidate</span>
+          </button>
 
-              <button
-                className={`nav-tab-btn ${currentView === 'recruitment' ? 'active' : ''}`}
-                onClick={() => setCurrentView('recruitment')}
-              >
-                <i className="fa-solid fa-user-plus"></i>
-                <span className="nav-label">Recruitment</span>
-              </button>
+          <button
+            className={`nav-tab-btn ${currentView === 'approvals' ? 'active' : ''}`}
+            onClick={() => setCurrentView('approvals')}
+          >
+            <i className="fa-solid fa-clipboard-check"></i>
+            <span className="nav-label">Approvals</span>
+          </button>
 
-              <button
-                className={`nav-tab-btn ${currentView === 'dashboard' ? 'active' : ''}`}
-                onClick={() => setCurrentView('dashboard')}
-              >
-                <i className="fa-solid fa-users-gear"></i>
-                <span className="nav-label">Directory</span>
-              </button>
+          <button
+            className={`nav-tab-btn ${currentView === 'recruitment' ? 'active' : ''}`}
+            onClick={() => setCurrentView('recruitment')}
+          >
+            <i className="fa-solid fa-user-plus"></i>
+            <span className="nav-label">Recruitment</span>
+          </button>
 
-              <button
-                className={`nav-tab-btn ${currentView === 'services' ? 'active' : ''}`}
-                onClick={() => setCurrentView('services')}
-              >
-                <i className="fa-solid fa-headset"></i>
-                <span className="nav-label">Services & AI</span>
-              </button>
+          <button
+            className={`nav-tab-btn ${currentView === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setCurrentView('dashboard')}
+          >
+            <i className="fa-solid fa-users-gear"></i>
+            <span className="nav-label">Directory</span>
+          </button>
 
-              <button
-                className={`nav-tab-btn ${currentView === 'exit' ? 'active' : ''}`}
-                onClick={() => setCurrentView('exit')}
-              >
-                <i className="fa-solid fa-person-walking-arrow-right"></i>
-                <span className="nav-label">Offboarding</span>
-              </button>
+          <button
+            className={`nav-tab-btn ${currentView === 'services' ? 'active' : ''}`}
+            onClick={() => setCurrentView('services')}
+          >
+            <i className="fa-solid fa-headset"></i>
+            <span className="nav-label">Services & AI</span>
+          </button>
 
-              <button
-                className={`nav-tab-btn ${currentView === 'analytics' ? 'active' : ''}`}
-                onClick={() => setCurrentView('analytics')}
-              >
-                <i className="fa-solid fa-chart-pie"></i>
-                <span className="nav-label">HR Analytics</span>
-              </button>
-            </>
-          )}
+          <button
+            className={`nav-tab-btn ${currentView === 'exit' ? 'active' : ''}`}
+            onClick={() => setCurrentView('exit')}
+          >
+            <i className="fa-solid fa-person-walking-arrow-right"></i>
+            <span className="nav-label">Offboarding</span>
+          </button>
 
-          {/* CANDIDATE / EMPLOYEE TABS */}
-          {!isHR && (
-            <>
-              <button
-                className={`nav-tab-btn ${currentView === 'wizard' ? 'active' : ''}`}
-                onClick={() => setCurrentView('wizard')}
-              >
-                <i className="fa-solid fa-wand-magic-sparkles"></i>
-                <span className="nav-label">Onboarding</span>
-              </button>
-
-              <button
-                className={`nav-tab-btn ${currentView === 'exit' ? 'active' : ''}`}
-                onClick={() => setCurrentView('exit')}
-              >
-                <i className="fa-solid fa-person-walking-arrow-right"></i>
-                <span className="nav-label">Offboarding</span>
-              </button>
-            </>
-          )}
+          <button
+            className={`nav-tab-btn ${currentView === 'analytics' ? 'active' : ''}`}
+            onClick={() => setCurrentView('analytics')}
+          >
+            <i className="fa-solid fa-chart-pie"></i>
+            <span className="nav-label">HR Analytics</span>
+          </button>
         </nav>
       </div>
 
@@ -143,7 +125,7 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, togg
               boxShadow: '0 2px 6px rgba(234, 88, 12, 0.25)',
             }}
           >
-            {currentUser?.avatar || currentUser?.name?.charAt(0) || 'U'}
+            {currentUser?.avatar || 'P'}
           </div>
           <div className="user-meta" style={{ flex: 1, minWidth: 0, lineHeight: 1.2 }}>
             <div
@@ -156,13 +138,13 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, togg
                 textOverflow: 'ellipsis',
               }}
             >
-              {currentUser?.name?.split(' (')[0] || 'User'}
+              {currentUser?.name?.split(' (')[0] || 'Pooja Deshmukh'}
             </div>
             <span
-              className={`badge ${isHR ? 'badge-verified' : 'badge-pending'}`}
+              className="badge badge-verified"
               style={{ fontSize: '0.62rem', padding: '1px 6px', marginTop: '2px' }}
             >
-              {isHR ? 'HR Manager' : 'Candidate'}
+              HR Administrator
             </span>
           </div>
           <button
@@ -180,7 +162,7 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, togg
               alignItems: 'center',
               justifyContent: 'center',
             }}
-            title="Logout / Switch Account"
+            title="Logout"
           >
             <i className="fa-solid fa-arrow-right-from-bracket"></i>
           </button>

@@ -36,7 +36,7 @@ export default function Header({ currentView, toggleSidebar, onAutoFill }) {
       </div>
 
       <div className="top-header-right">
-        {!isHR && currentView === 'wizard' && (
+        {currentView === 'wizard' && (
           <button
             className="btn btn-secondary"
             onClick={onAutoFill}

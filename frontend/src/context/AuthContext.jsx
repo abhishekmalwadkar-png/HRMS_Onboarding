@@ -6,9 +6,28 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem('mangohrms_user');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.role === 'hr') return parsed;
+      }
+      // Default to HR Administrator
+      const defaultHR = {
+        role: 'hr',
+        name: 'Pooja Deshmukh (HR Operations Director)',
+        email: 'pooja.deshmukh@mangohrms.com',
+        avatar: 'P',
+        badge: 'HR Administrator'
+      };
+      localStorage.setItem('mangohrms_user', JSON.stringify(defaultHR));
+      return defaultHR;
     } catch {
-      return null;
+      return {
+        role: 'hr',
+        name: 'Pooja Deshmukh (HR Operations Director)',
+        email: 'pooja.deshmukh@mangohrms.com',
+        avatar: 'P',
+        badge: 'HR Administrator'
+      };
     }
   });
 
@@ -25,25 +44,14 @@ export function AuthProvider({ children }) {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const loginAs = (role, email, name) => {
-    let userObj = {};
-    if (role === 'hr') {
-      userObj = {
-        role: 'hr',
-        name: name || 'Pooja Deshmukh (HR Operations Director)',
-        email: email || 'pooja.deshmukh@mangohrms.com',
-        avatar: 'P',
-        badge: 'HR Administrator'
-      };
-    } else {
-      userObj = {
-        role: 'candidate',
-        name: name || 'Sneha Rao',
-        email: email || 'sneha.rao@mangohrms.com',
-        avatar: 'S',
-        badge: 'Candidate / New Hire'
-      };
-    }
+  const loginAs = (role = 'hr', email, name) => {
+    const userObj = {
+      role: 'hr',
+      name: name || 'Pooja Deshmukh (HR Operations Director)',
+      email: email || 'pooja.deshmukh@mangohrms.com',
+      avatar: 'P',
+      badge: 'HR Administrator'
+    };
 
     setCurrentUser(userObj);
     localStorage.setItem('mangohrms_user', JSON.stringify(userObj));

@@ -218,8 +218,10 @@ export default function OnboardingWizard({ onRefreshEmployees }) {
         <div className="wizard-header" style={{ marginBottom: '2rem' }}>
           <div className="wizard-title-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
             <div className="wizard-title-group">
-              <h1 style={{ fontSize: '1.6rem', color: 'var(--text-main)' }}>Employee Onboarding Portal</h1>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Submit your personal details and upload required verification documents for HR & ServiceNow approval.</p>
+              <h1 style={{ fontSize: '1.6rem', color: 'var(--text-main)' }}>Employee Onboarding & Candidate Registration</h1>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                Add candidate details and upload documents to trigger AutomationEdge T4 (<code>HR Demo Req getEMPDetails</code>) and ServiceNow Service Catalog workflows.
+              </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
               <button
