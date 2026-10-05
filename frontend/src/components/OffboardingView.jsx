@@ -367,13 +367,8 @@ export default function OffboardingView() {
                 <div>
                   <h4 style={{ margin: 0 }}>{item.empName} ({item.department})</h4>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    Resignation Date: {item.resignationDate} • Last Working Day: <strong>{item.lastWorkingDay}</strong>
+                    Last Working Day: <strong>{item.lastWorkingDay}</strong>
                   </span>
-                  {item.rpaResignationRequestId && (
-                    <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '4px' }}>
-                      <i className="fa-solid fa-robot"></i> AE T4 RPA Workflow: <code>{item.rpaResignationRequestId}</code>
-                    </div>
-                  )}
                 </div>
                 <span className={`badge ${item.accessRevoked ? 'badge-draft' : 'badge-pending'}`}>
                   {item.accessRevoked ? 'Deprovisioned' : 'Clearance Active'}

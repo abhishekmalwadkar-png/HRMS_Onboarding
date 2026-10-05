@@ -130,9 +130,9 @@ export default function DirectoryView({ employees }) {
                 <th>Employee</th>
                 <th>Role & Department</th>
                 <th>Status</th>
-                <th>ServiceNow Request</th>
-                <th>Hardware Asset</th>
-                <th>Actions</th>
+                <th>Workstation</th>
+                <th>ServiceNow</th>
+                <th>Details</th>
               </tr>
             </thead>
             <tbody>
@@ -180,24 +180,24 @@ export default function DirectoryView({ employees }) {
                       </span>
                     </td>
                     <td>
-                      <span className="badge badge-verified" style={{ fontSize: '0.75rem' }}>
-                        <i className="fa-solid fa-ticket"></i> {c.serviceNowReq || 'REQ0010042'}
+                      <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{c.hardware || 'MacBook Pro M3'}</div>
+                      <span style={{ fontSize: '0.72rem', color: c.hardwareDispatched ? '#059669' : '#f59e0b', fontWeight: 600 }}>
+                        {c.hardwareDispatched ? 'Dispatched' : 'Provisioning'}
                       </span>
                     </td>
                     <td>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{c.hardware || 'MacBook Pro M3'}</div>
-                      {c.laptopTicket && (
-                        <span style={{ fontSize: '0.72rem', color: '#059669' }}>Ticket: {c.laptopTicket}</span>
-                      )}
+                      <span className="badge badge-verified" style={{ fontSize: '0.75rem' }}>
+                        <i className="fa-solid fa-ticket"></i> Verified
+                      </span>
                     </td>
                     <td>
                       <button
                         className="btn btn-secondary"
                         onClick={() => setSelectedCandidate(c)}
                         style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
-                        title="View Complete Multi-Engine Dossier"
+                        title="View Complete Profile Details"
                       >
-                        <i className="fa-solid fa-id-card"></i> Dossier
+                        <i className="fa-solid fa-id-card"></i> View
                       </button>
                     </td>
                   </tr>

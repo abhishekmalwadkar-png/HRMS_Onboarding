@@ -310,7 +310,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                       </span>
                     </div>
                     <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '3px' }}>
-                      <i className="fa-solid fa-envelope"></i> {cand.email} • <i className="fa-solid fa-phone"></i> {cand.phone || '+91 98230 45670'} • ID: <code>{cand.id}</code>
+                      <i className="fa-solid fa-envelope"></i> {cand.email} • <i className="fa-solid fa-phone"></i> {cand.phone || '+91 98230 45670'}
                     </div>
                   </div>
                 </div>
@@ -325,7 +325,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                       className="btn btn-secondary"
                       style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: 'var(--border-orange)', color: 'var(--brand-orange)', background: '#fff7ed', fontWeight: 700, textDecoration: 'none', borderRadius: '6px' }}
                     >
-                      <i className="fa-solid fa-ticket"></i> REQ: <span>{cand.serviceNowReq || 'REQ0010042'}</span>
+                      <i className="fa-solid fa-ticket"></i> ServiceNow Request
                     </a>
                     <a
                       href={cand.ritmUrl || `https://ven04528.service-now.com/nav_to.do?uri=sc_req_item_list.do?sysparm_query=number=${cand.serviceNowRitm || 'RITM0010076'}`}
@@ -334,7 +334,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                       className="btn btn-secondary"
                       style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: '#bae6fd', color: '#0284c7', background: '#f0f9ff', fontWeight: 700, textDecoration: 'none', borderRadius: '6px' }}
                     >
-                      <i className="fa-solid fa-box"></i> RITM: <span>{cand.serviceNowRitm || 'RITM0010076'}</span>
+                      <i className="fa-solid fa-box"></i> Catalog Item
                     </a>
                   </div>
                 </div>
