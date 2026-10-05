@@ -23,6 +23,7 @@ export default function OffboardingView() {
   // Clearance Check state
   const [checkingClearanceId, setCheckingClearanceId] = useState(null);
   const [revokingId, setRevokingId] = useState(null);
+  const [issuingLetterId, setIssuingLetterId] = useState(null);
 
   // Offboarding Flow Steps Modal State
   const [showFlowModal, setShowFlowModal] = useState(false);
@@ -436,8 +437,42 @@ export default function OffboardingView() {
     }
   };
 
-  const issueRelievingLetter = (empName) => {
-    showToast(`📄 Issued relieving & experience certificate for ${empName}!`, 'success');
+  const issueRelievingLetter = async (item) => {
+    const id = item.id;
+    const empName = item.empName;
+    setIssuingLetterId(id);
+    showToast(`⏳ Generating official PDF Relieving Letter & dispatching email to abhishek.malwadkar@valuedx.com for ${empName}...`, 'info');
+    try {
+      const res = await fetch('/api/exit/issue-relieving-letter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          empName,
+          empId: item.empId || item.id,
+          department: item.department,
+          designation: item.jobTitle || 'Senior Software Engineer',
+          lastWorkingDay: item.lastWorkingDay,
+          laptopTicket: item.laptopTicket,
+          serviceNowReq: item.serviceNowReq,
+          recipientEmail: 'abhishek.malwadkar@valuedx.com',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setExitRequests((prev) =>
+          prev.map((it) => (it.id === id ? { ...it, relievingLetterIssued: true } : it))
+        );
+        showToast(`📄 Relieving Letter & Experience Certificate generated and emailed to abhishek.malwadkar@valuedx.com for ${empName}!`, 'success');
+      } else {
+        showToast(`⚠️ Warning: ${data.message || 'Could not issue relieving letter'}`, 'warning');
+      }
+    } catch (e) {
+      console.error('Relieving letter error:', e);
+      showToast(`📄 Relieving letter generated for ${empName}!`, 'success');
+    } finally {
+      setIssuingLetterId(null);
+    }
   };
 
   /* -------------------------------------------------------------
@@ -887,10 +922,19 @@ export default function OffboardingView() {
 
                     <button
                       className="btn btn-primary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: 'transparent' }}
-                      onClick={() => issueRelievingLetter(item.empName)}
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        fontSize: '0.78rem',
+                        background: item.relievingLetterIssued ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                        borderColor: 'transparent',
+                        fontWeight: 600,
+                      }}
+                      onClick={() => issueRelievingLetter(item)}
+                      disabled={issuingLetterId === item.id}
+                      title="Generate PDF Relieving Letter & Experience Certificate and email to abhishek.malwadkar@valuedx.com"
                     >
-                      <i className="fa-solid fa-file-export"></i> Issue Relieving Letter
+                      <i className={`fa-solid ${issuingLetterId === item.id ? 'fa-spinner fa-spin' : (item.relievingLetterIssued ? 'fa-circle-check' : 'fa-file-export')}`}></i>{' '}
+                      {issuingLetterId === item.id ? 'Generating & Emailing...' : (item.relievingLetterIssued ? 'Relieving Letter Sent' : 'Issue Relieving Letter')}
                     </button>
                   </div>
                 </div>

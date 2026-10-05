@@ -712,5 +712,155 @@ class Office365Client:
                 "message": str(e)
             }
 
+    def send_relieving_letter_email(self, employee_data: dict, pdf_path: str, recipient_email: str = "abhishek.malwadkar@valuedx.com") -> dict:
+        """
+        Sends the generated PDF Relieving Letter & Experience Certificate via Microsoft Graph API with base64 PDF attachment.
+        Default recipient is abhishek.malwadkar@valuedx.com.
+        """
+        import base64
+        try:
+            token = self.get_access_token()
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+
+            emp_name = employee_data.get('empName') or employee_data.get('fullName') or employee_data.get('name') or "Employee"
+            emp_id = employee_data.get('empId') or employee_data.get('id') or "EMP-XXXX"
+            role = employee_data.get('designation') or employee_data.get('jobTitle') or "Senior Software Engineer"
+            dept = employee_data.get('department') or "Engineering"
+            last_working_day = employee_data.get('lastWorkingDay') or employee_data.get('lwd') or time.strftime('%B %d, %Y')
+            joining_date = employee_data.get('joiningDate') or "January 15, 2023"
+
+            subject = f"Official Relieving Letter & Service Experience Certificate: {emp_name} ({emp_id})"
+
+            # Encode PDF file to base64
+            pdf_b64 = ""
+            pdf_filename = os.path.basename(pdf_path) if pdf_path else f"Relieving_Letter_{emp_name.replace(' ', '_')}.pdf"
+            if pdf_path and os.path.exists(pdf_path):
+                with open(pdf_path, 'rb') as f:
+                    pdf_b64 = base64.b64encode(f.read()).decode('utf-8')
+
+            html_body = f"""
+            <html>
+            <body style="font-family: Arial, Helvetica, sans-serif; color: #1c1917; background-color: #f8fafc; padding: 24px;">
+                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; border: 1px solid #cbd5e1; padding: 24px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.08);">
+                    <div style="display: flex; align-items: center; border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 18px;">
+                        <h2 style="color: #0284c7; margin: 0; font-size: 20px;">MangoHRMS Enterprise Relieving & Experience Certificate</h2>
+                    </div>
+
+                    <p style="font-size: 14px; line-height: 1.5; color: #334155;">
+                        Dear <strong>{emp_name}</strong>,
+                    </p>
+
+                    <p style="font-size: 14px; line-height: 1.5; color: #334155;">
+                        We are pleased to provide you with your official <strong>Relieving Letter & Service Experience Certificate</strong> following the successful completion of your exit handover and multi-system clearance process.
+                    </p>
+
+                    <div style="background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd; padding: 14px; margin: 16px 0; font-size: 13.5px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 5px 0; color: #64748b; width: 45%;"><strong>Employee Name:</strong></td>
+                                <td style="padding: 5px 0; font-weight: bold; color: #0f172a;">{emp_name}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 5px 0; color: #64748b;"><strong>Employee ID:</strong></td>
+                                <td style="padding: 5px 0; font-family: monospace; font-weight: bold; color: #0284c7;">{emp_id}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 5px 0; color: #64748b;"><strong>Designation / Role:</strong></td>
+                                <td style="padding: 5px 0; color: #0f172a;">{role}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 5px 0; color: #64748b;"><strong>Department:</strong></td>
+                                <td style="padding: 5px 0; color: #0f172a;">{dept}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 5px 0; color: #64748b;"><strong>Date of Joining:</strong></td>
+                                <td style="padding: 5px 0; color: #0f172a;">{joining_date}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 5px 0; color: #64748b;"><strong>Last Working Day:</strong></td>
+                                <td style="padding: 5px 0; font-weight: bold; color: #0f172a;">{last_working_day}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 5px 0; color: #64748b;"><strong>Clearance Status:</strong></td>
+                                <td style="padding: 5px 0; color: #059669; font-weight: bold;">✓ All Dues Cleared & Deprovisioned</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <p style="font-size: 14px; line-height: 1.5; color: #334155;">
+                        Please find attached your official digitally signed <strong>Relieving Letter & Experience Certificate PDF</strong>.
+                    </p>
+
+                    <p style="font-size: 14px; line-height: 1.5; color: #334155;">
+                        We thank you for your contributions during your tenure with us and wish you great success in your future endeavors.
+                    </p>
+
+                    <p style="font-size: 13px; color: #64748b; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+                        Dispatched via MangoHRMS Automated Exit Engine.<br/>
+                        Delivered to: <strong>{recipient_email}</strong>
+                    </p>
+                </div>
+            </body>
+            </html>
+            """
+
+            attachments = []
+            if pdf_b64:
+                attachments.append({
+                    "@odata.type": "#microsoft.graph.fileAttachment",
+                    "name": pdf_filename,
+                    "contentType": "application/pdf",
+                    "contentBytes": pdf_b64
+                })
+
+            mail_payload = {
+                "message": {
+                    "subject": subject,
+                    "body": {
+                        "contentType": "HTML",
+                        "content": html_body
+                    },
+                    "toRecipients": [
+                        {"emailAddress": {"address": recipient_email}}
+                    ],
+                    "attachments": attachments
+                },
+                "saveToSentItems": "false"
+            }
+
+            sender_upn = "vishal.kekare@automationedge.ai"
+            send_url = f"{self.graph_base_url}/users/{sender_upn}/sendMail"
+            resp = requests.post(send_url, headers=headers, json=mail_payload, timeout=25)
+
+            if resp.status_code in [200, 202]:
+                print(f"[Relieving Letter Email LIVE SUCCESS] Dispatched relieving letter PDF to {recipient_email} for {emp_name}")
+                return {
+                    "status": "success",
+                    "sent": True,
+                    "recipient": recipient_email,
+                    "subject": subject,
+                    "pdfFilename": pdf_filename,
+                    "message": f"Relieving letter email with PDF attachment sent successfully to {recipient_email}."
+                }
+            else:
+                print(f"[Relieving Letter Email Warning]: {resp.status_code} - {resp.text}")
+                return {
+                    "status": "warning",
+                    "statusCode": resp.status_code,
+                    "recipient": recipient_email,
+                    "message": f"Graph API returned {resp.status_code}: {resp.text}"
+                }
+
+        except Exception as e:
+            print(f"[Relieving Letter Email Exception]: {e}")
+            return {
+                "status": "error",
+                "recipient": recipient_email,
+                "message": str(e)
+            }
+
 # Singleton instance
 office365_client = Office365Client()
