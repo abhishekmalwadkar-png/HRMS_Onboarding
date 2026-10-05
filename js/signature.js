@@ -113,7 +113,7 @@ function renderAutoSignature(name) {
   
   sigCtx.font = "italic bold 36px 'Caveat', 'Dancing Script', cursive, 'Brush Script MT', sans-serif";
   sigCtx.fillStyle = '#6366f1';
-  sigCtx.fillText(name || 'Sarah Jenkins', 40, signatureCanvas.height / 2 + 10);
+  sigCtx.fillText(name || 'Sneha Rao', 40, signatureCanvas.height / 2 + 10);
   
   // Underline flourish
   sigCtx.beginPath();

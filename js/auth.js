@@ -61,16 +61,16 @@ function loginAs(role, email, name) {
   if (role === 'hr') {
     userObj = {
       role: 'hr',
-      name: name || 'Victoria Vance (HR Operations Director)',
-      email: email || 'hr.admin@mangohrms.com',
-      avatar: 'V',
+      name: name || 'Pooja Deshmukh (HR Operations Director)',
+      email: email || 'pooja.deshmukh@mangohrms.com',
+      avatar: 'P',
       badge: 'HR Administrator'
     };
   } else {
     userObj = {
       role: 'candidate',
-      name: name || 'Sarah Jenkins',
-      email: email || 'sarah.jenkins@mangohrms.com',
+      name: name || 'Sneha Rao',
+      email: email || 'sneha.rao@mangohrms.com',
       avatar: 'S',
       badge: 'Candidate / New Hire'
     };
