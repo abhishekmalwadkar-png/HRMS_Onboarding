@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '../context/ToastContext';
 
 export default function DirectoryView({ employees }) {
@@ -7,6 +7,14 @@ export default function DirectoryView({ employees }) {
   const [deptFilter, setDeptFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, deptFilter, statusFilter]);
 
   const filteredEmployees = employees.filter((e) => {
     const matchesSearch =
@@ -21,6 +29,11 @@ export default function DirectoryView({ employees }) {
 
     return matchesSearch && matchesDept && matchesStatus;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / ITEMS_PER_PAGE));
+  const validCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (validCurrentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedEmployees = filteredEmployees.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const exportCSV = () => {
     const headers = ['ID', 'Full Name', 'Email', 'Department', 'Job Title', 'Status', 'ServiceNow REQ', 'Laptop Ticket'];
@@ -130,7 +143,7 @@ export default function DirectoryView({ employees }) {
                   </td>
                 </tr>
               ) : (
-                filteredEmployees.map((c) => (
+                paginatedEmployees.map((c) => (
                   <tr key={c.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -193,6 +206,87 @@ export default function DirectoryView({ employees }) {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Bar - 10 Employees Per Page */}
+        {filteredEmployees.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              marginTop: '1rem',
+              paddingTop: '0.75rem',
+              borderTop: '1px solid var(--border-subtle)',
+              fontSize: '0.82rem',
+              color: 'var(--text-muted)',
+            }}
+          >
+            <div>
+              Showing <strong style={{ color: 'var(--text-main)' }}>{filteredEmployees.length === 0 ? 0 : startIndex + 1}</strong> to{' '}
+              <strong style={{ color: 'var(--text-main)' }}>{Math.min(startIndex + ITEMS_PER_PAGE, filteredEmployees.length)}</strong> of{' '}
+              <strong style={{ color: 'var(--text-main)' }}>{filteredEmployees.length}</strong> employees (10 per page)
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <button
+                className="btn btn-secondary"
+                disabled={validCurrentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                style={{
+                  padding: '0.3rem 0.65rem',
+                  fontSize: '0.78rem',
+                  opacity: validCurrentPage === 1 ? 0.5 : 1,
+                  cursor: validCurrentPage === 1 ? 'not-allowed' : 'pointer',
+                }}
+                title="Previous Page"
+              >
+                <i className="fa-solid fa-chevron-left"></i> Prev
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  style={{
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: 'var(--radius-xs)',
+                    border: pageNum === validCurrentPage ? '1px solid transparent' : '1px solid var(--border-color)',
+                    background: pageNum === validCurrentPage ? 'var(--accent-gradient)' : 'var(--bg-card)',
+                    color: pageNum === validCurrentPage ? '#fff' : 'var(--text-main)',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'var(--transition-fast)',
+                    boxShadow: pageNum === validCurrentPage ? '0 2px 6px rgba(234, 88, 12, 0.25)' : 'none',
+                  }}
+                >
+                  {pageNum}
+                </button>
+              ))}
+
+              <button
+                className="btn btn-secondary"
+                disabled={validCurrentPage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                style={{
+                  padding: '0.3rem 0.65rem',
+                  fontSize: '0.78rem',
+                  opacity: validCurrentPage === totalPages ? 0.5 : 1,
+                  cursor: validCurrentPage === totalPages ? 'not-allowed' : 'pointer',
+                }}
+                title="Next Page"
+              >
+                Next <i className="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Candidate Dossier Modal (4-Engine System Status Grid) */}

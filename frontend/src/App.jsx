@@ -52,16 +52,13 @@ export default function App() {
     });
   };
 
-  const handleCandidateAutofill = async () => {
-    try {
-      const res = await fetch('/api/autofill');
-      if (res.ok) {
-        const profile = await res.json();
-        showToast(`✨ Fetched profile for ${profile.fullName}!`, 'success');
-      }
-    } catch {
-      showToast('Autofill ready', 'info');
+  const handleCandidateAutofill = () => {
+    if (currentView !== 'wizard') {
+      setCurrentView('wizard');
     }
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('mangohrms-trigger-autofill'));
+    }, 50);
   };
 
   if (!currentUser) {

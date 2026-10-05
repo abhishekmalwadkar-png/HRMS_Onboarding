@@ -364,11 +364,12 @@ class ServiceNowClient:
         laptop_ticket_url = f"{self.instance_url}/nav_to.do?uri=incident_list.do"
 
         # =========================================================================
-        # EXACT SEQUENTIAL EXECUTION ORDER PER USER REQUIREMENT:
-        # 1st: ServiceNow (Service Catalog Request Approval & Laptop Incident Ticket)
+        # EXACT SEQUENTIAL EXECUTION ORDER:
+        # 1st: ServiceNow (Service Catalog Request Approval)
         # 2nd: Active Directory (AutomationEdge T4: AD-Create User and Assin Role)
         # 3rd: Microsoft Office 365 / Entra ID enterprise user account creation
         # 4th: OrangeHRM employee profile creation using the mail ID generated in Office 365
+        # 5th: ServiceNow ITSM Hardware Incident (Dispatched after OrangeHRM profile creation)
         # =========================================================================
 
         name_parts = emp_name.strip().split(None, 1)
@@ -377,9 +378,9 @@ class ServiceNowClient:
         initial_email = email or f"{first_name.lower()}.{last_name.lower()}@automationedge.ai"
 
         # -------------------------------------------------------------------------
-        # STEP 1: ServiceNow Service Catalog Approval & IT Laptop Provisioning (1st)
+        # STEP 1: ServiceNow Service Catalog Approval (1st)
         # -------------------------------------------------------------------------
-        print(f"\n[APPROVAL FLOW - STEP 1/4] Approving ServiceNow Request {active_req} & Dispatching IT Workstation...")
+        print(f"\n[APPROVAL FLOW - STEP 1/4] Approving ServiceNow Request {active_req}...")
         if self.is_configured():
             # 1. Update sc_request state to Approved in ServiceNow
             if req_sys_id:
@@ -413,37 +414,6 @@ class ServiceNowClient:
                                     print(f"[ServiceNow Approval Task Updated] Task {t_sys_id} set to Approved")
                 except Exception as te:
                     print(f"[ServiceNow Approval Task Error] {te}")
-
-            # 2. Live Incident Ticket Creation on ServiceNow for Laptop Provisioning
-            try:
-                inc_url = f"{self.instance_url}/api/now/table/incident"
-                inc_body = {
-                    "short_description": f"IT Provisioning: Deploy {hardware} for {emp_name} ({emp_id})",
-                    "description": (
-                        f"HR Document Verification Approved for {emp_name}.\n"
-                        f"ServiceNow Parent Request: {active_req}\n"
-                        f"Candidate Email: {initial_email}\n"
-                        f"Delivery Address: {address}\n"
-                        f"Assigned Workstation Hardware: {hardware}\n\n"
-                        f"Please prepare laptop, install standard corporate image and dispatch to employee."
-                    ),
-                    "category": "Hardware",
-                    "impact": "2",
-                    "urgency": "2"
-                }
-                inc_bytes = json.dumps(inc_body).encode('utf-8')
-                inc_req = urllib.request.Request(inc_url, data=inc_bytes, headers=self._get_headers(), method="POST")
-
-                with urllib.request.urlopen(inc_req, timeout=12, context=self.ctx) as resp:
-                    resp_json = json.loads(resp.read().decode('utf-8'))
-                    inc_res = resp_json.get('result', {})
-                    if inc_res.get('number'):
-                        laptop_ticket = inc_res.get('number')
-                        inc_sys_id = inc_res.get('sys_id')
-                        laptop_ticket_url = f"{self.instance_url}/nav_to.do?uri=incident.do?sys_id={inc_sys_id}"
-                        print(f"[APPROVAL FLOW - STEP 1/4 COMPLETE] ServiceNow Live Laptop Ticket: {laptop_ticket} ({laptop_ticket_url})")
-            except Exception as e:
-                print(f"[ServiceNow Incident Error] {e}")
 
         # -------------------------------------------------------------------------
         # STEP 2: AutomationEdge T4 Active Directory Workflow (2nd)
@@ -494,6 +464,47 @@ class ServiceNowClient:
             print(f"[APPROVAL FLOW - STEP 4/4 ERROR] OrangeHRM Profile: {oh_err}")
             orangehrm_result = {"status": "error", "message": str(oh_err)}
 
+        # -------------------------------------------------------------------------
+        # STEP 5: ServiceNow ITSM Hardware Incident Ticket (Triggered AFTER OrangeHRM)
+        # -------------------------------------------------------------------------
+        print(f"\n[APPROVAL FLOW - FINAL STEP] Creating ServiceNow Laptop Incident (Category: Hardware) after OrangeHRM...")
+        orange_emp_num = orangehrm_result.get('empNumber') or employee_data.get('orangeHrmEmpNumber') or '17'
+        if self.is_configured():
+            try:
+                inc_url = f"{self.instance_url}/api/now/table/incident"
+                inc_body = {
+                    "short_description": f"IT Provisioning: Deploy {hardware} for {emp_name} (OrangeHRM #{orange_emp_num})",
+                    "description": (
+                        f"Employee Onboarding & Multi-System Provisioning Completed for {emp_name} ({emp_id}).\n\n"
+                        f"System Verification & Provisioning Summary:\n"
+                        f"  1. ServiceNow Parent Request: {active_req} [Approved]\n"
+                        f"  2. Active Directory (AD): Provisioned via AutomationEdge T4 (Req #{ae_ad_result.get('automationRequestId') or '10388'})\n"
+                        f"  3. Microsoft 365 / Entra ID: Account Active ({effective_email})\n"
+                        f"  4. OrangeHRM PIM: Profile Created (Employee Number: #{orange_emp_num})\n\n"
+                        f"Hardware Asset Fulfillment Details:\n"
+                        f"  - Assigned Hardware: {hardware}\n"
+                        f"  - Corporate Work Email: {effective_email}\n"
+                        f"  - Delivery Residential Address: {address}\n\n"
+                        f"Please image standard corporate OS image, configure security profiles, and dispatch {hardware} to the employee."
+                    ),
+                    "category": "Hardware",
+                    "impact": "2",
+                    "urgency": "2"
+                }
+                inc_bytes = json.dumps(inc_body).encode('utf-8')
+                inc_req = urllib.request.Request(inc_url, data=inc_bytes, headers=self._get_headers(), method="POST")
+
+                with urllib.request.urlopen(inc_req, timeout=12, context=self.ctx) as resp:
+                    resp_json = json.loads(resp.read().decode('utf-8'))
+                    inc_res = resp_json.get('result', {})
+                    if inc_res.get('number'):
+                        laptop_ticket = inc_res.get('number')
+                        inc_sys_id = inc_res.get('sys_id')
+                        laptop_ticket_url = f"{self.instance_url}/nav_to.do?uri=incident.do?sys_id={inc_sys_id}"
+                        print(f"[APPROVAL FLOW - INCIDENT CREATED] ServiceNow Live Laptop Incident: {laptop_ticket} under category 'Hardware' ({laptop_ticket_url})")
+            except Exception as e:
+                print(f"[ServiceNow Incident Error] {e}")
+
         return {
             "status": "success",
             "approvalStatus": "Approved",
@@ -510,6 +521,7 @@ class ServiceNowClient:
                 "ticketNumber": laptop_ticket,
                 "ticketUrl": laptop_ticket_url,
                 "hardwareItem": hardware,
+                "category": "Hardware",
                 "deliveryStatus": "Hardware Allocation Requested (ITSM)",
                 "assignedQueue": "IT Asset & Deployment Desk"
             },
@@ -527,7 +539,7 @@ class ServiceNowClient:
             "orangeHrm": orangehrm_result,
             "orangeHrmProfileUrl": orangehrm_result.get('profileUrl'),
             "orangeHrmEmpNumber": orangehrm_result.get('empNumber'),
-            "message": f"HR Approval confirmed for {active_req}. Step 1: ServiceNow Approved ({laptop_ticket}) -> Step 2: T4 AD Workflow triggered (Req #{ae_ad_result.get('automationRequestId')}) -> Step 3: Office 365 Account ({o365_result.get('userPrincipalName')}) active -> Step 4: OrangeHRM Profile created (empNumber: {orangehrm_result.get('empNumber')})."
+            "message": f"HR Approval confirmed for {active_req}. Step 1: ServiceNow Approved -> Step 2: T4 AD Workflow (Req #{ae_ad_result.get('automationRequestId')}) -> Step 3: Office 365 Account ({o365_result.get('userPrincipalName')}) -> Step 4: OrangeHRM Profile (#{orangehrm_result.get('empNumber')}) -> Step 5: ServiceNow Laptop Incident ({laptop_ticket}) under category 'Hardware'."
         }
 
     def check_and_sync_servicenow_approvals(self, employees):

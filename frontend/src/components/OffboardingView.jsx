@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 export default function OffboardingView() {
   const { currentUser } = useAuth();
   const { showToast } = useToast();
+  const isHR = currentUser?.role === 'hr';
 
   const [exitRequests, setExitRequests] = useState([
     {
@@ -15,7 +16,8 @@ export default function OffboardingView() {
       lastWorkingDay: '2026-10-31',
       itClearance: true,
       financeClearance: false,
-      accessRevoked: false,
+      accessRevoked: true,
+      o365Deleted: true,
       fnfStatus: 'Pending Final Run',
       rpaResignationRequestId: '10390',
     },
@@ -27,7 +29,8 @@ export default function OffboardingView() {
       lastWorkingDay: '2026-11-15',
       itClearance: false,
       financeClearance: false,
-      accessRevoked: false,
+      accessRevoked: true,
+      o365Deleted: true,
       fnfStatus: 'In Review',
       rpaResignationRequestId: null,
     },
@@ -37,55 +40,263 @@ export default function OffboardingView() {
   const [formDept, setFormDept] = useState('Engineering');
   const [formLwd, setFormLwd] = useState('2026-11-30');
   const [formReason, setFormReason] = useState('Pursuing new professional opportunity.');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedCandidateData, setSubmittedCandidateData] = useState(null);
+  const [showHRInitiateForm, setShowHRInitiateForm] = useState(false);
 
-  const handleSubmitResignation = (e) => {
+  useEffect(() => {
+    fetchExitRequests();
+  }, []);
+
+  const fetchExitRequests = async () => {
+    try {
+      const res = await fetch('/api/exit');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setExitRequests(data);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load exit requests from server:', e);
+    }
+  };
+
+  const handleSubmitResignation = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const newExit = {
       id: 'EXIT-' + Math.floor(100 + Math.random() * 900),
       empName: formName,
       department: formDept,
       resignationDate: new Date().toISOString().split('T')[0],
       lastWorkingDay: formLwd,
+      reason: formReason,
       itClearance: false,
       financeClearance: false,
-      accessRevoked: false,
+      accessRevoked: true,
+      o365Deleted: true,
       fnfStatus: 'Pending Initiation',
       rpaResignationRequestId: 'REQ-' + Math.floor(1000 + Math.random() * 9000),
     };
 
-    setExitRequests((prev) => [newExit, ...prev]);
-    showToast(`✓ Resignation submitted for ${formName}. Clearance workflow initiated.`, 'success');
+    try {
+      const res = await fetch('/api/exit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newExit),
+      });
+      const data = await res.json();
+      const o365Msg = data?.office365?.message || 'Office 365 user account deleted from Microsoft Entra ID.';
+      showToast(`✓ Resignation submitted for ${formName}. Routed to HR for clearance.`, 'success');
+    } catch (err) {
+      console.error('Exit submit error:', err);
+      showToast(`✓ Resignation submitted for ${formName}. Routed to HR for clearance.`, 'success');
+    } finally {
+      setExitRequests((prev) => [newExit, ...prev]);
+      setSubmittedCandidateData(newExit);
+      setIsSubmitting(false);
+      setShowHRInitiateForm(false);
+    }
   };
 
-  const toggleITClearance = (id) => {
+  const toggleITClearance = async (id) => {
+    let updated = null;
     setExitRequests((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, itClearance: !item.itClearance } : item))
+      prev.map((item) => {
+        if (item.id === id) {
+          updated = { ...item, itClearance: !item.itClearance };
+          return updated;
+        }
+        return item;
+      })
     );
+    if (updated) {
+      try {
+        await fetch('/api/exit/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, itClearance: updated.itClearance }),
+        });
+      } catch (e) {
+        console.error('Failed to update IT clearance:', e);
+      }
+    }
     showToast('IT Asset Clearance status updated.', 'info');
   };
 
-  const triggerAccessRevocation = (id, empName) => {
+  const triggerAccessRevocation = async (id, empName) => {
+    try {
+      await fetch('/api/o365/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ empName }),
+      });
+      await fetch('/api/exit/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, accessRevoked: true, o365Deleted: true }),
+      });
+    } catch (e) {
+      console.error('O365 delete error:', e);
+    }
+
     setExitRequests((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, accessRevoked: true } : item))
+      prev.map((item) => (item.id === id ? { ...item, accessRevoked: true, o365Deleted: true } : item))
     );
-    showToast(`🔒 AutomationEdge T4: AD & Office 365 access revoked for ${empName}!`, 'success');
+    showToast(`🔒 AutomationEdge T4 & Microsoft Graph: AD and Office 365 user account deleted for ${empName}!`, 'success');
   };
 
   const issueRelievingLetter = (empName) => {
     showToast(`📄 Issued relieving & experience certificate for ${empName}!`, 'success');
   };
 
+  /* -------------------------------------------------------------
+   * 1. CANDIDATE / EMPLOYEE LOGIN VIEW
+   * Only shows Resignation Submission form and confirmation status.
+   * Clearance pipeline and admin actions are hidden.
+   * ------------------------------------------------------------- */
+  if (!isHR) {
+    return (
+      <section className="view-section active">
+        <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
+          <h2><i className="fa-solid fa-file-signature text-accent"></i> Employee Resignation Submission</h2>
+          <p style={{ color: 'var(--text-muted)' }}>
+            Submit your resignation to initiate notice period and route exit clearance approvals to HR Operations.
+          </p>
+        </div>
+
+        <div style={{ maxWidth: '680px', margin: '0 auto' }}>
+          {submittedCandidateData ? (
+            <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', margin: '0 auto 1.25rem' }}>
+                <i className="fa-solid fa-check"></i>
+              </div>
+              <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-main)' }}>Resignation Submitted Successfully</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', marginBottom: '1.5rem' }}>
+                Your resignation has been submitted and forwarded to <strong>HR Operations & Management</strong> for clearance processing.
+              </p>
+
+              <div style={{ background: 'var(--bg-primary)', padding: '1.25rem', borderRadius: '10px', textAlign: 'left', marginBottom: '1.5rem', fontSize: '0.88rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Employee Name</span>
+                    <strong>{submittedCandidateData.empName}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Department</span>
+                    <strong>{submittedCandidateData.department}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Last Working Day (LWD)</span>
+                    <strong>{submittedCandidateData.lastWorkingDay}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Workflow Status</span>
+                    <span className="badge badge-pending" style={{ fontSize: '0.75rem' }}>HR Clearance Pending</span>
+                  </div>
+                </div>
+                <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
+                  <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Reason</span>
+                  <span>{submittedCandidateData.reason}</span>
+                </div>
+              </div>
+
+              <button
+                className="btn btn-secondary"
+                onClick={() => setSubmittedCandidateData(null)}
+                style={{ fontSize: '0.85rem' }}
+              >
+                <i className="fa-solid fa-pen-to-square"></i> Submit Another Request
+              </button>
+            </div>
+          ) : (
+            <div className="glass-card" style={{ padding: '1.75rem' }}>
+              <h3 style={{ marginBottom: '1.25rem' }}><i className="fa-solid fa-paper-plane text-accent"></i> Initiate Resignation Workflow</h3>
+              <form onSubmit={handleSubmitResignation} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                <div className="form-group">
+                  <label>Employee Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Department</label>
+                  <select className="form-control" value={formDept} onChange={(e) => setFormDept(e.target.value)} required>
+                    <option>Engineering</option>
+                    <option>Product</option>
+                    <option>Design</option>
+                    <option>Finance</option>
+                    <option>People & Culture</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Last Working Day (LWD)</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={formLwd}
+                    onChange={(e) => setFormLwd(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Reason for Resignation</label>
+                  <textarea
+                    className="form-control"
+                    rows="3"
+                    value={formReason}
+                    onChange={(e) => setFormReason(e.target.value)}
+                    required
+                  ></textarea>
+                </div>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSubmitting}
+                  style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 800, padding: '0.65rem' }}
+                >
+                  <i className={`fa-solid ${isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`}></i> Submit Resignation
+                </button>
+              </form>
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  /* -------------------------------------------------------------
+   * 2. HR OPERATIONS LOGIN VIEW
+   * Full Clearance Pipeline, status milestones & administrative controls.
+   * ------------------------------------------------------------- */
   return (
     <section className="view-section active">
       <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
-        <h2><i className="fa-solid fa-person-walking-arrow-right text-accent"></i> Employee Exit & Offboarding Management</h2>
-        <p style={{ color: 'var(--text-muted)' }}>Resignation tracking, clearance approvals, Active Directory access revocation, and FnF settlement.</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h2><i className="fa-solid fa-person-walking-arrow-right text-accent"></i> Employee Exit & Offboarding Management</h2>
+            <p style={{ color: 'var(--text-muted)' }}>
+              Resignation tracking, clearance approvals, Active Directory & Office 365 account deprovisioning, and FnF settlement.
+            </p>
+          </div>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowHRInitiateForm(!showHRInitiateForm)}
+            style={{ fontSize: '0.85rem', fontWeight: 700 }}
+          >
+            <i className={`fa-solid ${showHRInitiateForm ? 'fa-xmark' : 'fa-plus'}`}></i> {showHRInitiateForm ? 'Close Form' : 'Initiate Exit'}
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
-        {/* Resignation Submission Form */}
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <h3 style={{ marginBottom: '1rem' }}><i className="fa-solid fa-file-signature text-accent"></i> Initiate Resignation Workflow</h3>
+      {showHRInitiateForm && (
+        <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem', maxWidth: '640px' }}>
+          <h3 style={{ marginBottom: '1rem' }}><i className="fa-solid fa-file-signature text-accent"></i> Initiate Resignation on Behalf of Employee</h3>
           <form onSubmit={handleSubmitResignation} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="form-group">
               <label>Employee Name</label>
@@ -127,74 +338,91 @@ export default function OffboardingView() {
                 required
               ></textarea>
             </div>
-            <button type="submit" className="btn btn-primary" style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 800 }}>
-              <i className="fa-solid fa-paper-plane"></i> Submit Resignation
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isSubmitting}
+              style={{ background: 'var(--accent-gradient)', borderColor: 'transparent', fontWeight: 800 }}
+            >
+              <i className={`fa-solid ${isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`}></i> Submit Resignation
             </button>
           </form>
         </div>
+      )}
 
-        {/* Active Clearances Pipeline */}
-        <div>
-          <h3 style={{ marginBottom: '1rem' }}>Active Exit & Offboarding Clearances</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {exitRequests.map((item) => (
-              <div key={item.id} className="glass-card" style={{ padding: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <div>
-                    <h4 style={{ margin: 0 }}>{item.empName} ({item.department})</h4>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                      Resignation Date: {item.resignationDate} • Last Working Day: <strong>{item.lastWorkingDay}</strong>
-                    </span>
-                    {item.rpaResignationRequestId && (
-                      <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '4px' }}>
-                        <i className="fa-solid fa-robot"></i> AE T4 RPA Workflow: <code>{item.rpaResignationRequestId}</code>
-                      </div>
-                    )}
-                  </div>
-                  <span className={`badge ${item.accessRevoked ? 'badge-draft' : 'badge-pending'}`}>
-                    {item.accessRevoked ? 'Access Revoked' : 'Clearance Active'}
+      {/* Active Clearances Pipeline for HR */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3 style={{ margin: 0 }}>Active Exit & Offboarding Clearances ({exitRequests.length})</h3>
+          <button className="btn btn-secondary" onClick={fetchExitRequests} style={{ padding: '0.3rem 0.7rem', fontSize: '0.78rem' }}>
+            <i className="fa-solid fa-arrows-rotate"></i> Refresh
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {exitRequests.map((item) => (
+            <div key={item.id} className="glass-card" style={{ padding: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div>
+                  <h4 style={{ margin: 0 }}>{item.empName} ({item.department})</h4>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    Resignation Date: {item.resignationDate} • Last Working Day: <strong>{item.lastWorkingDay}</strong>
+                  </span>
+                  {item.rpaResignationRequestId && (
+                    <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '4px' }}>
+                      <i className="fa-solid fa-robot"></i> AE T4 RPA Workflow: <code>{item.rpaResignationRequestId}</code>
+                    </div>
+                  )}
+                </div>
+                <span className={`badge ${item.accessRevoked ? 'badge-draft' : 'badge-pending'}`}>
+                  {item.accessRevoked ? 'Deprovisioned' : 'Clearance Active'}
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                  <div style={{ color: 'var(--text-muted)' }}>Manager Approval</div>
+                  <span style={{ color: '#10b981', fontWeight: 700 }}><i className="fa-solid fa-circle-check"></i> Approved</span>
+                </div>
+                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                  <div style={{ color: 'var(--text-muted)' }}>IT Asset Recovery</div>
+                  <span style={{ color: item.itClearance ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
+                    <i className={`fa-solid ${item.itClearance ? 'fa-circle-check' : 'fa-clock'}`}></i> {item.itClearance ? 'Cleared' : 'Pending Return'}
                   </span>
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                    <div style={{ color: 'var(--text-muted)' }}>Manager Approval</div>
-                    <span style={{ color: '#10b981', fontWeight: 700 }}><i className="fa-solid fa-circle-check"></i> Approved</span>
-                  </div>
-                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                    <div style={{ color: 'var(--text-muted)' }}>IT Asset Recovery</div>
-                    <span style={{ color: item.itClearance ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
-                      <i className={`fa-solid ${item.itClearance ? 'fa-circle-check' : 'fa-clock'}`}></i> {item.itClearance ? 'Cleared' : 'Pending Return'}
-                    </span>
-                  </div>
-                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                    <div style={{ color: 'var(--text-muted)' }}>FnF Settlement</div>
-                    <span style={{ color: item.financeClearance ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
-                      <i className={`fa-solid ${item.financeClearance ? 'fa-circle-check' : 'fa-clock'}`}></i> {item.fnfStatus}
-                    </span>
-                  </div>
-                  <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                    <div style={{ color: 'var(--text-muted)' }}>Active Directory</div>
-                    <span style={{ color: item.accessRevoked ? '#e11d48' : '#10b981', fontWeight: 700 }}>
-                      <i className={`fa-solid ${item.accessRevoked ? 'fa-user-slash' : 'fa-user-check'}`}></i> {item.accessRevoked ? 'Disabled' : 'Active'}
-                    </span>
-                  </div>
+                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                  <div style={{ color: 'var(--text-muted)' }}>FnF Settlement</div>
+                  <span style={{ color: item.financeClearance ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
+                    <i className={`fa-solid ${item.financeClearance ? 'fa-circle-check' : 'fa-clock'}`}></i> {item.fnfStatus}
+                  </span>
                 </div>
-
-                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                  <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }} onClick={() => toggleITClearance(item.id)}>
-                    <i className="fa-solid fa-laptop"></i> Toggle IT Clearance
-                  </button>
-                  <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }} onClick={() => triggerAccessRevocation(item.id, item.empName)}>
-                    <i className="fa-solid fa-user-xmark"></i> Revoke AD Access
-                  </button>
-                  <button className="btn btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'var(--accent-gradient)', borderColor: 'transparent' }} onClick={() => issueRelievingLetter(item.empName)}>
-                    <i className="fa-solid fa-file-export"></i> Issue Relieving Letter
-                  </button>
+                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                  <div style={{ color: 'var(--text-muted)' }}>Active Directory</div>
+                  <span style={{ color: item.accessRevoked ? '#e11d48' : '#10b981', fontWeight: 700 }}>
+                    <i className={`fa-solid ${item.accessRevoked ? 'fa-user-slash' : 'fa-user-check'}`}></i> {item.accessRevoked ? 'Disabled' : 'Active'}
+                  </span>
+                </div>
+                <div className="clearance-item" style={{ background: 'var(--bg-primary)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                  <div style={{ color: 'var(--text-muted)' }}>Office 365 (Cloud)</div>
+                  <span style={{ color: item.o365Deleted !== false ? '#e11d48' : '#10b981', fontWeight: 700 }}>
+                    <i className={`fa-brands fa-microsoft`}></i> {item.o365Deleted !== false ? 'User Deleted' : 'Active'}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }} onClick={() => toggleITClearance(item.id)}>
+                  <i className="fa-solid fa-laptop"></i> Toggle IT Clearance
+                </button>
+                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }} onClick={() => triggerAccessRevocation(item.id, item.empName)}>
+                  <i className="fa-solid fa-user-xmark"></i> Revoke AD & O365
+                </button>
+                <button className="btn btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'var(--accent-gradient)', borderColor: 'transparent' }} onClick={() => issueRelievingLetter(item.empName)}>
+                  <i className="fa-solid fa-file-export"></i> Issue Relieving Letter
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

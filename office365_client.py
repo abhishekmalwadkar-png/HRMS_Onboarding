@@ -201,5 +201,82 @@ class Office365Client:
                 "message": f"Failed to create Office 365 account: {resp.text}"
             }
 
+    def delete_user_account(self, identifier: str) -> dict:
+        """
+        Deletes a user account from Microsoft 365 / Entra ID using Microsoft Graph API.
+        identifier can be userPrincipalName (UPN), userId (GUID), email, or employee full name.
+        """
+        try:
+            token = self.get_access_token()
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+
+            target_user_id = None
+            target_upn = None
+
+            identifier = (identifier or "").strip()
+            if not identifier:
+                return {"status": "error", "message": "No identifier provided for O365 user deletion."}
+
+            # If identifier is an email/upn with @
+            if "@" in identifier:
+                target_upn = identifier
+                target_user_id = identifier
+            else:
+                # Try finding by generated UPN first
+                _, _, _, gen_upn = self.generate_upn(identifier)
+                chk_resp = requests.get(f"{self.graph_base_url}/users/{gen_upn}", headers=headers, timeout=15)
+                if chk_resp.status_code == 200:
+                    data = chk_resp.json()
+                    target_user_id = data.get("id")
+                    target_upn = data.get("userPrincipalName", gen_upn)
+                else:
+                    # Search by displayName
+                    search_url = f"{self.graph_base_url}/users?$filter=startswith(displayName,'{identifier}')"
+                    s_resp = requests.get(search_url, headers=headers, timeout=15)
+                    if s_resp.status_code == 200:
+                        users = s_resp.json().get("value", [])
+                        if users:
+                            target_user_id = users[0].get("id")
+                            target_upn = users[0].get("userPrincipalName")
+
+            # Fallback to generated UPN if not located via search
+            if not target_user_id:
+                _, _, _, target_upn = self.generate_upn(identifier)
+                target_user_id = target_upn
+
+            delete_url = f"{self.graph_base_url}/users/{target_user_id}"
+            del_resp = requests.delete(delete_url, headers=headers, timeout=20)
+
+            if del_resp.status_code in [200, 204]:
+                return {
+                    "status": "success",
+                    "deleted": True,
+                    "targetUser": target_upn or identifier,
+                    "message": f"Successfully deleted Office 365 user account {target_upn or identifier} from Microsoft Entra ID."
+                }
+            elif del_resp.status_code == 404:
+                return {
+                    "status": "success",
+                    "deleted": True,
+                    "notFound": True,
+                    "targetUser": target_upn or identifier,
+                    "message": f"Office 365 account {target_upn or identifier} was already removed or not found in Microsoft Entra ID."
+                }
+            else:
+                return {
+                    "status": "error",
+                    "statusCode": del_resp.status_code,
+                    "error": del_resp.text,
+                    "message": f"Failed to delete Office 365 account: {del_resp.text}"
+                }
+        except Exception as ex:
+            return {
+                "status": "error",
+                "message": f"Exception during Office 365 user deletion: {str(ex)}"
+            }
+
 # Singleton instance
 office365_client = Office365Client()

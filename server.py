@@ -3,11 +3,14 @@ import socketserver
 import json
 import os
 import time
+import random
+import threading
 from ae_rpa_client import ae_client
 from generate_offer_letter import create_and_email_offer_letter
 from servicenow_client import sn_client
+from office365_client import office365_client
 
-PORT = int(os.environ.get('PORT', 8080))
+PORT = int(os.environ.get('PORT', 8081))
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'employees.json')
 AUTOFILL_FILE = os.path.join(os.path.dirname(__file__), 'autofill.json')
 
@@ -78,7 +81,11 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             elif self.path.startswith('/api/servicenow/config'):
                 self.wfile.write(json.dumps(sn_client.get_config_summary()).encode('utf-8'))
             elif self.path.startswith('/api/autofill'):
-                self.wfile.write(json.dumps(self.read_autofill_db()).encode('utf-8'))
+                autofill_data = self.read_autofill_db()
+                profiles = autofill_data.get('autofillProfiles', [])
+                selected = dict(random.choice(profiles)) if profiles else {}
+                selected['autofillProfiles'] = profiles
+                self.wfile.write(json.dumps(selected).encode('utf-8'))
             elif self.path.startswith('/api/db'):
                 self.wfile.write(json.dumps(db).encode('utf-8'))
             else:
@@ -225,12 +232,56 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "success", "data": payload}).encode('utf-8'))
 
         elif self.path == '/api/exit':
+            emp_name = payload.get('empName') or payload.get('name') or payload.get('employeeName') or payload.get('email')
+            o365_result = {}
+            if emp_name:
+                try:
+                    o365_result = office365_client.delete_user_account(emp_name)
+                    payload['o365DeleteResult'] = o365_result
+                    payload['o365Deleted'] = o365_result.get('deleted', True)
+                except Exception as e:
+                    payload['o365DeleteResult'] = {"status": "error", "message": str(e)}
+                    payload['o365Deleted'] = False
+
+            # Update status in employees list if present
+            employees = db.get('employees', [])
+            for emp in employees:
+                if emp.get('fullName') == emp_name or emp.get('name') == emp_name or emp.get('id') == payload.get('empId'):
+                    emp['status'] = 'Resigned / Offboarding'
+                    emp['o365Deleted'] = True
+                    break
+            db['employees'] = employees
+
             exits = db.get('exitRequests', [])
             exits.insert(0, payload)
             db['exitRequests'] = exits
             self.write_db(db)
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "success", "data": payload}).encode('utf-8'))
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "data": payload,
+                "office365": o365_result
+            }).encode('utf-8'))
+
+        elif self.path == '/api/exit/update':
+            exits = db.get('exitRequests', [])
+            target_id = payload.get('id')
+            for item in exits:
+                if item.get('id') == target_id:
+                    for k, v in payload.items():
+                        if k != 'id':
+                            item[k] = v
+                    break
+            db['exitRequests'] = exits
+            self.write_db(db)
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "success", "data": exits}).encode('utf-8'))
+
+        elif self.path == '/api/o365/delete-user':
+            emp_ident = payload.get('identifier') or payload.get('email') or payload.get('employeeName') or payload.get('empName')
+            o365_result = office365_client.delete_user_account(emp_ident)
+            self.end_headers()
+            self.wfile.write(json.dumps(o365_result).encode('utf-8'))
 
         else:
             self.send_error(404, "Endpoint Not Found")

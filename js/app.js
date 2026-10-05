@@ -130,31 +130,9 @@ function toggleTheme() {
   showToast(`Switched to ${newTheme.toUpperCase()} mode`, 'info');
 }
 
-// Toast Notification System
+// Toast Notification System (Disabled)
 function showToast(message, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  if (!container) return;
-
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  
-  let icon = 'fa-circle-info';
-  if (type === 'success') icon = 'fa-circle-check';
-  if (type === 'error') icon = 'fa-triangle-exclamation';
-
-  toast.innerHTML = `
-    <i class="fa-solid ${icon}"></i>
-    <span>${message}</span>
-  `;
-
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(100%)';
-    toast.style.transition = 'all 0.3s ease';
-    setTimeout(() => toast.remove(), 300);
-  }, 4000);
+  // Popups disabled
 }
 
 // ServiceNow PDI Configuration Modal

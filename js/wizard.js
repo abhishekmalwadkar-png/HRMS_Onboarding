@@ -331,8 +331,6 @@ async function autoFillDemoData(specificIndex) {
 
   // Clear validation borders
   document.querySelectorAll('.form-control').forEach(inp => inp.style.borderColor = 'var(--border-color)');
-
-  showToast(`⚡ Loaded random Indian candidate "${profile.fullName}" (${profile.jobTitle}) from database!`, 'success');
 }
 
 // Form Submission: Calls ServiceNow Service Catalog API & triggers Sequential Onboarding Pipeline
