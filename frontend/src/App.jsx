@@ -53,12 +53,16 @@ export default function App() {
   };
 
   const handleCandidateAutofill = () => {
-    if (currentView !== 'wizard') {
-      setCurrentView('wizard');
+    if (currentView === 'exit') {
+      window.dispatchEvent(new CustomEvent('mangohrms-trigger-exit-autofill'));
+    } else {
+      if (currentView !== 'wizard') {
+        setCurrentView('wizard');
+      }
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('mangohrms-trigger-autofill'));
+      }, 50);
     }
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('mangohrms-trigger-autofill'));
-    }, 50);
   };
 
   if (!currentUser) {

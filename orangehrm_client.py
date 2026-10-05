@@ -328,5 +328,81 @@ class OrangeHRMClient:
             "message": f"Employee record '{target_name}' deleted in simulated mode."
         }
 
+    def get_active_employees(self) -> list:
+        """
+        Fetches the live list of employees from OrangeHRM PIM API.
+        """
+        self.reload_config()
+        if self.is_configured():
+            try:
+                opener = self._get_authenticated_session()
+                pim_url = f"{self.base_url}/web/index.php/api/v2/pim/employees?limit=50"
+                resp = opener.open(pim_url, timeout=10)
+                pim_data = json.loads(resp.read().decode('utf-8'))
+                emp_list = pim_data.get('data', [])
+
+                parsed_employees = []
+                for emp in emp_list:
+                    emp_num = emp.get('empNumber')
+                    fn = (emp.get('firstName') or '').strip()
+                    mn = (emp.get('middleName') or '').strip()
+                    ln = (emp.get('lastName') or '').strip()
+                    full_name = f"{fn} {mn} {ln}".replace('  ', ' ').strip() or f"{fn} {ln}".strip() or "Employee"
+                    emp_id = str(emp.get('employeeId') or f"EMP-{emp_num}")
+                    
+                    # Job and subunit
+                    job = "Software Engineer"
+                    if isinstance(emp.get('jobTitle'), dict) and emp.get('jobTitle').get('title'):
+                        job = emp.get('jobTitle').get('title')
+                    
+                    subunit = "Engineering"
+                    if isinstance(emp.get('subunit'), dict) and emp.get('subunit').get('name'):
+                        subunit = emp.get('subunit').get('name')
+                        if subunit not in ['Engineering', 'Product', 'IT Systems', 'Human Resources', 'Finance']:
+                            subunit = 'Engineering'
+
+                    parsed_employees.append({
+                        "empNumber": emp_num,
+                        "employeeId": emp_id,
+                        "empId": emp_id if emp_id.startswith("EMP-") else f"EMP-{emp_id}",
+                        "fullName": full_name,
+                        "firstName": fn,
+                        "lastName": ln,
+                        "department": subunit,
+                        "jobTitle": job,
+                        "workEmail": f"{fn.lower()}.{ln.lower()}@automationedge.ai" if fn and ln else f"emp{emp_num}@automationedge.ai"
+                    })
+
+                if parsed_employees:
+                    return parsed_employees
+
+            except Exception as e:
+                print(f"[OrangeHRM Fetch Employees Error]: {e}")
+
+        # Fallback list of pre-configured OrangeHRM employee profiles
+        return [
+            {"empNumber": 33, "employeeId": "9023", "empId": "EMP-9023", "fullName": "Marcus Aurelius", "department": "Engineering", "jobTitle": "Lead Cloud Architect"},
+            {"empNumber": 34, "employeeId": "9024", "empId": "EMP-9024", "fullName": "Samantha Chang", "department": "Engineering", "jobTitle": "Senior Full Stack Engineer"},
+            {"empNumber": 3, "employeeId": "1160", "empId": "EMP-1160", "fullName": "Priyanka Chopra", "department": "Product", "jobTitle": "Lead Product Manager"},
+            {"empNumber": 10, "employeeId": "7894", "empId": "EMP-7894", "fullName": "Sumit Deshmukh", "department": "IT Systems", "jobTitle": "Enterprise ServiceNow Specialist"},
+            {"empNumber": 5, "employeeId": "4213", "empId": "EMP-4213", "fullName": "Suhas Kulkarni", "department": "Engineering", "jobTitle": "Senior DevOps Engineer"},
+            {"empNumber": 19, "employeeId": "9075", "empId": "EMP-9075", "fullName": "Jagdish Verma", "department": "Finance", "jobTitle": "Financial Operations Lead"}
+        ]
+
+    def get_random_employee(self) -> dict:
+        """
+        Returns a single random employee profile from OrangeHRM PIM.
+        """
+        import random
+        employees = self.get_active_employees()
+        return random.choice(employees) if employees else {
+            "empNumber": 34,
+            "employeeId": "9024",
+            "empId": "EMP-9024",
+            "fullName": "Samantha Chang",
+            "department": "Engineering",
+            "jobTitle": "Senior Full Stack Engineer"
+        }
+
 # Global singleton
 orangehrm_client = OrangeHRMClient()

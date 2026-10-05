@@ -100,6 +100,12 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 selected = dict(random.choice(profiles)) if profiles else {}
                 selected['autofillProfiles'] = profiles
                 self.wfile.write(json.dumps(selected).encode('utf-8'))
+            elif self.path.startswith('/api/orangehrm/random-employee'):
+                emp = orangehrm_client.get_random_employee()
+                self.wfile.write(json.dumps(emp).encode('utf-8'))
+            elif self.path.startswith('/api/orangehrm/employees'):
+                emps = orangehrm_client.get_active_employees()
+                self.wfile.write(json.dumps(emps).encode('utf-8'))
             elif self.path.startswith('/api/db'):
                 self.wfile.write(json.dumps(db).encode('utf-8'))
             else:

@@ -53,6 +53,23 @@ export default function Header({ currentView, toggleSidebar, onAutoFill }) {
             <i className="fa-solid fa-wand-magic-sparkles text-accent"></i> Auto-Fill
           </button>
         )}
+        {currentView === 'exit' && (
+          <button
+            className="btn btn-secondary"
+            onClick={onAutoFill}
+            style={{
+              padding: '0.4rem 0.85rem',
+              fontSize: '0.8rem',
+              borderColor: '#0284c7',
+              background: '#f0f9ff',
+              fontWeight: 700,
+              color: '#0284c7',
+            }}
+            title="Auto-fill random employee directly from OrangeHRM live directory"
+          >
+            <i className="fa-solid fa-wand-magic-sparkles" style={{ color: '#0284c7' }}></i> Auto-Fill OrangeHRM
+          </button>
+        )}
       </div>
     </header>
   );

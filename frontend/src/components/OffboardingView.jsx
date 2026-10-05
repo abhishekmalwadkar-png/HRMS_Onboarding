@@ -16,6 +16,9 @@ export default function OffboardingView() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedCandidateData, setSubmittedCandidateData] = useState(null);
   const [showHRInitiateForm, setShowHRInitiateForm] = useState(false);
+  const [autofillEmpId, setAutofillEmpId] = useState('');
+  const [isAutofilling, setIsAutofilling] = useState(false);
+  const [activeOrangeEmp, setActiveOrangeEmp] = useState(null);
 
   // Clearance Check state
   const [checkingClearanceId, setCheckingClearanceId] = useState(null);
@@ -36,6 +39,56 @@ export default function OffboardingView() {
   useEffect(() => {
     fetchExitRequests();
   }, []);
+
+  useEffect(() => {
+    const handleExitAutofillEvent = () => {
+      handleAutofillOrangeHRM();
+    };
+    window.addEventListener('mangohrms-trigger-exit-autofill', handleExitAutofillEvent);
+    return () => window.removeEventListener('mangohrms-trigger-exit-autofill', handleExitAutofillEvent);
+  }, []);
+
+  const handleAutofillOrangeHRM = async () => {
+    setIsAutofilling(true);
+    setShowHRInitiateForm(true);
+    try {
+      const res = await fetch('/api/orangehrm/random-employee?t=' + Date.now());
+      if (res.ok) {
+        const emp = await res.json();
+        if (emp && emp.fullName) {
+          setFormName(emp.fullName);
+          if (emp.department) {
+            setFormDept(emp.department);
+          }
+          const id = emp.empId || (emp.employeeId ? `EMP-${emp.employeeId}` : (emp.empNumber ? `EMP-${emp.empNumber}` : 'EMP-9024'));
+          setAutofillEmpId(id);
+          setActiveOrangeEmp(emp);
+
+          // Realistic Last Working Day: 30 days out
+          const d = new Date();
+          d.setDate(d.getDate() + 30);
+          setFormLwd(d.toISOString().split('T')[0]);
+
+          const sampleReasons = [
+            'Pursuing new career opportunity in enterprise cloud engineering.',
+            'Relocating and pursuing higher academic research.',
+            'Personal transition and career advancement opportunity.',
+            'Accepting an executive leadership offer.',
+            'Transitioning to independent specialized consulting.'
+          ];
+          setFormReason(sampleReasons[Math.floor(Math.random() * sampleReasons.length)]);
+          showToast(`⚡ Auto-filled OrangeHRM Employee: ${emp.fullName} (${id}) - ${emp.jobTitle || emp.department}`, 'success');
+        } else {
+          showToast('No active employee records returned from OrangeHRM.', 'info');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to autofill from OrangeHRM:', err);
+      showToast('Error connecting to OrangeHRM for autofill.', 'error');
+    } finally {
+      setIsAutofilling(false);
+    }
+  };
 
   const fetchExitRequests = async () => {
     try {
@@ -65,7 +118,7 @@ export default function OffboardingView() {
   const handleSubmitResignation = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const empId = currentUser?.id || currentUser?.empId || ('EMP-' + Math.floor(1000 + Math.random() * 9000));
+    const empId = autofillEmpId || currentUser?.id || currentUser?.empId || ('EMP-' + Math.floor(1000 + Math.random() * 9000));
     const newExit = {
       id: 'EXIT-' + Math.floor(100 + Math.random() * 900),
       empId: empId,
@@ -92,7 +145,7 @@ export default function OffboardingView() {
       });
       const data = await res.json();
       const createdItem = data?.data || newExit;
-      showToast(`✓ Resignation submitted for ${formName}. T4 RPA workflow (HR Demo Offboarding SN Req) & ServiceNow request created.`, 'success');
+      showToast(`✓ Resignation submitted for ${formName} (${empId}). T4 RPA workflow (HR Demo Offboarding SN Req) & ServiceNow request created.`, 'success');
       setExitRequests((prev) => [createdItem, ...prev]);
       setSubmittedCandidateData(createdItem);
     } catch (err) {
@@ -103,6 +156,8 @@ export default function OffboardingView() {
     } finally {
       setIsSubmitting(false);
       setShowHRInitiateForm(false);
+      setActiveOrangeEmp(null);
+      setAutofillEmpId('');
     }
   };
 
@@ -505,29 +560,104 @@ export default function OffboardingView() {
               Manage employee resignations, ServiceNow hardware recovery incidents, and execute multi-system deprovisioning workflows.
             </p>
           </div>
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowHRInitiateForm(!showHRInitiateForm)}
-            style={{
-              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-              borderColor: 'transparent',
-              fontWeight: 700,
-              padding: '0.5rem 1.15rem',
-              fontSize: '0.88rem',
-            }}
-          >
-            <i className={`fa-solid ${showHRInitiateForm ? 'fa-xmark' : 'fa-plus'}`}></i>{' '}
-            {showHRInitiateForm ? 'Close Resignation Form' : 'Initiate Resignation'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+            <button
+              className="btn btn-secondary"
+              onClick={handleAutofillOrangeHRM}
+              disabled={isAutofilling}
+              style={{
+                borderColor: '#0284c7',
+                color: '#0284c7',
+                background: '#f0f9ff',
+                fontWeight: 700,
+                padding: '0.5rem 1rem',
+                fontSize: '0.88rem',
+              }}
+              title="Auto-fill random employee from OrangeHRM live directory"
+            >
+              <i className={`fa-solid ${isAutofilling ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`}></i>{' '}
+              {isAutofilling ? 'Fetching...' : '⚡ Auto-Fill from OrangeHRM'}
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowHRInitiateForm(!showHRInitiateForm)}
+              style={{
+                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                borderColor: 'transparent',
+                fontWeight: 700,
+                padding: '0.5rem 1.15rem',
+                fontSize: '0.88rem',
+              }}
+            >
+              <i className={`fa-solid ${showHRInitiateForm ? 'fa-xmark' : 'fa-plus'}`}></i>{' '}
+              {showHRInitiateForm ? 'Close Resignation Form' : 'Initiate Resignation'}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* HR Initiate Resignation Card */}
       {showHRInitiateForm && (
-        <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff', padding: '1.5rem' }}>
-          <h3 style={{ margin: '0 0 1rem 0', color: '#0f172a', fontSize: '1rem' }}>
-            <i className="fa-solid fa-file-signature text-accent"></i> Submit Resignation on Behalf of Employee
-          </h3>
+        <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff', padding: '1.5rem', borderLeft: '4px solid #0284c7' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div>
+              <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fa-solid fa-file-signature" style={{ color: '#0284c7' }}></i> Submit Resignation on Behalf of Employee
+              </h3>
+              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                Populate employee details to trigger ServiceNow hardware incident and multi-system offboarding.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleAutofillOrangeHRM}
+              disabled={isAutofilling}
+              style={{
+                borderColor: '#0284c7',
+                color: '#0284c7',
+                background: '#f0f9ff',
+                fontWeight: 700,
+                padding: '0.4rem 0.85rem',
+                fontSize: '0.82rem',
+              }}
+              title="Pull random employee from OrangeHRM database"
+            >
+              <i className={`fa-solid ${isAutofilling ? 'fa-spinner fa-spin' : 'fa-dice'}`}></i>{' '}
+              {isAutofilling ? 'Loading...' : '⚡ Random OrangeHRM Employee'}
+            </button>
+          </div>
+
+          {activeOrangeEmp && (
+            <div style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              padding: '0.65rem 1rem',
+              marginBottom: '1.2rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.5rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700, padding: '0.25rem 0.6rem' }}>
+                  <i className="fa-solid fa-building-user"></i> OrangeHRM Live Record
+                </span>
+                <span style={{ fontSize: '0.85rem', color: '#334155', fontWeight: 600 }}>
+                  {activeOrangeEmp.fullName} ({autofillEmpId})
+                </span>
+                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  • {activeOrangeEmp.jobTitle || activeOrangeEmp.department}
+                </span>
+              </div>
+              <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 600 }}>
+                <i className="fa-solid fa-circle-check"></i> Direct Synced
+              </span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmitResignation}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
               <div>
