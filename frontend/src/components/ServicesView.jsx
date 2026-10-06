@@ -599,26 +599,6 @@ export default function ServicesView() {
                           )}
                         </button>
                       )}
-
-                      <a
-                        href="http://10.41.5.39/orangehrm/web/index.php/leave/viewLeaveList"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-secondary btn-sm"
-                        style={{
-                          padding: '4px 8px',
-                          fontSize: '11px',
-                          borderRadius: '6px',
-                          textDecoration: 'none',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                        title="Open OrangeHRM Leave Module"
-                      >
-                        <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '10px' }}></i>
-                        <span>OrangeHRM Leave</span>
-                      </a>
                     </div>
                   </div>
                 </li>
