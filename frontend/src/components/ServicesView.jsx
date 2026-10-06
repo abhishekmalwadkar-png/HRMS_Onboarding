@@ -298,41 +298,37 @@ export default function ServicesView() {
 
   const [isClearingLogs, setIsClearingLogs] = useState(false);
 
-  // Clear all leave requests/logs from database
+  // Clear all leave requests/logs immediately without popup
   const handleClearLeaveLogs = async () => {
-    if (!window.confirm('Are you sure you want to clear all leave request logs?')) return;
+    // Clear UI state immediately with zero delay
+    setLeaveRequests([]);
+    showToast('Leave request logs deleted.', 'info');
     setIsClearingLogs(true);
     try {
-      const res = await fetch('/api/leave/clear', {
+      await fetch('/api/leave/clear', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      if (res.ok) {
-        setLeaveRequests([]);
-        showToast('All leave request logs have been deleted.', 'info');
-      }
     } catch (err) {
-      console.warn('Error clearing leave logs:', err);
-      setLeaveRequests([]);
-      showToast('Leave request logs cleared.', 'info');
+      console.warn('Error clearing leave logs on server:', err);
     } finally {
       setIsClearingLogs(false);
     }
   };
 
-  // Delete single leave log
+  // Delete single leave log immediately without popup
   const handleDeleteSingleLog = async (id, e) => {
     e?.stopPropagation();
+    setLeaveRequests((prev) => prev.filter((r) => r.id !== id));
+    showToast('Leave request log deleted.', 'info');
     try {
       await fetch('/api/leave/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
-      setLeaveRequests((prev) => prev.filter((r) => r.id !== id));
-      showToast('Leave request log deleted.', 'info');
     } catch (err) {
-      setLeaveRequests((prev) => prev.filter((r) => r.id !== id));
+      console.warn('Error deleting leave log on server:', err);
     }
   };
 
