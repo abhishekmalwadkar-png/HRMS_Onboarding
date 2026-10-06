@@ -59,6 +59,7 @@ export default function ServicesView() {
     }
   ]);
 
+  const [empNumber, setEmpNumber] = useState(41);
   const [employeeName, setEmployeeName] = useState(currentUser?.name?.split(' (')[0] || 'Karthik Swaminathan');
   const [leaveType, setLeaveType] = useState('Casual Leave');
   const [fromDate, setFromDate] = useState('2026-11-04');
@@ -67,6 +68,8 @@ export default function ServicesView() {
   const [leaveError, setLeaveError] = useState('');
   const [leaveResult, setLeaveResult] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAutofilling, setIsAutofilling] = useState(false);
+  const [orangeHrmEmployees, setOrangeHrmEmployees] = useState([]);
   const [approvingLeaveId, setApprovingLeaveId] = useState(null);
 
   const [chatInput, setChatInput] = useState('');
@@ -78,7 +81,7 @@ export default function ServicesView() {
 
   const requestedDays = daysBetween(fromDate, toDate);
 
-  // Fetch leave requests from backend
+  // Fetch leave requests and OrangeHRM employees from backend
   const fetchLeaves = useCallback(async () => {
     try {
       const res = await fetch('/api/leave/requests');
@@ -93,9 +96,85 @@ export default function ServicesView() {
     }
   }, []);
 
+  const fetchOrangeHrmEmployees = useCallback(async () => {
+    try {
+      const res = await fetch('/api/orangehrm/employees');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setOrangeHrmEmployees(data);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not fetch OrangeHRM employees:', e);
+    }
+  }, []);
+
   useEffect(() => {
     fetchLeaves();
-  }, [fetchLeaves]);
+    fetchOrangeHrmEmployees();
+  }, [fetchLeaves, fetchOrangeHrmEmployees]);
+
+  // Autofill form using live OrangeHRM employee database
+  const handleAutofillFromOrangeHRM = async (selectedEmp = null) => {
+    setIsAutofilling(true);
+    try {
+      let emp = selectedEmp;
+      if (!emp) {
+        // Fetch random employee from OrangeHRM API
+        const res = await fetch('/api/orangehrm/random-employee');
+        if (res.ok) {
+          emp = await res.json();
+        }
+      }
+
+      if (!emp && orangeHrmEmployees.length > 0) {
+        emp = orangeHrmEmployees[Math.floor(Math.random() * orangeHrmEmployees.length)];
+      }
+
+      if (emp) {
+        const name = emp.fullName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Karthik Swaminathan';
+        const num = emp.empNumber || 41;
+        setEmployeeName(name);
+        setEmpNumber(num);
+
+        // Random leave details
+        const leaveTypes = ['Casual Leave', 'Sick Leave', 'Privilege Leave'];
+        const sampleReasons = [
+          'Personal family event and travel',
+          'Attending doctor appointment and medical checkup',
+          'Family wedding function out of town',
+          'Home renovation and personal errands',
+          'Urgent domestic commitments'
+        ];
+        const randomType = leaveTypes[Math.floor(Math.random() * leaveTypes.length)];
+        const randomReason = sampleReasons[Math.floor(Math.random() * sampleReasons.length)];
+        
+        // Generate upcoming dates (e.g. 2-5 weeks from now)
+        const today = new Date();
+        const startOffset = Math.floor(Math.random() * 15) + 5;
+        const dur = Math.floor(Math.random() * 3) + 1;
+        const start = new Date(today.getTime() + startOffset * 86400000);
+        const end = new Date(start.getTime() + (dur - 1) * 86400000);
+
+        const startIso = start.toISOString().split('T')[0];
+        const endIso = end.toISOString().split('T')[0];
+
+        setLeaveType(randomType);
+        setFromDate(startIso);
+        setToDate(endIso);
+        setReason(randomReason);
+        setLeaveError('');
+
+        showToast(`Autofilled from OrangeHRM: ${name} (Emp #${num})`, 'success');
+      }
+    } catch (err) {
+      console.warn('Autofill error:', err);
+      showToast('Autofilled standard employee leave data', 'info');
+    } finally {
+      setIsAutofilling(false);
+    }
+  };
 
   // Scroll only the chat log itself
   useEffect(() => {
@@ -115,7 +194,7 @@ export default function ServicesView() {
 
     const payload = {
       employeeName: employeeName.trim() || 'Karthik Swaminathan',
-      empNumber: 41,
+      empNumber: empNumber || 41,
       leaveType,
       type: leaveType,
       fromDate,
@@ -130,7 +209,7 @@ export default function ServicesView() {
       const res = await fetch('/api/leave/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: jsonSafeStringify(payload)
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (data.requests) {
@@ -273,7 +352,87 @@ export default function ServicesView() {
 
       <motion.div className="panel-grid" variants={staggerContainer} initial="hidden" animate="show">
         {/* Leave request */}
-        <Card title="Request leave" icon="fa-solid fa-calendar-plus">
+        <Card
+          title="Request leave"
+          icon="fa-solid fa-calendar-plus"
+          actions={
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => handleAutofillFromOrangeHRM()}
+              disabled={isAutofilling}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'linear-gradient(135deg, rgba(234, 88, 12, 0.12), rgba(249, 115, 22, 0.06))',
+                borderColor: '#ea580c',
+                color: '#ea580c',
+                fontWeight: '600',
+                padding: '5px 12px',
+                borderRadius: '8px'
+              }}
+              title="Auto-fill form from OrangeHRM employee database"
+            >
+              <i className={`fa-solid ${isAutofilling ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`}></i>
+              <span>{isAutofilling ? 'Autofilling...' : 'Autofill (OrangeHRM)'}</span>
+            </button>
+          }
+        >
+          {/* Quick Select & Workflow Indicator Bar */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              background: 'var(--bg-surface-elevated, #f8fafc)',
+              border: '1px solid var(--border-subtle, #e2e8f0)',
+              marginBottom: '16px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 240px' }}>
+              <i className="fa-solid fa-users" style={{ color: '#ea580c', fontSize: '13px' }}></i>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary, #475569)', whiteSpace: 'nowrap' }}>
+                Select Employee:
+              </span>
+              <select
+                className="form-control"
+                style={{ fontSize: '12.5px', padding: '4px 8px', height: '32px' }}
+                value={empNumber}
+                onChange={(e) => {
+                  const num = parseInt(e.target.value, 10);
+                  const found = orangeHrmEmployees.find((x) => x.empNumber === num);
+                  if (found) {
+                    handleAutofillFromOrangeHRM(found);
+                  }
+                }}
+              >
+                {orangeHrmEmployees.length > 0 ? (
+                  orangeHrmEmployees.map((emp) => (
+                    <option key={emp.empNumber} value={emp.empNumber}>
+                      {emp.fullName} ({emp.department || 'Engineering'} · Emp #{emp.empNumber})
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value={41}>Karthik Swaminathan (Emp #41)</option>
+                    <option value={34}>Samantha Chang (Emp #34)</option>
+                    <option value={33}>Marcus Aurelius (Emp #33)</option>
+                  </>
+                )}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#059669', fontWeight: '600' }}>
+              <i className="fa-solid fa-robot"></i>
+              <span>T4 RPA Workflows Active</span>
+            </div>
+          </div>
+
           <AnimatePresence>
             {leaveResult && (
               <StatusBanner tone="success" title="Leave request status" onDismiss={() => setLeaveResult(null)}>
@@ -284,7 +443,7 @@ export default function ServicesView() {
 
           <form onSubmit={handleApplyLeave} className="stack-form" noValidate>
             <div className="form-grid-2">
-              <Field id="leave-employee" label="Employee Name" required>
+              <Field id="leave-employee" label={`Employee Name (Emp #${empNumber})`} required>
                 <input
                   type="text"
                   className="form-control"

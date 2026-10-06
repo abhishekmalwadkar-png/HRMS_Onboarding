@@ -665,6 +665,40 @@ class AutomationEdgeClient:
         print(f"[AE RPA] Triggering 'HR Send Mail' on T4 with subject='{subject}'...")
         return self.execute_workflow_sync("HR Send Mail", params, max_wait_seconds=45)
 
+    # -------------------------------------------------------------------------
+    # 14. Apply Leave Workflow: "HR Demo Apply Leave"
+    # Parameters: emp_Id
+    # -------------------------------------------------------------------------
+    def trigger_apply_leave(self, emp_id):
+        """
+        Executes 'HR Demo Apply Leave' RPA workflow on AutomationEdge T4 server.
+        Parameters: emp_Id
+        """
+        clean_id = str(emp_id or "41").replace("EMP-", "").strip()
+        params = {
+            "emp_Id": clean_id,
+            "empId": clean_id
+        }
+        print(f"[AE RPA] Triggering 'HR Demo Apply Leave' on T4 for emp_Id='{clean_id}'...")
+        return self.execute_workflow_sync("HR Demo Apply Leave", params, max_wait_seconds=45)
+
+    # -------------------------------------------------------------------------
+    # 15. Leave Approval Workflow: "HR Demo Leave Approval"
+    # Parameters: emp_Id
+    # -------------------------------------------------------------------------
+    def trigger_leave_approval(self, emp_id):
+        """
+        Executes 'HR Demo Leave Approval' RPA workflow on AutomationEdge T4 server.
+        Parameters: emp_Id
+        """
+        clean_id = str(emp_id or "41").replace("EMP-", "").strip()
+        params = {
+            "emp_Id": clean_id,
+            "empId": clean_id
+        }
+        print(f"[AE RPA] Triggering 'HR Demo Leave Approval' on T4 for emp_Id='{clean_id}'...")
+        return self.execute_workflow_sync("HR Demo Leave Approval", params, max_wait_seconds=45)
+
     def trigger_create_ad_account(self, data):
         full_name = data.get("fullName") or data.get("candidateName") or "New Employee"
         parts = full_name.strip().split(None, 1)

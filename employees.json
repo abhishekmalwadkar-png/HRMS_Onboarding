@@ -438,7 +438,34 @@
       "emailRecipient": "abhishek.malwadkar@valuedx.com"
     }
   ],
-  "leaveRequests": [],
+  "leaveRequests": [
+    {
+      "id": "LR-301",
+      "employeeName": "Karthik Swaminathan",
+      "empNumber": 41,
+      "type": "Privilege Leave",
+      "from": "2026-10-10",
+      "to": "2026-10-14",
+      "days": 5,
+      "reason": "Annual family travel",
+      "status": "Approved",
+      "orangeHrmAssigned": true,
+      "leaveId": "1"
+    },
+    {
+      "id": "LR-302",
+      "employeeName": "Samantha Chang",
+      "empNumber": 34,
+      "type": "Casual Leave",
+      "from": "2026-10-24",
+      "to": "2026-10-24",
+      "days": 1,
+      "reason": "Personal errands",
+      "status": "Approved",
+      "orangeHrmAssigned": true,
+      "leaveId": "2"
+    }
+  ],
   "exitRequests": [
     {
       "id": "EXIT-758",

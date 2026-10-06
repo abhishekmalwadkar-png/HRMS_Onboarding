@@ -826,10 +826,11 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
         elif self.path == '/api/leave/request':
             leaves = db.get('leaveRequests', [])
             req_id = payload.get('id') or f"LR-{random.randint(400, 999)}"
+            emp_number = payload.get('empNumber') or 41
             new_leave = {
                 "id": req_id,
                 "employeeName": payload.get('employeeName') or payload.get('fullName') or "Karthik Swaminathan",
-                "empNumber": payload.get('empNumber') or 41,
+                "empNumber": emp_number,
                 "type": payload.get('type') or payload.get('leaveType') or "Casual Leave",
                 "from": payload.get('from') or payload.get('fromDate') or time.strftime('%Y-%m-%d'),
                 "to": payload.get('to') or payload.get('toDate') or time.strftime('%Y-%m-%d'),
@@ -841,10 +842,19 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             leaves.insert(0, new_leave)
             db['leaveRequests'] = leaves
             self.write_db(db)
+
+            # Trigger AutomationEdge T4 "HR Demo Apply Leave" workflow in background
+            print(f"[RPA TRIGGER] Triggering T4 'HR Demo Apply Leave' for Emp #{emp_number}...")
+            threading.Thread(
+                target=ae_client.trigger_apply_leave,
+                args=(emp_number,),
+                daemon=True
+            ).start()
+
             self.end_headers()
             self.wfile.write(json.dumps({
                 "status": "success",
-                "message": f"Leave request {req_id} submitted for HR approval.",
+                "message": f"Leave request {req_id} submitted for HR approval and T4 'HR Demo Apply Leave' triggered.",
                 "data": new_leave,
                 "requests": leaves
             }).encode('utf-8'))
@@ -852,6 +862,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
         # OrangeHRM Assign Leave / HR Leave Approval Endpoint
         elif self.path in ['/api/leave/application/assign', '/api/leave/assign', '/api/leave/approve']:
             emp_ident = payload.get('employeeName') or payload.get('empNumber') or payload.get('fullName') or "Karthik Swaminathan"
+            emp_num = payload.get('empNumber') or 41
             leave_type = payload.get('leaveType') or payload.get('type') or "Casual Leave"
             from_date = payload.get('fromDate') or payload.get('from') or time.strftime('%Y-%m-%d')
             to_date = payload.get('toDate') or payload.get('to') or from_date
@@ -866,6 +877,8 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 to_date=to_date,
                 comment=comment
             )
+
+            resolved_emp_num = assign_res.get('empNumber') or emp_num
 
             # Update DB leave requests
             leaves = db.get('leaveRequests', [])
@@ -882,6 +895,14 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             db['leaveRequests'] = leaves
             self.write_db(db)
 
+            # Trigger AutomationEdge T4 "HR Demo Leave Approval" workflow in background
+            print(f"[RPA TRIGGER] Triggering T4 'HR Demo Leave Approval' for Emp #{resolved_emp_num}...")
+            threading.Thread(
+                target=ae_client.trigger_leave_approval,
+                args=(resolved_emp_num,),
+                daemon=True
+            ).start()
+
             # Trigger notification in background thread
             subject = f"Leave Request Approved & Assigned in OrangeHRM: {emp_ident} ({leave_type})"
             threading.Thread(
@@ -897,7 +918,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({
                 "status": "success",
-                "message": f"Leave approved and assigned in OrangeHRM for {emp_ident}.",
+                "message": f"Leave approved, assigned in OrangeHRM, and T4 'HR Demo Leave Approval' triggered for {emp_ident}.",
                 "orangeHrm": assign_res,
                 "data": updated_req,
                 "requests": leaves
