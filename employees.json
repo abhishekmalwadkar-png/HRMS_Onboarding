@@ -440,6 +440,21 @@
   ],
   "leaveRequests": [
     {
+      "id": "LR-564",
+      "employeeName": "Siddharth Mehta",
+      "empNumber": 32,
+      "type": "Casual Leave",
+      "from": "2026-10-22",
+      "to": "2026-10-31",
+      "days": 10,
+      "reason": "Urgent domestic commitments",
+      "status": "Approved",
+      "createdAt": "2026-10-06 14:40:10",
+      "orangeHrmAssigned": true,
+      "orangeHrmLeaveId": 5,
+      "approvedAt": "2026-10-06 14:40:36"
+    },
+    {
       "id": "LR-301",
       "employeeName": "Karthik Swaminathan",
       "empNumber": 41,

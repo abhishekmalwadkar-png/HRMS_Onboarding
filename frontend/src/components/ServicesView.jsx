@@ -297,6 +297,46 @@ export default function ServicesView() {
     }
   };
 
+  const [isClearingLogs, setIsClearingLogs] = useState(false);
+
+  // Clear all leave requests/logs from database
+  const handleClearLeaveLogs = async () => {
+    if (!window.confirm('Are you sure you want to clear all leave request logs?')) return;
+    setIsClearingLogs(true);
+    try {
+      const res = await fetch('/api/leave/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (res.ok) {
+        setLeaveRequests([]);
+        showToast('All leave request logs have been deleted.', 'info');
+      }
+    } catch (err) {
+      console.warn('Error clearing leave logs:', err);
+      setLeaveRequests([]);
+      showToast('Leave request logs cleared.', 'info');
+    } finally {
+      setIsClearingLogs(false);
+    }
+  };
+
+  // Delete single leave log
+  const handleDeleteSingleLog = async (id, e) => {
+    e?.stopPropagation();
+    try {
+      await fetch('/api/leave/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      setLeaveRequests((prev) => prev.filter((r) => r.id !== id));
+      showToast('Leave request log deleted.', 'info');
+    } catch (err) {
+      setLeaveRequests((prev) => prev.filter((r) => r.id !== id));
+    }
+  };
+
   const sendMessage = (text) => {
     const userMsg = text.trim();
     if (!userMsg) return;
@@ -491,11 +531,38 @@ export default function ServicesView() {
             </div>
           </form>
 
-          <h3 className="subsection-title" style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 className="subsection-title" style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
             <span>Recent requests & OrangeHRM Sync</span>
-            <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '600' }}>
-              <i className="fa-solid fa-sync"></i> Live Sync
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <i className="fa-solid fa-sync"></i> Live Sync
+              </span>
+              {leaveRequests.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearLeaveLogs}
+                  disabled={isClearingLogs}
+                  className="btn btn-secondary btn-sm"
+                  style={{
+                    padding: '3px 9px',
+                    fontSize: '11px',
+                    borderRadius: '6px',
+                    color: '#ef4444',
+                    borderColor: '#fca5a5',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                  title="Clear all leave request logs"
+                >
+                  <i className={`fa-solid ${isClearingLogs ? 'fa-spinner fa-spin' : 'fa-trash-can'}`}></i>
+                  <span>Delete logs</span>
+                </button>
+              )}
+            </div>
           </h3>
 
           <ul className="request-list">
@@ -530,6 +597,24 @@ export default function ServicesView() {
                           r.status
                         )}
                       </span>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteSingleLog(r.id, e)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#94a3b8',
+                          cursor: 'pointer',
+                          padding: '3px 6px',
+                          fontSize: '12px',
+                          borderRadius: '4px'
+                        }}
+                        title="Delete this request log"
+                        onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
+                      >
+                        <i className="fa-regular fa-trash-can"></i>
+                      </button>
                     </div>
                   </div>
 

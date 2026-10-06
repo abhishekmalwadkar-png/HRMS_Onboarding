@@ -916,12 +916,28 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             ).start()
 
             self.end_headers()
+        # Clear All Leave Requests / Logs
+        elif self.path in ['/api/leave/clear', '/api/leave/requests/clear', '/api/leaves/clear']:
+            db['leaveRequests'] = []
+            self.write_db(db)
+            self.end_headers()
             self.wfile.write(json.dumps({
                 "status": "success",
-                "message": f"Leave approved, assigned in OrangeHRM, and T4 'HR Demo Leave Approval' triggered for {emp_ident}.",
-                "orangeHrm": assign_res,
-                "data": updated_req,
-                "requests": leaves
+                "message": "All leave request logs cleared",
+                "data": []
+            }).encode('utf-8'))
+
+        # Delete Single Leave Request
+        elif self.path in ['/api/leave/delete', '/api/leave/requests/delete']:
+            target_id = payload.get('id')
+            leaves = [l for l in db.get('leaveRequests', []) if l.get('id') != target_id]
+            db['leaveRequests'] = leaves
+            self.write_db(db)
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "message": f"Leave request {target_id} deleted",
+                "data": leaves
             }).encode('utf-8'))
 
         else:
