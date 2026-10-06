@@ -545,9 +545,10 @@ class ServiceNowClient:
                 print(f"[ServiceNow Incident Error] {e}")
 
         # -------------------------------------------------------------------------
-        # STEP 7: Generate Official Offer Letter PDF & Dispatch Email to abhishek.malwadkar@valuedx.com
+        # STEP 7: Generate Official Offer Letter PDF & Dispatch Email
         # -------------------------------------------------------------------------
-        print(f"\n[APPROVAL FLOW - STEP 7/7] Generating Offer Letter PDF and dispatching email to abhishek.malwadkar@valuedx.com for {emp_name}...")
+        hr_recip = os.environ.get('HR_NOTIFICATION_RECIPIENT', '')
+        print(f"\n[APPROVAL FLOW - STEP 7/7] Generating Offer Letter PDF and dispatching email to {hr_recip} for {emp_name}...")
         offer_letter_result = {}
         try:
             sal = employee_data.get('salary') or employee_data.get('annualCtc') or '₹32,00,000 INR / annum (₹32.0 LPA)'
@@ -560,12 +561,12 @@ class ServiceNowClient:
                 'perfBonus': '₹4,00,000 INR Annual Target Evaluation',
                 'joiningDate': employee_data.get('startDate', '2026-10-15'),
                 'hardware': hardware,
-                'email': 'abhishek.malwadkar@valuedx.com'
+                'email': hr_recip
             }
             gen_res = generate_offer_letter_pdf(candidate_offer_data)
             pdf_file_path = gen_res[0] if isinstance(gen_res, tuple) else gen_res
-            offer_letter_result = office365_client.send_offer_letter_email(candidate_offer_data, pdf_file_path, recipient_email="abhishek.malwadkar@valuedx.com")
-            print(f"[APPROVAL FLOW - STEP 7/7 COMPLETE] Offer letter PDF dispatched to abhishek.malwadkar@valuedx.com ({offer_letter_result.get('status')})")
+            offer_letter_result = office365_client.send_offer_letter_email(candidate_offer_data, pdf_file_path, recipient_email=hr_recip)
+            print(f"[APPROVAL FLOW - STEP 7/7 COMPLETE] Offer letter PDF dispatched to {hr_recip} ({offer_letter_result.get('status')})")
         except Exception as off_err:
             print(f"[APPROVAL FLOW - STEP 7/7 ERROR] Offer Letter Email: {off_err}")
             offer_letter_result = {"status": "error", "message": str(off_err)}

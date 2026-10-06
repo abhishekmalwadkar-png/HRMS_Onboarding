@@ -12,36 +12,70 @@ from dotenv import load_dotenv
 # Load environment configuration
 load_dotenv(override=True)
 
+import base64
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 
+def decode_secret(val: str) -> str:
+    """
+    Decodes an obfuscated/encrypted secret if formatted as ENC(...), enc:..., b64:..., 
+    or base64-encoded string. Falls back to plain text if not encoded.
+    """
+    if not val:
+        return ""
+    val = str(val).strip().strip('"').strip("'")
+    if val.startswith("ENC(") and val.endswith(")"):
+        inner = val[4:-1].strip()
+        try:
+            return base64.b64decode(inner.encode("utf-8")).decode("utf-8")
+        except Exception:
+            return inner
+    if val.startswith("enc:") or val.startswith("b64:") or val.startswith("base64:"):
+        inner = val.split(":", 1)[1].strip()
+        try:
+            return base64.b64decode(inner.encode("utf-8")).decode("utf-8")
+        except Exception:
+            return inner
+    if (val.endswith("==") or val.endswith("=")) and len(val) >= 8:
+        try:
+            decoded = base64.b64decode(val.encode("utf-8")).decode("utf-8")
+            if decoded.isprintable() and len(decoded) > 0:
+                return decoded
+        except Exception:
+            pass
+    return val
+
 class Office365Client:
     def __init__(self):
-        self.client_id = os.getenv("O365_CLIENT_ID", "fbf2d69f-1a01-4141-b943-543285bbc5fe")
-        self.client_secret = os.getenv("O365_CLIENT_SECRET", "mM88Q~PJp2~wpmlFZD6jZSuVv7vUTHAj8HCj~dcA")
-        self.tenant_id = os.getenv("O365_TENANT_ID", "6b62a1c7-55b4-42ce-8c14-162851182af0")
-        self.default_domain = os.getenv("O365_DEFAULT_DOMAIN", "automationedge.ai")
-        self.sender_email = os.getenv("SMTP_FROM_EMAIL", "abhishekmalwadkar@gmail.com")
-        self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-        self.smtp_port = int(os.getenv("SMTP_PORT", 587))
-        self.smtp_user = os.getenv("SMTP_USERNAME", "abhishekmalwadkar@gmail.com")
-        self.smtp_pass = os.getenv("SMTP_PASSWORD", "faahtjbqrgdqhmsx").replace(" ", "")
-        self.default_recipient = os.getenv("HR_NOTIFICATION_RECIPIENT", "abhishek.malwadkar@valuedx.com")
-        self.sender_name = os.getenv("SMTP_SENDER_NAME", "Automation Suite")
-        self.refresh_token = os.getenv("O365_REFRESH_TOKEN", "")
+        self.reload_config()
         self.graph_base_url = "https://graph.microsoft.com/v1.0"
-
         self._cached_token = None
         self._token_expiry = 0
+
+    def reload_config(self):
+        load_dotenv(override=True)
+        self.client_id = os.getenv("O365_CLIENT_ID", "")
+        self.client_secret = os.getenv("O365_CLIENT_SECRET", "")
+        self.tenant_id = os.getenv("O365_TENANT_ID", "")
+        self.default_domain = os.getenv("O365_DEFAULT_DOMAIN", "automationedge.ai")
+        self.sender_email = os.getenv("SMTP_FROM_EMAIL", "")
+        self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+        self.smtp_port = int(os.getenv("SMTP_PORT", 587))
+        self.smtp_user = os.getenv("SMTP_USERNAME", "")
+        self.smtp_pass = decode_secret(os.getenv("SMTP_PASSWORD", "")).replace(" ", "")
+        self.default_recipient = os.getenv("HR_NOTIFICATION_RECIPIENT", "")
+        self.sender_name = os.getenv("SMTP_SENDER_NAME", "Automation Suite")
+        self.refresh_token = os.getenv("O365_REFRESH_TOKEN", "")
 
     def _dispatch_mail(self, subject: str, html_body: str, recipient_email: str = None, file_path: str = "", log_title: str = "Email") -> dict:
         """
         1. Sends rich HTML formatted email from Backend via Gmail SMTP with attachment support.
         2. Triggers AutomationEdge T4 RPA Workflow 'HR Send Mail' passing 'subject'.
         """
-        target_to = (recipient_email or self.default_recipient or "abhishek.malwadkar@valuedx.com").strip()
+        self.reload_config()
+        target_to = (recipient_email or self.default_recipient).strip()
         smtp_success = False
         smtp_msg = ""
         ae_res = {}
@@ -358,10 +392,10 @@ class Office365Client:
                 "message": f"Exception during Office 365 user deletion: {str(ex)}"
             }
 
-    def send_offboarding_email(self, exit_data: dict, recipient_email: str = "abhishek.malwadkar@valuedx.com") -> dict:
+    def send_offboarding_email(self, exit_data: dict, recipient_email: str = None) -> dict:
         """
-        Sends an automated Offboarding & Clearance Confirmation Email via Microsoft Graph API.
-        Default recipient is set to abhishek.malwadkar@valuedx.com for HR and candidate notification.
+        Sends an automated Offboarding & Clearance Confirmation Email.
+        Recipient defaults dynamically to HR_NOTIFICATION_RECIPIENT from .env.
         """
         try:
             token = self.get_access_token()
@@ -456,12 +490,11 @@ class Office365Client:
                 "message": str(e)
             }
 
-    def send_offer_letter_email(self, candidate_data: dict, pdf_path: str, recipient_email: str = "abhishek.malwadkar@valuedx.com") -> dict:
+    def send_offer_letter_email(self, candidate_data: dict, pdf_path: str, recipient_email: str = None) -> dict:
         """
-        Sends the generated PDF Offer Letter via Microsoft Graph API with base64 PDF attachment.
-        Default recipient is abhishek.malwadkar@valuedx.com.
+        Sends the generated PDF Offer Letter via Gmail SMTP / T4 RPA workflow with PDF attachment.
+        Recipient defaults dynamically to HR_NOTIFICATION_RECIPIENT from .env.
         """
-        import base64
         try:
             token = self.get_access_token()
             headers = {
@@ -581,10 +614,10 @@ class Office365Client:
                 "message": str(e)
             }
 
-    def send_interview_email(self, candidate_data: dict, meeting_link: str, recipient_email: str = "abhishek.malwadkar@valuedx.com") -> dict:
+    def send_interview_email(self, candidate_data: dict, meeting_link: str, recipient_email: str = None) -> dict:
         """
-        Sends an automated Google Meet Interview Schedule Email via Microsoft Graph API.
-        Default recipient is set to abhishek.malwadkar@valuedx.com.
+        Sends an automated Google Meet Interview Schedule Email via Gmail SMTP / T4 RPA workflow.
+        Recipient defaults dynamically to HR_NOTIFICATION_RECIPIENT from .env.
         """
         try:
             token = self.get_access_token()
@@ -716,12 +749,11 @@ class Office365Client:
                 "message": str(e)
             }
 
-    def send_relieving_letter_email(self, employee_data: dict, pdf_path: str, recipient_email: str = "abhishek.malwadkar@valuedx.com") -> dict:
+    def send_relieving_letter_email(self, employee_data: dict, pdf_path: str, recipient_email: str = None) -> dict:
         """
-        Sends the generated PDF Relieving Letter & Experience Certificate via Microsoft Graph API with base64 PDF attachment.
-        Default recipient is abhishek.malwadkar@valuedx.com.
+        Sends the generated PDF Relieving Letter & Experience Certificate via Gmail SMTP / T4 RPA workflow with attachment.
+        Recipient defaults dynamically to HR_NOTIFICATION_RECIPIENT from .env.
         """
-        import base64
         try:
             token = self.get_access_token()
             headers = {
@@ -838,10 +870,10 @@ class Office365Client:
                 "message": str(e)
             }
 
-    def send_leave_approval_email(self, leave_data: dict, recipient_email: str = "abhishek.malwadkar@valuedx.com") -> dict:
+    def send_leave_approval_email(self, leave_data: dict, recipient_email: str = None) -> dict:
         """
         Sends an official formal Leave Approval confirmation email with rich corporate HTML formatting.
-        Dispatches via Gmail SMTP and triggers T4 'HR Send Mail' RPA workflow.
+        Recipient defaults dynamically to HR_NOTIFICATION_RECIPIENT from .env.
         """
         try:
             emp_name = leave_data.get('employeeName') or leave_data.get('fullName') or "Valued Employee"

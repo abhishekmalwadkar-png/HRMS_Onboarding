@@ -261,7 +261,7 @@ def send_offer_email(candidate_data, pdf_path):
     """
     try:
         from office365_client import office365_client
-        recipient = candidate_data.get('email', 'abhishek.malwadkar@valuedx.com')
+        recipient = candidate_data.get('email') or os.environ.get('HR_NOTIFICATION_RECIPIENT', '')
         return office365_client.send_offer_letter_email(candidate_data, pdf_path, recipient_email=recipient)
     except Exception as e:
         print(f"[Offer Email Exception]: {e}")

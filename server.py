@@ -229,7 +229,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                         offer_info = approve_result.get('offerLetter', {})
                         if offer_info.get('status') == 'success' or offer_info.get('sent'):
                             emp['offerLetterEmailed'] = True
-                            emp['offerLetterRecipient'] = offer_info.get('recipient', 'abhishek.malwadkar@valuedx.com')
+                            emp['offerLetterRecipient'] = offer_info.get('recipient') or os.environ.get('HR_NOTIFICATION_RECIPIENT', '')
                             emp['offerLetterPdf'] = offer_info.get('pdfFilename')
 
                         break
@@ -442,14 +442,15 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "skills": payload.get('skills') or ["Python", "Cloud Architecture", "Generative AI"]
             }
 
-            # 1. Send Google Meet Interview Email via Microsoft Graph API to abhishek.malwadkar@valuedx.com
+            # 1. Send Google Meet Interview Email
             email_res = {}
+            recip = payload.get('email') or payload.get('recipientEmail') or os.environ.get('HR_NOTIFICATION_RECIPIENT', '')
             try:
-                print(f"[RECRUITMENT] Sending Google Meet Interview Invitation for {cand_name} to abhishek.malwadkar@valuedx.com...")
+                print(f"[RECRUITMENT] Sending Google Meet Interview Invitation for {cand_name} to {recip}...")
                 email_res = office365_client.send_interview_email(
                     candidate_data=interview_payload,
                     meeting_link=meet_link,
-                    recipient_email="abhishek.malwadkar@valuedx.com"
+                    recipient_email=recip
                 )
             except Exception as mail_err:
                 print(f"[RECRUITMENT] Email Dispatch Error: {mail_err}")
@@ -474,7 +475,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cand['interviewType'] = int_type
                     cand['interviewScheduled'] = True
                     cand['emailSent'] = True
-                    cand['emailRecipient'] = "abhishek.malwadkar@valuedx.com"
+                    cand['emailRecipient'] = recip
                     matched = True
                     break
             
@@ -724,10 +725,11 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             # 3. Direct OrangeHRM Employee Profile Deletion
             orangehrm_result = orangehrm_client.delete_employee_profile(emp_ident)
 
-            # 4. Send Clearance Email Notification to abhishek.malwadkar@valuedx.com
+            # 4. Send Clearance Email Notification
+            recip = payload.get('recipientEmail') or os.environ.get('HR_NOTIFICATION_RECIPIENT', '')
             email_result = office365_client.send_offboarding_email(
                 {"empName": emp_ident, "department": payload.get("department", "Engineering"), "lastWorkingDay": payload.get("lastWorkingDay", "2026-11-30")},
-                recipient_email="abhishek.malwadkar@valuedx.com"
+                recipient_email=recip
             )
 
             # Update status in db
@@ -794,8 +796,8 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             # 1. Generate PDF Relieving & Experience Letter
             pdf_path = generate_relieving_letter_pdf(emp_data)
 
-            # 2. Send Relieving Letter Email to abhishek.malwadkar@valuedx.com
-            recipient = payload.get('recipientEmail') or "abhishek.malwadkar@valuedx.com"
+            # 2. Send Relieving Letter Email
+            recipient = payload.get('recipientEmail') or os.environ.get('HR_NOTIFICATION_RECIPIENT', '')
             email_res = office365_client.send_relieving_letter_email(emp_data, pdf_path, recipient_email=recipient)
 
             # 3. Update DB
@@ -924,10 +926,11 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                         'reason': c_text,
                         'approvedAt': time.strftime('%B %d, %Y at %I:%M %p')
                     }
-                    print(f"\n[EMAIL 3RD] Dispatching formal Leave Approval notification for {e_ident} to abhishek.malwadkar@valuedx.com...")
+                    hr_recip = os.environ.get('HR_NOTIFICATION_RECIPIENT', '')
+                    print(f"\n[EMAIL 3RD] Dispatching formal Leave Approval notification for {e_ident} to {hr_recip}...")
                     office365_client.send_leave_approval_email(
                         leave_data=leave_email_data,
-                        recipient_email="abhishek.malwadkar@valuedx.com"
+                        recipient_email=hr_recip
                     )
                 except Exception as ex:
                     print(f"[LEAVE ASYNC ERROR]: {ex}")
