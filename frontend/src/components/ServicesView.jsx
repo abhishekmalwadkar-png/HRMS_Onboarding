@@ -239,61 +239,54 @@ export default function ServicesView() {
     }
   };
 
-  // 1-Click Approve Leave in OrangeHRM via /api/leave/application/assign
-  const handleApproveLeaveInOrangeHRM = async (req) => {
-    setApprovingLeaveId(req.id);
-    try {
-      const assignPayload = {
-        id: req.id,
-        requestId: req.id,
-        employeeName: req.employeeName || 'Karthik Swaminathan',
-        empNumber: req.empNumber || 41,
-        leaveType: req.type || 'Casual Leave',
-        fromDate: req.from,
-        toDate: req.to,
-        comment: req.reason || 'Leave approved & assigned via MangoHRMS Portal'
-      };
+  // 1-Click Instant Approve Leave in OrangeHRM & T4 Workflow
+  const handleApproveLeaveInOrangeHRM = (req) => {
+    // 1. Immediately update UI state with zero delay
+    setLeaveRequests((prev) =>
+      prev.map((r) =>
+        r.id === req.id
+          ? { ...r, status: 'Approved', orangeHrmAssigned: true }
+          : r
+      )
+    );
 
-      const res = await fetch('/api/leave/application/assign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: jsonSafeStringify(assignPayload)
-      });
-
-      const data = await res.json();
-      if (data.requests) {
-        setLeaveRequests(data.requests);
-      } else {
-        setLeaveRequests((prev) =>
-          prev.map((r) =>
-            r.id === req.id
-              ? { ...r, status: 'Approved', orangeHrmAssigned: true, orangeHrmLeaveId: data.orangeHrm?.leaveId || 'LV-OK' }
-              : r
-          )
-        );
-      }
-
-      // Decrement balance
-      if (req.type?.includes('Casual')) {
-        setLeaveBalances((b) => ({ ...b, casual: Math.max(0, b.casual - (req.days || 1)) }));
-      } else if (req.type?.includes('Sick')) {
-        setLeaveBalances((b) => ({ ...b, sick: Math.max(0, b.sick - (req.days || 1)) }));
-      } else {
-        setLeaveBalances((b) => ({ ...b, privilege: Math.max(0, b.privilege - (req.days || 1)) }));
-      }
-
-      showToast(`Leave approved & successfully assigned in OrangeHRM!`, 'success');
-    } catch (err) {
-      console.error('Failed to assign leave in OrangeHRM:', err);
-      showToast(`Leave approved and queued for OrangeHRM sync.`, 'info');
-      setLeaveRequests((prev) =>
-        prev.map((r) =>
-          r.id === req.id ? { ...r, status: 'Approved', orangeHrmAssigned: true } : r
-        )
-      );
-    } finally {
-      setApprovingLeaveId(null);
+    // Decrement leave balance immediately
+    if (req.type?.includes('Casual')) {
+      setLeaveBalances((b) => ({ ...b, casual: Math.max(0, b.casual - (req.days || 1)) }));
+    } else if (req.type?.includes('Sick')) {
+      setLeaveBalances((b) => ({ ...b, sick: Math.max(0, b.sick - (req.days || 1)) }));
+    } else {
+      setLeaveBalances((b) => ({ ...b, privilege: Math.max(0, b.privilege - (req.days || 1)) }));
     }
+
+    showToast(`Leave approved instantly! Triggered OrangeHRM & T4 approval workflow.`, 'success');
+
+    // 2. Dispatch backend synchronization and RPA trigger immediately
+    const assignPayload = {
+      id: req.id,
+      requestId: req.id,
+      employeeName: req.employeeName || 'Karthik Swaminathan',
+      empNumber: req.empNumber || 41,
+      leaveType: req.type || 'Casual Leave',
+      fromDate: req.from,
+      toDate: req.to,
+      comment: req.reason || 'Leave approved & assigned via MangoHRMS Portal'
+    };
+
+    fetch('/api/leave/application/assign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(assignPayload)
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.requests) {
+          setLeaveRequests(data.requests);
+        }
+      })
+      .catch((err) => {
+        console.warn('Background OrangeHRM assign note:', err);
+      });
   };
 
   const [isClearingLogs, setIsClearingLogs] = useState(false);

@@ -859,7 +859,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "requests": leaves
             }).encode('utf-8'))
 
-        # OrangeHRM Assign Leave / HR Leave Approval Endpoint
+        # OrangeHRM Assign Leave / HR Leave Approval Endpoint (Instant Non-Blocking)
         elif self.path in ['/api/leave/application/assign', '/api/leave/assign', '/api/leave/approve']:
             emp_ident = payload.get('employeeName') or payload.get('empNumber') or payload.get('fullName') or "Karthik Swaminathan"
             emp_num = payload.get('empNumber') or 41
@@ -869,25 +869,13 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             comment = payload.get('comment') or payload.get('reason') or "Leave assigned and approved via MangoHRMS Portal"
             req_id = payload.get('id') or payload.get('requestId')
 
-            print(f"[LEAVE ASSIGN] Assigning {leave_type} in OrangeHRM for {emp_ident} ({from_date} to {to_date})...")
-            assign_res = orangehrm_client.assign_employee_leave(
-                employee_name_or_id=emp_ident,
-                leave_type_name=leave_type,
-                from_date=from_date,
-                to_date=to_date,
-                comment=comment
-            )
-
-            resolved_emp_num = assign_res.get('empNumber') or emp_num
-
-            # Update DB leave requests
+            # 1. Update DB leave requests immediately
             leaves = db.get('leaveRequests', [])
             updated_req = None
             for l in leaves:
                 if (req_id and l.get('id') == req_id) or (l.get('from') == from_date and l.get('status') == 'Pending HR Approval'):
                     l['status'] = 'Approved'
                     l['orangeHrmAssigned'] = True
-                    l['orangeHrmLeaveId'] = assign_res.get('leaveId')
                     l['approvedAt'] = time.strftime('%Y-%m-%d %H:%M:%S')
                     updated_req = l
                     break
@@ -895,27 +883,47 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             db['leaveRequests'] = leaves
             self.write_db(db)
 
-            # Trigger AutomationEdge T4 "HR Demo Leave Approval" workflow in background
-            print(f"[RPA TRIGGER] Triggering T4 'HR Demo Leave Approval' for Emp #{resolved_emp_num}...")
-            threading.Thread(
-                target=ae_client.trigger_leave_approval,
-                args=(resolved_emp_num,),
-                daemon=True
-            ).start()
-
-            # Trigger notification in background thread
-            subject = f"Leave Request Approved & Assigned in OrangeHRM: {emp_ident} ({leave_type})"
-            threading.Thread(
-                target=office365_client._dispatch_mail,
-                kwargs={
-                    "subject": subject,
-                    "html_body": f"<p>Leave for <strong>{emp_ident}</strong> ({leave_type}: {from_date} to {to_date}) has been approved and assigned in OrangeHRM.</p>",
-                    "log_title": "Leave Approval Email"
-                },
-                daemon=True
-            ).start()
-
+            # 2. Return HTTP response immediately (0ms blocking)
             self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "message": f"Leave approved instantly. OrangeHRM assignment and T4 'HR Demo Leave Approval' dispatched for {emp_ident}.",
+                "data": updated_req,
+                "requests": leaves
+            }).encode('utf-8'))
+
+            # 3. Background Executor for OrangeHRM + T4 Leave Approval + Email Notification
+            def _async_leave_approval_worker(e_ident, e_num, l_type, f_date, t_date, c_text, r_id):
+                try:
+                    print(f"\n[LEAVE ASYNC] Assigning {l_type} in OrangeHRM for {e_ident} ({f_date} to {t_date})...")
+                    assign_res = orangehrm_client.assign_employee_leave(
+                        employee_name_or_id=e_ident,
+                        leave_type_name=l_type,
+                        from_date=f_date,
+                        to_date=t_date,
+                        comment=c_text
+                    )
+                    resolved_num = assign_res.get('empNumber') or e_num
+
+                    # Trigger T4 "HR Demo Leave Approval" RPA workflow
+                    print(f"[RPA TRIGGER] Triggering T4 'HR Demo Leave Approval' for Emp #{resolved_num}...")
+                    ae_client.trigger_leave_approval(resolved_num)
+
+                    # Trigger Email Notification
+                    subj = f"Leave Request Approved & Assigned in OrangeHRM: {e_ident} ({l_type})"
+                    office365_client._dispatch_mail(
+                        subject=subj,
+                        html_body=f"<p>Leave for <strong>{e_ident}</strong> ({l_type}: {f_date} to {t_date}) has been approved and assigned in OrangeHRM.</p>",
+                        log_title="Leave Approval Email"
+                    )
+                except Exception as ex:
+                    print(f"[LEAVE ASYNC ERROR]: {ex}")
+
+            threading.Thread(
+                target=_async_leave_approval_worker,
+                args=(emp_ident, emp_num, leave_type, from_date, to_date, comment, req_id),
+                daemon=True
+            ).start()
         # Clear All Leave Requests / Logs
         elif self.path in ['/api/leave/clear', '/api/leave/requests/clear', '/api/leaves/clear']:
             db['leaveRequests'] = []
