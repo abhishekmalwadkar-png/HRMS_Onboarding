@@ -911,12 +911,23 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                     )
                     print(f"[ORANGEHRM 2ND COMPLETED] OrangeHRM leave record assigned: {assign_res}")
 
-                    # Step 3: Dispatch Email Notification
-                    subj = f"Leave Request Approved & Assigned in OrangeHRM: {e_ident} ({l_type})"
-                    office365_client._dispatch_mail(
-                        subject=subj,
-                        html_body=f"<p>Leave for <strong>{e_ident}</strong> ({l_type}: {f_date} to {t_date}) has been approved and assigned in OrangeHRM.</p>",
-                        log_title="Leave Approval Email"
+                    # Step 3: Dispatch Formal HTML Email Notification
+                    leave_email_data = {
+                        'employeeName': e_ident,
+                        'fullName': e_ident,
+                        'empNumber': e_num,
+                        'empId': f"EMP-{e_num}",
+                        'leaveType': l_type,
+                        'fromDate': f_date,
+                        'toDate': t_date,
+                        'days': (updated_req and updated_req.get('days')) or 1,
+                        'reason': c_text,
+                        'approvedAt': time.strftime('%B %d, %Y at %I:%M %p')
+                    }
+                    print(f"\n[EMAIL 3RD] Dispatching formal Leave Approval notification for {e_ident} to abhishek.malwadkar@valuedx.com...")
+                    office365_client.send_leave_approval_email(
+                        leave_data=leave_email_data,
+                        recipient_email="abhishek.malwadkar@valuedx.com"
                     )
                 except Exception as ex:
                     print(f"[LEAVE ASYNC ERROR]: {ex}")

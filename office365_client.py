@@ -838,5 +838,138 @@ class Office365Client:
                 "message": str(e)
             }
 
+    def send_leave_approval_email(self, leave_data: dict, recipient_email: str = "abhishek.malwadkar@valuedx.com") -> dict:
+        """
+        Sends an official formal Leave Approval confirmation email with rich corporate HTML formatting.
+        Dispatches via Gmail SMTP and triggers T4 'HR Send Mail' RPA workflow.
+        """
+        try:
+            emp_name = leave_data.get('employeeName') or leave_data.get('fullName') or "Valued Employee"
+            emp_num = leave_data.get('empNumber') or leave_data.get('empId') or "41"
+            leave_type = leave_data.get('leaveType') or leave_data.get('type') or "Casual Leave"
+            from_date = leave_data.get('fromDate') or leave_data.get('from') or time.strftime('%Y-%m-%d')
+            to_date = leave_data.get('toDate') or leave_data.get('to') or from_date
+            days = leave_data.get('days') or 1
+            reason = leave_data.get('reason') or leave_data.get('comment') or "Personal commitments"
+            approved_at = leave_data.get('approvedAt') or time.strftime('%B %d, %Y at %I:%M %p')
+
+            subject = f"Official Leave Approval Notice: {emp_name} - {leave_type} ({from_date} to {to_date})"
+
+            date_range_display = f"{from_date} to {to_date}" if from_date != to_date else from_date
+
+            html_body = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Leave Approval Notification</title>
+            </head>
+            <body style="margin: 0; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b;">
+                <div style="max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 28px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);">
+                    
+                    <!-- Header -->
+                    <div style="display: flex; align-items: center; border-bottom: 2px solid #059669; padding-bottom: 16px; margin-bottom: 20px;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td>
+                                    <h2 style="color: #059669; margin: 0; font-size: 20px; font-weight: 700;">MangoHRMS Leave Administration</h2>
+                                    <p style="margin: 3px 0 0 0; color: #64748b; font-size: 13px;">Human Resources & Time Off Management</p>
+                                </td>
+                                <td style="text-align: right;">
+                                    <span style="background: #d1fae5; color: #047857; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        ✓ Approved
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Salutation -->
+                    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 12px;">
+                        Dear <strong>{emp_name}</strong>,
+                    </p>
+
+                    <p style="font-size: 14.5px; line-height: 1.6; color: #334155; margin-bottom: 18px;">
+                        We are pleased to inform you that your leave request has been formally reviewed and <strong>APPROVED</strong> by the Human Resources Department. Your leave schedule has been recorded and synchronized with the <strong>OrangeHRM Leave Module</strong>.
+                    </p>
+
+                    <!-- Leave Summary Card -->
+                    <div style="background: #f0fdf4; border-radius: 10px; border: 1px solid #bbf7d0; padding: 18px; margin: 18px 0;">
+                        <h3 style="margin: 0 0 12px 0; color: #166534; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">
+                            Approved Leave Particulars
+                        </h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b; width: 42%;"><strong>Employee Name:</strong></td>
+                                <td style="padding: 6px 0; font-weight: 600; color: #0f172a;">{emp_name}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b;"><strong>Employee Number / ID:</strong></td>
+                                <td style="padding: 6px 0; font-family: monospace; font-weight: 700; color: #059669;">Emp #{emp_num}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b;"><strong>Leave Type:</strong></td>
+                                <td style="padding: 6px 0; font-weight: 600; color: #0f172a;">{leave_type}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b;"><strong>Duration:</strong></td>
+                                <td style="padding: 6px 0; font-weight: 700; color: #047857;">{days} Working Day(s)</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b;"><strong>Leave Period:</strong></td>
+                                <td style="padding: 6px 0; font-weight: 600; color: #0f172a;">{date_range_display}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b;"><strong>Reason for Leave:</strong></td>
+                                <td style="padding: 6px 0; color: #334155; font-style: italic;">"{reason}"</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0; color: #64748b;"><strong>Approval Status:</strong></td>
+                                <td style="padding: 6px 0; color: #047857; font-weight: 700;">✓ Approved & Scheduled in OrangeHRM</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Important Advisory -->
+                    <div style="background: #f8fafc; border-left: 4px solid #059669; padding: 12px 16px; margin: 18px 0; border-radius: 0 8px 8px 0;">
+                        <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #475569;">
+                            <strong>Note on Project Handover:</strong> Please ensure all ongoing tasks, project deliverables, and urgent client escalations are transitioned to your team members or designated backup prior to proceeding on leave.
+                        </p>
+                    </div>
+
+                    <!-- Sign-off -->
+                    <p style="font-size: 14px; line-height: 1.5; color: #334155; margin-top: 24px; margin-bottom: 4px;">
+                        Warm regards,<br/>
+                        <strong>Human Resources & Talent Operations Team</strong><br/>
+                        <span style="color: #64748b; font-size: 13px;">MangoHRMS Automated Enterprise Suite</span>
+                    </p>
+
+                    <!-- Footer -->
+                    <div style="border-top: 1px solid #e2e8f0; margin-top: 22px; padding-top: 14px; font-size: 11.5px; color: #94a3b8; line-height: 1.4;">
+                        This is an official automated notification generated by MangoHRMS.<br/>
+                        Automated synchronization powered by <strong>OrangeHRM PIM</strong> & <strong>AutomationEdge T4 RPA Engine</strong>.<br/>
+                        Delivered to: <strong style="color: #64748b;">{recipient_email}</strong>
+                    </div>
+
+                </div>
+            </body>
+            </html>
+            """
+
+            return self._dispatch_mail(
+                subject=subject,
+                html_body=html_body,
+                recipient_email=recipient_email,
+                log_title="Leave Approval Email"
+            )
+
+        except Exception as e:
+            print(f"[Leave Approval Email Exception]: {e}")
+            return {
+                "status": "error",
+                "recipient": recipient_email,
+                "message": str(e)
+            }
+
 # Singleton instance
 office365_client = Office365Client()
