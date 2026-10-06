@@ -22,13 +22,13 @@ export default function Header({ toggleSidebar }) {
       <div id={PAGE_HEADER_SLOT_ID} className="top-header-slot"></div>
 
       <div className="top-header-tools">
-        {/* Direct T4 Server Button */}
+        {/* Direct AE Server Button */}
         <a
           href="https://t4.automationedge.com/#/requests/list"
           target="_blank"
           rel="noopener noreferrer"
           className="t4-server-btn"
-          title="Open AutomationEdge T4 Server Requests"
+          title="Open AutomationEdge Server Requests"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -56,7 +56,7 @@ export default function Header({ toggleSidebar }) {
           }}
         >
           <i className="fa-solid fa-server" style={{ fontSize: '12px' }}></i>
-          <span>T4 Server</span>
+          <span>AE server</span>
           <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '10px', opacity: 0.85 }}></i>
         </a>
 
