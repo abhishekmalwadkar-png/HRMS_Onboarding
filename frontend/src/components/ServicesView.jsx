@@ -7,15 +7,27 @@ import { PageHeader, Card, Field, StatusBanner, staggerContainer, EASE_OUT } fro
 const SUGGESTED_QUESTIONS = ['How many leaves do I get?', 'When is my laptop dispatched?', 'What is my work email?'];
 
 const DEFAULT_ORANGEHRM_EMPLOYEES = [
-  { empNumber: 41, fullName: 'Karthik Swaminathan', department: 'Engineering', jobTitle: 'Senior Software Engineer' },
-  { empNumber: 34, fullName: 'Samantha Chang', department: 'Engineering', jobTitle: 'Lead Cloud Architect' },
-  { empNumber: 33, fullName: 'Marcus Aurelius', department: 'Engineering', jobTitle: 'Principal Systems Architect' },
-  { empNumber: 32, fullName: 'Siddharth Mehta', department: 'Engineering', jobTitle: 'Senior AI Engineer' },
-  { empNumber: 3, fullName: 'Priyanka Chopra', department: 'Product', jobTitle: 'Lead Product Manager' },
-  { empNumber: 10, fullName: 'Sumit Deshmukh', department: 'IT Systems', jobTitle: 'ServiceNow Specialist' },
-  { empNumber: 5, fullName: 'Suhas Kulkarni', department: 'Engineering', jobTitle: 'Senior DevOps Engineer' },
-  { empNumber: 19, fullName: 'Jagdish Verma', department: 'Finance', jobTitle: 'Financial Operations Lead' }
+  { empNumber: 41, fullName: 'Karthik Swaminathan', department: 'Engineering', jobTitle: 'Senior Software Engineer', balances: { casual: 12, sick: 8, privilege: 15 } },
+  { empNumber: 34, fullName: 'Samantha Chang', department: 'Engineering', jobTitle: 'Lead Cloud Architect', balances: { casual: 9, sick: 6, privilege: 14 } },
+  { empNumber: 33, fullName: 'Marcus Aurelius', department: 'Engineering', jobTitle: 'Principal Systems Architect', balances: { casual: 14, sick: 10, privilege: 18 } },
+  { empNumber: 32, fullName: 'Siddharth Mehta', department: 'Engineering', jobTitle: 'Senior AI Engineer', balances: { casual: 11, sick: 7, privilege: 12 } },
+  { empNumber: 18, fullName: 'Test Emp 3', department: 'Engineering', jobTitle: 'Senior Software Engineer', balances: { casual: 10, sick: 9, privilege: 16 } },
+  { empNumber: 16, fullName: 'Aarav Sharma', department: 'Engineering', jobTitle: 'Lead Full Stack Engineer', balances: { casual: 13, sick: 8, privilege: 15 } },
+  { empNumber: 3, fullName: 'Priyanka Chopra', department: 'Product', jobTitle: 'Lead Product Manager', balances: { casual: 8, sick: 5, privilege: 11 } },
+  { empNumber: 10, fullName: 'Sumit Deshmukh', department: 'IT Systems', jobTitle: 'ServiceNow Specialist', balances: { casual: 10, sick: 8, privilege: 13 } },
+  { empNumber: 5, fullName: 'Suhas Kulkarni', department: 'Engineering', jobTitle: 'Senior DevOps Engineer', balances: { casual: 7, sick: 6, privilege: 10 } },
+  { empNumber: 19, fullName: 'Jagdish Verma', department: 'Finance', jobTitle: 'Financial Operations Lead', balances: { casual: 12, sick: 9, privilege: 17 } }
 ];
+
+function getEmployeeLeaveBalances(emp) {
+  if (emp?.balances) return emp.balances;
+  const num = parseInt(emp?.empNumber, 10) || 41;
+  return {
+    casual: ((num * 3) % 8) + 6,
+    sick: ((num * 2) % 6) + 4,
+    privilege: ((num * 5) % 9) + 10
+  };
+}
 
 const LEAVE_TYPES = ['Casual Leave', 'Sick Leave', 'Privilege Leave'];
 const SAMPLE_REASONS = [
@@ -151,6 +163,10 @@ export default function ServicesView() {
       setEmployeeName(name);
       setEmpNumber(num);
 
+      // Update remaining leave balances dynamically for this specific employee
+      const balances = getEmployeeLeaveBalances(emp);
+      setLeaveBalances(balances);
+
       // Pick leave details
       const randomType = LEAVE_TYPES[Math.floor(Math.random() * LEAVE_TYPES.length)];
       const randomReason = SAMPLE_REASONS[Math.floor(Math.random() * SAMPLE_REASONS.length)];
@@ -175,7 +191,7 @@ export default function ServicesView() {
       setReason(randomReason);
       setLeaveError('');
 
-      showToast(`Autofilled from OrangeHRM: ${name} (Emp #${num})`, 'success');
+      showToast(`Autofilled from OrangeHRM: ${name} (Emp #${num}) — Updated leave balances!`, 'success');
     }
   };
 
@@ -377,7 +393,7 @@ export default function ServicesView() {
       <PageHeader
         icon="fa-solid fa-headset"
         title="Self-service & AI assistant"
-        description="Check leave balances, request time off and assign leave directly in OrangeHRM."
+        description={`Check leave balances, request time off and assign leave directly in OrangeHRM for ${employeeName} (Emp #${empNumber}).`}
       />
 
       <motion.div className="kpi-grid kpi-grid-3" variants={staggerContainer} initial="hidden" animate="show">
@@ -393,7 +409,7 @@ export default function ServicesView() {
           >
             <span className="kpi-label"><i className={`fa-solid ${b.icon} text-accent`} aria-hidden="true"></i> {b.label}</span>
             <div className={`kpi-value tone-${b.tone}`}>{b.value}</div>
-            <span className="kpi-note">days available</span>
+            <span className="kpi-note">{employeeName.split(' ')[0]}'s available days</span>
           </motion.div>
         ))}
       </motion.div>
