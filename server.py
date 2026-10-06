@@ -139,8 +139,16 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                     db['recruitment'] = rec_list
                     self.write_db(db)
                 self.wfile.write(json.dumps(rec_list).encode('utf-8'))
-            elif self.path.startswith('/api/leaves'):
-                self.wfile.write(json.dumps(db.get('leaveRequests', [])).encode('utf-8'))
+            elif self.path.startswith('/api/leave/requests') or self.path.startswith('/api/leaves'):
+                leaves = db.get('leaveRequests', [])
+                if not leaves:
+                    leaves = [
+                        { "id": "LR-301", "employeeName": "Karthik Swaminathan", "empNumber": 41, "type": "Privilege Leave", "from": "2026-10-10", "to": "2026-10-14", "days": 5, "reason": "Annual family travel", "status": "Approved", "orangeHrmAssigned": True, "leaveId": "1" },
+                        { "id": "LR-302", "employeeName": "Samantha Chang", "empNumber": 34, "type": "Casual Leave", "from": "2026-10-24", "to": "2026-10-24", "days": 1, "reason": "Personal errands", "status": "Approved", "orangeHrmAssigned": True, "leaveId": "2" }
+                    ]
+                    db['leaveRequests'] = leaves
+                    self.write_db(db)
+                self.wfile.write(json.dumps(leaves).encode('utf-8'))
             elif self.path.startswith('/api/exit'):
                 self.wfile.write(json.dumps(db.get('exitRequests', [])).encode('utf-8'))
             elif self.path.startswith('/api/rpa/config'):
@@ -812,6 +820,87 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "pdfPath": pdf_path,
                 "emailResult": email_res,
                 "data": target_exit or exits
+            }).encode('utf-8'))
+
+        # Leave Request Submission
+        elif self.path == '/api/leave/request':
+            leaves = db.get('leaveRequests', [])
+            req_id = payload.get('id') or f"LR-{random.randint(400, 999)}"
+            new_leave = {
+                "id": req_id,
+                "employeeName": payload.get('employeeName') or payload.get('fullName') or "Karthik Swaminathan",
+                "empNumber": payload.get('empNumber') or 41,
+                "type": payload.get('type') or payload.get('leaveType') or "Casual Leave",
+                "from": payload.get('from') or payload.get('fromDate') or time.strftime('%Y-%m-%d'),
+                "to": payload.get('to') or payload.get('toDate') or time.strftime('%Y-%m-%d'),
+                "days": payload.get('days') or 1,
+                "reason": payload.get('reason') or "Personal event",
+                "status": "Pending HR Approval",
+                "createdAt": time.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            leaves.insert(0, new_leave)
+            db['leaveRequests'] = leaves
+            self.write_db(db)
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "message": f"Leave request {req_id} submitted for HR approval.",
+                "data": new_leave,
+                "requests": leaves
+            }).encode('utf-8'))
+
+        # OrangeHRM Assign Leave / HR Leave Approval Endpoint
+        elif self.path in ['/api/leave/application/assign', '/api/leave/assign', '/api/leave/approve']:
+            emp_ident = payload.get('employeeName') or payload.get('empNumber') or payload.get('fullName') or "Karthik Swaminathan"
+            leave_type = payload.get('leaveType') or payload.get('type') or "Casual Leave"
+            from_date = payload.get('fromDate') or payload.get('from') or time.strftime('%Y-%m-%d')
+            to_date = payload.get('toDate') or payload.get('to') or from_date
+            comment = payload.get('comment') or payload.get('reason') or "Leave assigned and approved via MangoHRMS Portal"
+            req_id = payload.get('id') or payload.get('requestId')
+
+            print(f"[LEAVE ASSIGN] Assigning {leave_type} in OrangeHRM for {emp_ident} ({from_date} to {to_date})...")
+            assign_res = orangehrm_client.assign_employee_leave(
+                employee_name_or_id=emp_ident,
+                leave_type_name=leave_type,
+                from_date=from_date,
+                to_date=to_date,
+                comment=comment
+            )
+
+            # Update DB leave requests
+            leaves = db.get('leaveRequests', [])
+            updated_req = None
+            for l in leaves:
+                if (req_id and l.get('id') == req_id) or (l.get('from') == from_date and l.get('status') == 'Pending HR Approval'):
+                    l['status'] = 'Approved'
+                    l['orangeHrmAssigned'] = True
+                    l['orangeHrmLeaveId'] = assign_res.get('leaveId')
+                    l['approvedAt'] = time.strftime('%Y-%m-%d %H:%M:%S')
+                    updated_req = l
+                    break
+
+            db['leaveRequests'] = leaves
+            self.write_db(db)
+
+            # Trigger notification in background thread
+            subject = f"Leave Request Approved & Assigned in OrangeHRM: {emp_ident} ({leave_type})"
+            threading.Thread(
+                target=office365_client._dispatch_mail,
+                kwargs={
+                    "subject": subject,
+                    "html_body": f"<p>Leave for <strong>{emp_ident}</strong> ({leave_type}: {from_date} to {to_date}) has been approved and assigned in OrangeHRM.</p>",
+                    "log_title": "Leave Approval Email"
+                },
+                daemon=True
+            ).start()
+
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "message": f"Leave approved and assigned in OrangeHRM for {emp_ident}.",
+                "orangeHrm": assign_res,
+                "data": updated_req,
+                "requests": leaves
             }).encode('utf-8'))
 
         else:
