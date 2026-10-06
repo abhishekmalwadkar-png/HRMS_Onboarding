@@ -483,7 +483,7 @@ export default function ServicesView() {
               </Field>
             </div>
 
-            <Field id="leave-reason" label="Reason" required hint="Visible to HR and recorded in OrangeHRM Leave Module.">
+            <Field id="leave-reason" label="Reason" required>
               <textarea className="form-control" rows="2" value={reason} onChange={(e) => setReason(e.target.value)} required></textarea>
             </Field>
 
@@ -608,48 +608,36 @@ export default function ServicesView() {
                     </div>
                   </div>
 
-                  {/* HR Approval & OrangeHRM Sync Action */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px dashed var(--border-subtle, #e2e8f0)', paddingTop: '8px', marginTop: '4px' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--text-tertiary, #78716c)' }}>
-                      {r.orangeHrmAssigned ? (
-                        <span style={{ color: '#059669', fontWeight: '600' }}>
-                          <i className="fa-solid fa-circle-check"></i> Assigned in OrangeHRM Leave Module
-                        </span>
-                      ) : (
-                        <span>Action Required: Approve & Assign leave to employee record in OrangeHRM</span>
-                      )}
+                  {/* HR Approval Action if Pending */}
+                  {isPending && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', borderTop: '1px dashed var(--border-subtle, #e2e8f0)', paddingTop: '8px', marginTop: '4px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        disabled={isApproving}
+                        onClick={() => handleApproveLeaveInOrangeHRM(r)}
+                        style={{
+                          padding: '4px 10px',
+                          fontSize: '11.5px',
+                          fontWeight: '600',
+                          borderRadius: '6px',
+                          background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                          color: '#ffffff',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        {isApproving ? (
+                          <><i className="fa-solid fa-spinner fa-spin"></i> Assigning...</>
+                        ) : (
+                          <><i className="fa-solid fa-user-check"></i> Approve & Assign (OrangeHRM)</>
+                        )}
+                      </button>
                     </div>
-
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      {isPending && (
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-sm"
-                          disabled={isApproving}
-                          onClick={() => handleApproveLeaveInOrangeHRM(r)}
-                          style={{
-                            padding: '4px 10px',
-                            fontSize: '11.5px',
-                            fontWeight: '600',
-                            borderRadius: '6px',
-                            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                            color: '#ffffff',
-                            border: 'none',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px'
-                          }}
-                        >
-                          {isApproving ? (
-                            <><i className="fa-solid fa-spinner fa-spin"></i> Assigning...</>
-                          ) : (
-                            <><i className="fa-solid fa-user-check"></i> Approve & Assign (OrangeHRM)</>
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </li>
               );
             })}
