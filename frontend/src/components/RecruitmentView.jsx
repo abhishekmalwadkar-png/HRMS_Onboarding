@@ -381,7 +381,7 @@ export default function RecruitmentView() {
         <div className="glass-card" style={{ background: 'var(--bg-card)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <i className="fa-solid fa-briefcase" style={{ color: '#c2410c' }}></i> Open roles ({jobPostings.length})
+              <i className="fa-solid fa-briefcase" style={{ color: 'var(--accent-icon)' }}></i> Open roles ({jobPostings.length})
             </h3>
             <span className="badge badge-verified" style={{ fontSize: '0.72rem', fontWeight: 700 }}>
               Hiring active
@@ -405,7 +405,7 @@ export default function RecruitmentView() {
                     <strong style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>{job.title}</strong>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                       <i className="fa-solid fa-building" style={{ fontSize: '0.75rem', marginRight: '4px' }}></i>
-                      {job.dept} • <span style={{ color: '#c2410c', fontWeight: 600 }}>{job.applicants} Applicants</span>
+                      {job.dept} • <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>{job.applicants} Applicants</span>
                     </div>
                   </div>
                   <span className="badge badge-verified" style={{ fontSize: '0.7rem' }}>
@@ -440,7 +440,7 @@ export default function RecruitmentView() {
         <div className="glass-card" style={{ background: 'var(--bg-card)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <i className="fa-solid fa-users-viewfinder" style={{ color: '#c2410c' }}></i> Candidates in pipeline ({candidates.length})
+              <i className="fa-solid fa-users-viewfinder" style={{ color: 'var(--accent-icon)' }}></i> Candidates in pipeline ({candidates.length})
             </h3>
             <button
               className="btn btn-secondary"
@@ -456,8 +456,8 @@ export default function RecruitmentView() {
 
           {candidates.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem 1.5rem', color: 'var(--text-muted)' }}>
-              <i className="fa-solid fa-file-magnifying-glass" style={{ fontSize: '2.5rem', color: '#c2410c', opacity: 0.6, marginBottom: '1rem', display: 'block' }}></i>
-              <h4 style={{ color: '#0f172a', marginBottom: '0.3rem' }}>No screened candidates yet</h4>
+              <i className="fa-solid fa-file-magnifying-glass" style={{ fontSize: '2.5rem', color: 'var(--accent-icon)', opacity: 0.6, marginBottom: '1rem', display: 'block' }}></i>
+              <h4 style={{ color: 'var(--text-main)', marginBottom: '0.3rem' }}>No screened candidates yet</h4>
               <p style={{ fontSize: '0.85rem', marginBottom: '1.2rem' }}>
                 Upload candidate resumes to extract skills and match against open job descriptions.
               </p>
@@ -490,7 +490,7 @@ export default function RecruitmentView() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <strong style={{ fontSize: '0.98rem', color: '#0f172a' }}>{cand.name || cand.candidateName}</strong>
+                          <strong style={{ fontSize: '0.98rem', color: 'var(--text-main)' }}>{cand.name || cand.candidateName}</strong>
                           {cand.experienceYears && (
                             <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                               ({cand.experienceYears} yrs exp)
@@ -498,8 +498,8 @@ export default function RecruitmentView() {
                           )}
                         </div>
                         <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          Target: <strong style={{ color: '#c2410c' }}>{cand.role || cand.appliedRole}</strong>
-                          {cand.email && <span style={{ marginLeft: '8px', color: '#64748b' }}>• {cand.email}</span>}
+                          Target: <strong style={{ color: 'var(--accent-text)' }}>{cand.role || cand.appliedRole}</strong>
+                          {cand.email && <span style={{ marginLeft: '8px', color: 'var(--text-muted)' }}>• {cand.email}</span>}
                         </div>
                       </div>
 
@@ -561,7 +561,7 @@ export default function RecruitmentView() {
                           gap: '0.4rem',
                         }}
                       >
-                        <div style={{ fontSize: '0.78rem', color: '#c2410c', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--accent-text)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                           <i className="fa-solid fa-video"></i>
                           <span>Google Meet: <strong>{cand.meetingLink}</strong></span>
                         </div>

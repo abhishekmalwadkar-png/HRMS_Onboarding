@@ -830,6 +830,27 @@ h1, h2, h3 {
   border: 1px solid #a7f3d0; 
 }
 
+[data-theme="dark"] .badge-draft { 
+  background: rgba(148, 163, 184, 0.15); 
+  color: #cbd5e1; 
+  border: 1px solid rgba(148, 163, 184, 0.3); 
+}
+[data-theme="dark"] .badge-pending { 
+  background: rgba(245, 158, 11, 0.16); 
+  color: #fbbf24; 
+  border: 1px solid rgba(245, 158, 11, 0.35); 
+}
+[data-theme="dark"] .badge-verified { 
+  background: rgba(248, 121, 23, 0.18); 
+  color: #fb923c; 
+  border: 1px solid rgba(248, 121, 23, 0.45); 
+}
+[data-theme="dark"] .badge-approved { 
+  background: rgba(16, 185, 129, 0.18); 
+  color: #34d399; 
+  border: 1px solid rgba(16, 185, 129, 0.4); 
+}
+
 /* Typography Helpers */
 .text-accent {
   color: var(--accent-icon);

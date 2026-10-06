@@ -561,18 +561,18 @@ export default function ServicesView() {
               const isApproving = approvingLeaveId === r.id;
 
               return (
-                <li key={r.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', borderRadius: '8px', background: 'var(--bg-surface-elevated, #ffffff)', border: '1px solid var(--border-subtle, #e2e8f0)' }}>
+                <li key={r.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', borderRadius: '8px', background: 'var(--bg-card, #ffffff)', border: '1px solid var(--border-color, #e2e8f0)' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <strong style={{ fontSize: '14px' }}>{r.type}</strong>
+                        <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>{r.type}</strong>
                         {r.employeeName && (
                           <span style={{ fontSize: '12px', color: 'var(--text-secondary, #64748b)', fontWeight: '500' }}>
                             ({r.employeeName})
                           </span>
                         )}
                       </div>
-                      <div className="cell-sub" style={{ marginTop: '2px', fontSize: '12px', color: 'var(--text-tertiary, #78716c)' }}>
+                      <div className="cell-sub" style={{ marginTop: '2px', fontSize: '12px', color: 'var(--text-muted, #78716c)' }}>
                         <i className="fa-regular fa-calendar" style={{ marginRight: '4px' }}></i>
                         {r.from === r.to ? r.from : `${r.from} → ${r.to}`} · {r.days} day(s)
                         {r.reason && ` · "${r.reason}"`}
