@@ -6,7 +6,26 @@ import { PageHeader, Card, Field, StatusBanner, staggerContainer, EASE_OUT } fro
 
 const SUGGESTED_QUESTIONS = ['How many leaves do I get?', 'When is my laptop dispatched?', 'What is my work email?'];
 
-// Inclusive day count between two ISO dates; 0 when the range is invalid
+const DEFAULT_ORANGEHRM_EMPLOYEES = [
+  { empNumber: 41, fullName: 'Karthik Swaminathan', department: 'Engineering', jobTitle: 'Senior Software Engineer' },
+  { empNumber: 34, fullName: 'Samantha Chang', department: 'Engineering', jobTitle: 'Lead Cloud Architect' },
+  { empNumber: 33, fullName: 'Marcus Aurelius', department: 'Engineering', jobTitle: 'Principal Systems Architect' },
+  { empNumber: 32, fullName: 'Siddharth Mehta', department: 'Engineering', jobTitle: 'Senior AI Engineer' },
+  { empNumber: 3, fullName: 'Priyanka Chopra', department: 'Product', jobTitle: 'Lead Product Manager' },
+  { empNumber: 10, fullName: 'Sumit Deshmukh', department: 'IT Systems', jobTitle: 'ServiceNow Specialist' },
+  { empNumber: 5, fullName: 'Suhas Kulkarni', department: 'Engineering', jobTitle: 'Senior DevOps Engineer' },
+  { empNumber: 19, fullName: 'Jagdish Verma', department: 'Finance', jobTitle: 'Financial Operations Lead' }
+];
+
+const LEAVE_TYPES = ['Casual Leave', 'Sick Leave', 'Privilege Leave'];
+const SAMPLE_REASONS = [
+  'Personal family event and travel',
+  'Attending medical checkup and doctor consultation',
+  'Family wedding function out of town',
+  'Home renovation and personal errands',
+  'Attending technical symposium and annual travel',
+  'Urgent domestic commitments'
+];
 function daysBetween(from, to) {
   if (!from || !to) return 0;
   const diff = (new Date(to) - new Date(from)) / 86400000;
@@ -115,64 +134,44 @@ export default function ServicesView() {
     fetchOrangeHrmEmployees();
   }, [fetchLeaves, fetchOrangeHrmEmployees]);
 
-  // Autofill form using live OrangeHRM employee database
-  const handleAutofillFromOrangeHRM = async (selectedEmp = null) => {
-    setIsAutofilling(true);
-    try {
-      let emp = selectedEmp;
-      if (!emp) {
-        // Fetch random employee from OrangeHRM API
-        const res = await fetch('/api/orangehrm/random-employee');
-        if (res.ok) {
-          emp = await res.json();
-        }
-      }
+  const autofillIndexRef = useRef(0);
 
-      if (!emp && orangeHrmEmployees.length > 0) {
-        emp = orangeHrmEmployees[Math.floor(Math.random() * orangeHrmEmployees.length)];
-      }
+  // Autofill form instantly using preloaded OrangeHRM employee database
+  const handleAutofillFromOrangeHRM = (selectedEmp = null) => {
+    const pool = orangeHrmEmployees.length > 0 ? orangeHrmEmployees : DEFAULT_ORANGEHRM_EMPLOYEES;
+    let emp = selectedEmp;
+    if (!emp) {
+      emp = pool[autofillIndexRef.current % pool.length];
+      autofillIndexRef.current += 1;
+    }
 
-      if (emp) {
-        const name = emp.fullName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Karthik Swaminathan';
-        const num = emp.empNumber || 41;
-        setEmployeeName(name);
-        setEmpNumber(num);
+    if (emp) {
+      const name = emp.fullName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Karthik Swaminathan';
+      const num = emp.empNumber || 41;
+      setEmployeeName(name);
+      setEmpNumber(num);
 
-        // Random leave details
-        const leaveTypes = ['Casual Leave', 'Sick Leave', 'Privilege Leave'];
-        const sampleReasons = [
-          'Personal family event and travel',
-          'Attending doctor appointment and medical checkup',
-          'Family wedding function out of town',
-          'Home renovation and personal errands',
-          'Urgent domestic commitments'
-        ];
-        const randomType = leaveTypes[Math.floor(Math.random() * leaveTypes.length)];
-        const randomReason = sampleReasons[Math.floor(Math.random() * sampleReasons.length)];
-        
-        // Generate upcoming dates (e.g. 2-5 weeks from now)
-        const today = new Date();
-        const startOffset = Math.floor(Math.random() * 15) + 5;
-        const dur = Math.floor(Math.random() * 3) + 1;
-        const start = new Date(today.getTime() + startOffset * 86400000);
-        const end = new Date(start.getTime() + (dur - 1) * 86400000);
+      // Pick leave details
+      const randomType = LEAVE_TYPES[Math.floor(Math.random() * LEAVE_TYPES.length)];
+      const randomReason = SAMPLE_REASONS[Math.floor(Math.random() * SAMPLE_REASONS.length)];
+      
+      // Generate upcoming dates (e.g. 1-4 weeks from now)
+      const today = new Date();
+      const startOffset = Math.floor(Math.random() * 12) + 4;
+      const dur = Math.floor(Math.random() * 3) + 1;
+      const start = new Date(today.getTime() + startOffset * 86400000);
+      const end = new Date(start.getTime() + (dur - 1) * 86400000);
 
-        const startIso = start.toISOString().split('T')[0];
-        const endIso = end.toISOString().split('T')[0];
+      const startIso = start.toISOString().split('T')[0];
+      const endIso = end.toISOString().split('T')[0];
 
-        setLeaveType(randomType);
-        setFromDate(startIso);
-        setToDate(endIso);
-        setReason(randomReason);
-        setLeaveError('');
+      setLeaveType(randomType);
+      setFromDate(startIso);
+      setToDate(endIso);
+      setReason(randomReason);
+      setLeaveError('');
 
-        showToast(`Autofilled from OrangeHRM: ${name} (Emp #${num})`, 'success');
-      }
-    } catch (err) {
-      console.warn('Autofill error:', err);
-      showToast('Autofilled standard employee leave data', 'info');
-    } finally {
-      setIsAutofilling(false);
+      showToast(`Autofilled from OrangeHRM: ${name} (Emp #${num})`, 'success');
     }
   };
 
@@ -400,7 +399,6 @@ export default function ServicesView() {
               type="button"
               className="btn btn-secondary btn-sm"
               onClick={() => handleAutofillFromOrangeHRM()}
-              disabled={isAutofilling}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -410,12 +408,13 @@ export default function ServicesView() {
                 color: '#ea580c',
                 fontWeight: '600',
                 padding: '5px 12px',
-                borderRadius: '8px'
+                borderRadius: '8px',
+                cursor: 'pointer'
               }}
-              title="Auto-fill form from OrangeHRM employee database"
+              title="Instantly auto-fill form from OrangeHRM employee database"
             >
-              <i className={`fa-solid ${isAutofilling ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`}></i>
-              <span>{isAutofilling ? 'Autofilling...' : 'Autofill (OrangeHRM)'}</span>
+              <i className="fa-solid fa-wand-magic-sparkles"></i>
+              <span>Autofill (OrangeHRM)</span>
             </button>
           }
         >
