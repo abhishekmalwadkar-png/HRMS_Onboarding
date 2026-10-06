@@ -654,6 +654,17 @@ class AutomationEdgeClient:
             "matchJd": match_jd_res
         }
 
+    def trigger_hr_send_mail(self, subject: str, comment: str = "", file_path: str = ""):
+        """
+        Executes the 'HR Send Mail' RPA workflow on AutomationEdge T4 server.
+        Passes only the 'subject' parameter as configured on the T4 workflow.
+        """
+        params = {
+            "subject": str(subject or "MangoHRMS Official Notification")
+        }
+        print(f"[AE RPA] Triggering 'HR Send Mail' on T4 with subject='{subject}'...")
+        return self.execute_workflow_sync("HR Send Mail", params, max_wait_seconds=45)
+
     def trigger_create_ad_account(self, data):
         full_name = data.get("fullName") or data.get("candidateName") or "New Employee"
         parts = full_name.strip().split(None, 1)

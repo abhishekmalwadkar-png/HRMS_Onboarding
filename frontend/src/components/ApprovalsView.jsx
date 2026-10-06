@@ -353,9 +353,8 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
           {pendingApprovals.map((cand) => {
             const docs = [
               { label: 'Government ID / Aadhaar', icon: 'fa-id-badge', file: cand.idDocumentName },
-              { label: 'Degree certificate', icon: 'fa-graduation-cap', file: cand.educationDocName },
-              { label: 'Tax form (W-4 / Form 16)', icon: 'fa-file-invoice-dollar', file: cand.taxDocumentName },
-              { label: 'Signed offer letter', icon: 'fa-file-signature', file: cand.offerDocumentName },
+              { label: 'EPFO UAN Card', icon: 'fa-building-columns', file: cand.uanDocumentName },
+              { label: 'Salary Slip', icon: 'fa-file-invoice-dollar', file: cand.salarySlipDocName || cand.offerDocumentName },
             ];
             const missingDocs = docs.filter((d) => !d.file).length;
             const isApproving = approvingId === cand.id;

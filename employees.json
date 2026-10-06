@@ -1,6 +1,62 @@
 {
   "employees": [
     {
+      "id": "EMP-6468",
+      "fullName": "Karthik Swaminathan",
+      "email": "karthik.s@example.com",
+      "phone": "+91 98400 66778",
+      "dob": "1990-02-17",
+      "pan": "ABCDE014F",
+      "aadhaar": "4532 8901 2345",
+      "uan": "1012 1005 6177",
+      "emergencyName": "Meera Swaminathan (Spouse)",
+      "emergencyPhone": "+91 98400 66770",
+      "address": "Flat 3A, Temple View Apts, Mylapore, Chennai, Tamil Nadu 600004",
+      "bankName": "HDFC Bank",
+      "accountNumber": "334567890123",
+      "routingCode": "HDFC0000124",
+      "hardware": "Apple MacBook Pro M3 Max",
+      "idDocumentName": "Aadhaar_National_ID_Karthik.pdf",
+      "uanDocumentName": "UAN_Card_Karthik_Swaminathan_EPFO.pdf",
+      "salarySlipDocName": "Salary_Slip_Karthik_Swaminathan_Recent.pdf",
+      "department": "Engineering",
+      "jobTitle": "Lead Data Science Architect",
+      "manager": "Amit Deshmukh (VP of Engineering)",
+      "startDate": "2026-11-01",
+      "salary": "\u20b932,00,000 INR / annum (\u20b932.0 LPA)",
+      "status": "Approved",
+      "serviceNowReq": "REQ0011945",
+      "serviceNowRitm": "RITM0011924",
+      "submittedAt": "10/6/2026, 11:26:22 AM",
+      "serviceNowReqId": "874a7849eb730310b02df1b4cad0cd6f",
+      "serviceNowRitmId": "c34a7849eb730310b02df1b4cad0cd70",
+      "reqUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_request.do?sys_id=874a7849eb730310b02df1b4cad0cd6f",
+      "ritmUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_req_item.do?sys_id=c34a7849eb730310b02df1b4cad0cd70",
+      "serviceNowStatus": "Approved",
+      "serviceNowStage": "HR Document Verification",
+      "aeGetEmpDetailsReqId": 3300011,
+      "aeGetEmpDetailsStatus": "Complete",
+      "hardwareDispatched": true,
+      "laptopTicket": "INC0040478",
+      "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident.do?sys_id=10ca70c5337303105e900e570e5c7b42",
+      "approvedAt": "2026-10-06 11:28:27",
+      "orangeHrmProfileUrl": "http://10.41.5.39/orangehrm/web/index.php/pim/viewPersonalDetails/empNumber/41",
+      "orangeHrmEmpNumber": 41,
+      "orangeHrmStatus": "Profile Created in OrangeHRM PIM",
+      "o365UserId": "d37a86f8-b587-43dc-a0aa-3769f5506aea",
+      "o365Email": "karthik.swaminathan@automationedge.ai",
+      "o365UserPrincipalName": "karthik.swaminathan@automationedge.ai",
+      "o365DisplayName": "Karthik Swaminathan",
+      "o365InitialPassword": "Welcome@2026!Onboard",
+      "o365AdminUrl": "https://portal.azure.com/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/d37a86f8-b587-43dc-a0aa-3769f5506aea",
+      "o365Status": "Account Active in Office 365",
+      "aeT4RequestId": 3300016,
+      "aeT4Workflow": "AD-Create User and Assin Role",
+      "offerLetterEmailed": true,
+      "offerLetterRecipient": "abhishek.malwadkar@valuedx.com",
+      "offerLetterPdf": "Offer_Letter_Karthik_Swaminathan_MNG-OFR-66305.pdf"
+    },
+    {
       "id": "EMP-2116",
       "fullName": "Aarav Sharma",
       "email": "aarav.sharma@example.com",
@@ -57,7 +113,506 @@
       "offerLetterPdf": "Offer_Letter_Aarav_Sharma_MNG-OFR-5644.pdf"
     }
   ],
-  "recruitment": [],
+  "recruitment": [
+    {
+      "id": "CAND-584",
+      "name": "Sameer Kulkarni",
+      "candidateName": "Sameer Kulkarni",
+      "email": "sameer.kulkarni@valuedx.com",
+      "phone": "+91 98230 45678",
+      "experienceYears": 6.0,
+      "skills": [
+        "ServiceNow",
+        "ITSM",
+        "Service Catalog",
+        "Workflow Design",
+        "GlideScript",
+        "JavaScript",
+        "REST APIs",
+        "IntegrationHub",
+        "CMDB"
+      ],
+      "role": "Enterprise ServiceNow Architect",
+      "appliedRole": "Enterprise ServiceNow Architect",
+      "department": "IT Systems",
+      "score": "81%",
+      "matchScore": "81%",
+      "stage": "Interview Scheduled (Google Meet)",
+      "status": "Screened",
+      "recommendation": "Suitable for Technical Review",
+      "matchedSkills": [
+        "ServiceNow",
+        "ITSM",
+        "Service Catalog",
+        "Workflow Design",
+        "GlideScript",
+        "JavaScript",
+        "REST APIs",
+        "IntegrationHub",
+        "CMDB"
+      ],
+      "missingSkills": [
+        "ITIL Certified",
+        "Service Portal",
+        "Incident Management",
+        "Change Management"
+      ],
+      "allJobMatches": [
+        {
+          "jobId": "JOB-203",
+          "jobTitle": "Enterprise ServiceNow Architect",
+          "dept": "IT Systems",
+          "matchPercentage": "81%",
+          "matchScoreNum": 81,
+          "matchedSkills": [
+            "ServiceNow",
+            "ITSM",
+            "Service Catalog",
+            "Workflow Design",
+            "GlideScript",
+            "JavaScript",
+            "REST APIs",
+            "IntegrationHub",
+            "CMDB"
+          ],
+          "missingSkills": [
+            "ITIL Certified",
+            "Service Portal",
+            "Incident Management",
+            "Change Management"
+          ],
+          "recommendation": "Suitable for Technical Review"
+        },
+        {
+          "jobId": "JOB-201",
+          "jobTitle": "Senior AI Engineer",
+          "dept": "Engineering",
+          "matchPercentage": "45%",
+          "matchScoreNum": 45,
+          "matchedSkills": [],
+          "missingSkills": [
+            "Python",
+            "PyTorch",
+            "TensorFlow",
+            "Generative AI"
+          ],
+          "recommendation": "Potential Fit"
+        },
+        {
+          "jobId": "JOB-202",
+          "jobTitle": "Lead Product Manager",
+          "dept": "Product",
+          "matchPercentage": "45%",
+          "matchScoreNum": 45,
+          "matchedSkills": [],
+          "missingSkills": [
+            "Product Strategy",
+            "Agile",
+            "Scrum",
+            "Roadmapping"
+          ],
+          "recommendation": "Potential Fit"
+        },
+        {
+          "jobId": "JOB-204",
+          "jobTitle": "Senior Cloud & DevOps Engineer",
+          "dept": "Infrastructure",
+          "matchPercentage": "45%",
+          "matchScoreNum": 45,
+          "matchedSkills": [],
+          "missingSkills": [
+            "Kubernetes",
+            "Docker",
+            "AWS",
+            "Azure"
+          ],
+          "recommendation": "Potential Fit"
+        }
+      ],
+      "screenedAt": "2026-10-06 11:38:04",
+      "rawTextSnippet": "\n                Sameer Kulkarni\n                Email: sameer.kulkarni@valuedx.com | Phone: +91 97654 33210 | Pune, India\n                Enterprise ServiceNow Architect & Lead Consultant\n                Summary: 6 years of expertise architecting ServiceNow ITSM, Service Catalog, ITIL processes, Workflow Automation, IntegrationHub REST APIs, CMDB, and Service Portal UI customization.\n            ",
+      "t4RecruitmentPipeline": {
+        "status": "success",
+        "jobName": "Enterprise ServiceNow Architect",
+        "candidateName": "Sameer Kulkarni",
+        "steps": [
+          {
+            "step": 1,
+            "workflow": "HR Demo Recruitment Get JD",
+            "params": {
+              "job_name": "Enterprise ServiceNow Architect"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR Demo Recruitment Get JD",
+              "automationRequestId": 3300066,
+              "sourceId": "SID_1791266885531_f5d630bc2d8f",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "JD extracted from portal",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300066",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "job_name": "Enterprise ServiceNow Architect"
+              }
+            }
+          },
+          {
+            "step": 2,
+            "workflow": "HR Demo Recruitment Match JD",
+            "params": {
+              "job_name": "Enterprise ServiceNow Architect"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR Demo Recruitment Match JD",
+              "automationRequestId": 3300067,
+              "sourceId": "SID_1791266892812_e1e5a9c77555",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "JD matched with candidate",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300067",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "job_name": "Enterprise ServiceNow Architect"
+              }
+            }
+          }
+        ],
+        "getJd": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR Demo Recruitment Get JD",
+          "automationRequestId": 3300066,
+          "sourceId": "SID_1791266885531_f5d630bc2d8f",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "JD extracted from portal",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300066",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "job_name": "Enterprise ServiceNow Architect"
+          }
+        },
+        "matchJd": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR Demo Recruitment Match JD",
+          "automationRequestId": 3300067,
+          "sourceId": "SID_1791266892812_e1e5a9c77555",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "JD matched with candidate",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300067",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "job_name": "Enterprise ServiceNow Architect"
+          }
+        }
+      },
+      "getJdResult": {
+        "status": "success",
+        "mode": "live_t4_rpa",
+        "workflowName": "HR Demo Recruitment Get JD",
+        "automationRequestId": 3300066,
+        "sourceId": "SID_1791266885531_f5d630bc2d8f",
+        "executionStatus": "Complete",
+        "agentName": "mahesh@mspevent-win-1",
+        "message": "JD extracted from portal",
+        "errorDetails": null,
+        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300066",
+        "serverUrl": "https://t4.automationedge.com/aeengine",
+        "params": {
+          "job_name": "Enterprise ServiceNow Architect"
+        }
+      },
+      "matchJdResult": {
+        "status": "success",
+        "mode": "live_t4_rpa",
+        "workflowName": "HR Demo Recruitment Match JD",
+        "automationRequestId": 3300067,
+        "sourceId": "SID_1791266892812_e1e5a9c77555",
+        "executionStatus": "Complete",
+        "agentName": "mahesh@mspevent-win-1",
+        "message": "JD matched with candidate",
+        "errorDetails": null,
+        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300067",
+        "serverUrl": "https://t4.automationedge.com/aeengine",
+        "params": {
+          "job_name": "Enterprise ServiceNow Architect"
+        }
+      },
+      "meetingLink": "https://meet.google.com/ylp-kspy-uhz",
+      "interviewDate": "2026-10-08",
+      "interviewTime": "03:00 PM - 03:45 PM IST",
+      "interviewType": "Technical & AI Architecture Screening",
+      "interviewScheduled": true,
+      "emailSent": true,
+      "emailRecipient": "abhishek.malwadkar@valuedx.com"
+    },
+    {
+      "id": "CAND-901",
+      "name": "Aarav Sharma",
+      "candidateName": "Aarav Sharma",
+      "email": "aarav.sharma@example.com",
+      "role": "Senior AI Engineer",
+      "appliedRole": "Senior AI Engineer",
+      "department": "Engineering",
+      "score": "94%",
+      "matchScore": "94%",
+      "stage": "Interview Scheduled (Google Meet)",
+      "skills": [
+        "Python",
+        "PyTorch",
+        "Generative AI",
+        "LangChain",
+        "FastAPI"
+      ],
+      "experienceYears": 5.5,
+      "meetingLink": "https://meet.google.com/tsg-ihxz-eyb",
+      "interviewDate": "Wednesday, October 14, 2026",
+      "interviewTime": "02:00 PM - 03:00 PM IST",
+      "interviewType": "Technical & AI Architecture Screening",
+      "interviewScheduled": true,
+      "emailSent": true,
+      "emailRecipient": "abhishek.malwadkar@valuedx.com"
+    },
+    {
+      "id": "CAND-902",
+      "name": "Priya Iyer",
+      "candidateName": "Priya Iyer",
+      "email": "priya.iyer@example.com",
+      "role": "Lead Product Manager",
+      "appliedRole": "Lead Product Manager",
+      "department": "Product",
+      "score": "89%",
+      "matchScore": "89%",
+      "stage": "Interview Scheduled (Google Meet)",
+      "skills": [
+        "Product Strategy",
+        "Agile",
+        "Roadmapping",
+        "Scrum",
+        "User Stories"
+      ],
+      "experienceYears": 6.0,
+      "meetingLink": "https://meet.google.com/zwo-ogbf-huj",
+      "interviewDate": "2026-10-08",
+      "interviewTime": "03:00 PM - 03:45 PM IST",
+      "interviewType": "Technical & AI Architecture Screening",
+      "interviewScheduled": true,
+      "emailSent": true,
+      "emailRecipient": "abhishek.malwadkar@valuedx.com"
+    },
+    {
+      "id": "CAND-903",
+      "name": "Rohan Mehta",
+      "candidateName": "Rohan Mehta",
+      "email": "rohan.mehta@example.com",
+      "role": "Enterprise ServiceNow Architect",
+      "appliedRole": "Enterprise ServiceNow Architect",
+      "department": "IT Systems",
+      "score": "91%",
+      "matchScore": "91%",
+      "stage": "Interview Scheduled (Google Meet)",
+      "skills": [
+        "ServiceNow",
+        "ITSM",
+        "Workflow Design",
+        "Service Catalog",
+        "IntegrationHub"
+      ],
+      "experienceYears": 5.0,
+      "meetingLink": "https://meet.google.com/bsu-xwir-nox",
+      "interviewDate": "2026-10-08",
+      "interviewTime": "03:00 PM - 03:45 PM IST",
+      "interviewType": "Technical & AI Architecture Screening",
+      "interviewScheduled": true,
+      "emailSent": true,
+      "emailRecipient": "abhishek.malwadkar@valuedx.com"
+    }
+  ],
   "leaveRequests": [],
-  "exitRequests": []
+  "exitRequests": [
+    {
+      "id": "EXIT-758",
+      "empId": "EMP-2930",
+      "empName": "Vikram Malhotra",
+      "department": "Engineering",
+      "resignationDate": "2026-10-06",
+      "lastWorkingDay": "2026-11-05",
+      "reason": "Accepting an executive leadership offer.",
+      "itClearance": true,
+      "itClearanceStatus": "User Submitted Laptop",
+      "financeClearance": false,
+      "accessRevoked": true,
+      "o365Deleted": true,
+      "orangeHrmDeleted": true,
+      "emailSent": true,
+      "fnfStatus": "Pending Initiation",
+      "aeSnReqWorkflow": {
+        "status": "success",
+        "mode": "live_t4_rpa",
+        "workflowName": "HR Demo Offboarding SN Req",
+        "automationRequestId": 3300048,
+        "sourceId": "SID_1791266671297_dbb83a02d9c3",
+        "executionStatus": "Complete",
+        "agentName": "mahesh@mspevent-win-1",
+        "message": "Employee EMP-2930 Offboarding initiated and request submitted on ServiceNow",
+        "errorDetails": null,
+        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300048",
+        "serverUrl": "https://t4.automationedge.com/aeengine",
+        "params": {
+          "EmpID": "EMP-2930"
+        }
+      },
+      "serviceNowReq": "REQ0011946",
+      "serviceNowRitm": "RITM0016682",
+      "laptopTicket": "INC0040479",
+      "laptopTicketSysId": "7a3cb449337303105e900e570e5c7b41",
+      "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident.do?sys_id=7a3cb449337303105e900e570e5c7b41",
+      "assignedTo": "AE Plugin Test",
+      "laptopIncidentState": "Resolved",
+      "t4RevokePipeline": {
+        "status": "success",
+        "employeeId": "EMP-2930",
+        "employeeName": "Vikram Malhotra",
+        "adUsername": "Vikram.Malhotra",
+        "steps": [
+          {
+            "step": 1,
+            "workflow": "HR Demo OffboardingRemoveADUser",
+            "params": {
+              "AD username": "Vikram.Malhotra"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR Demo OffboardingRemoveADUser",
+              "automationRequestId": 3300054,
+              "sourceId": "SID_1791266735520_398066f75048",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "AD User Vikram.Malhotra Removed",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300054",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "ADUserName": "Vikram.Malhotra"
+              }
+            }
+          },
+          {
+            "step": 2,
+            "workflow": "HR DEMO offboarding Delete O365 user",
+            "params": {
+              "emp_id": "EMP-2930",
+              "emp_name": "Vikram Malhotra"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR DEMO offboarding Delete O365 user",
+              "automationRequestId": 3300056,
+              "sourceId": "SID_1791266746037_ac2fea144b28",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "User deleted from O365",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300056",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "emp_id": "EMP-2930",
+                "emp_name": "Vikram Malhotra"
+              }
+            }
+          },
+          {
+            "step": 3,
+            "workflow": "HR DEMO Offboarding Delete OrangeHRM User",
+            "params": {
+              "emp_id": "EMP-2930",
+              "emp_name": "Vikram Malhotra"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR DEMO Offboarding Delete OrangeHRM User",
+              "automationRequestId": 3300057,
+              "sourceId": "SID_1791266753178_bd20f6fd315e",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "User data deleted from OrangeHRM",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300057",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "emp_id": "EMP-2930",
+                "emp_name": "Vikram Malhotra"
+              }
+            }
+          }
+        ],
+        "adRemoval": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR Demo OffboardingRemoveADUser",
+          "automationRequestId": 3300054,
+          "sourceId": "SID_1791266735520_398066f75048",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "AD User Vikram.Malhotra Removed",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300054",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "ADUserName": "Vikram.Malhotra"
+          }
+        },
+        "o365Delete": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR DEMO offboarding Delete O365 user",
+          "automationRequestId": 3300056,
+          "sourceId": "SID_1791266746037_ac2fea144b28",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "User deleted from O365",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300056",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "emp_id": "EMP-2930",
+            "emp_name": "Vikram Malhotra"
+          }
+        },
+        "orangeHrmDelete": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR DEMO Offboarding Delete OrangeHRM User",
+          "automationRequestId": 3300057,
+          "sourceId": "SID_1791266753178_bd20f6fd315e",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "User data deleted from OrangeHRM",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300057",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "emp_id": "EMP-2930",
+            "emp_name": "Vikram Malhotra"
+          }
+        }
+      },
+      "relievingLetterIssued": true,
+      "relievingLetterPdf": "D:\\HRMS_Onboarding_V1\\generated_relieving_letters\\Relieving_Letter_Vikram_Malhotra_MNG-REL-2026-71375.pdf",
+      "relievingLetterDate": "2026-10-06 12:53:10"
+    }
+  ]
 }

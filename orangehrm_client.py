@@ -130,7 +130,7 @@ class OrangeHRMClient:
                     }
                 )
 
-                resp = opener.open(req, timeout=12)
+                resp = opener.open(req, timeout=20)
                 res_data = json.loads(resp.read().decode('utf-8')).get('data', {})
                 emp_number = res_data.get('empNumber')
                 assigned_emp_id = res_data.get('employeeId', clean_emp_id)
@@ -154,7 +154,7 @@ class OrangeHRMClient:
                             headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
                             method='PUT'
                         )
-                        opener.open(req_p, timeout=8)
+                        opener.open(req_p, timeout=15)
                     except Exception as pe:
                         print(f"[OrangeHRM Personal Update Note]: {pe}")
 
@@ -171,7 +171,7 @@ class OrangeHRMClient:
                             headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
                             method='PUT'
                         )
-                        opener.open(req_j, timeout=8)
+                        opener.open(req_j, timeout=15)
                     except Exception as je:
                         print(f"[OrangeHRM Job Update Note]: {je}")
 
@@ -198,7 +198,7 @@ class OrangeHRMClient:
                             headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
                             method='PUT'
                         )
-                        opener.open(req_c, timeout=8)
+                        opener.open(req_c, timeout=15)
                         print(f"[OrangeHRM Contact Details Updated] Successfully set workEmail to: {work_email}")
                     except Exception as ce:
                         print(f"[OrangeHRM Contact Details Update Note]: {ce}")

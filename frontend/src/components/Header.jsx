@@ -2,8 +2,6 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { PAGE_HEADER_SLOT_ID } from './ui';
 
-// Sticky app bar: menu button, the current page's title/description/actions (portalled in by
-// <PageHeader>), then theme toggle and the signed-in user.
 export default function Header({ toggleSidebar }) {
   const { currentUser, theme, toggleTheme } = useAuth();
   const displayName = currentUser?.name?.split(' (')[0] || 'User';
@@ -24,6 +22,44 @@ export default function Header({ toggleSidebar }) {
       <div id={PAGE_HEADER_SLOT_ID} className="top-header-slot"></div>
 
       <div className="top-header-tools">
+        {/* Direct T4 Server Button */}
+        <a
+          href="https://t4.automationedge.com/#/requests/list"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="t4-server-btn"
+          title="Open AutomationEdge T4 Server Requests"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '7px 14px',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+            color: '#ffffff',
+            textDecoration: 'none',
+            fontSize: '12.5px',
+            fontWeight: '600',
+            letterSpacing: '0.2px',
+            boxShadow: '0 2px 8px rgba(234, 88, 12, 0.25)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            transition: 'all 0.2s ease',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(234, 88, 12, 0.35)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(234, 88, 12, 0.25)';
+          }}
+        >
+          <i className="fa-solid fa-server" style={{ fontSize: '12px' }}></i>
+          <span>T4 Server</span>
+          <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '10px', opacity: 0.85 }}></i>
+        </a>
+
         <button
           className="header-icon-btn"
           onClick={toggleTheme}

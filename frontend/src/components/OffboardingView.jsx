@@ -482,19 +482,19 @@ export default function OffboardingView() {
   if (!isHR) {
     return (
       <section className="view-section active">
-        <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff' }}>
-          <h2 style={{ margin: 0, color: '#0f172a' }}>
+        <div className="glass-card" style={{ marginBottom: '1.5rem', background: 'var(--bg-card)' }}>
+          <h2 style={{ margin: 0, color: 'var(--text-main)' }}>
             <i className="fa-solid fa-file-signature" style={{ color: '#c2410c' }}></i> Employee Resignation Submission
           </h2>
         </div>
 
         <div style={{ maxWidth: '680px', margin: '0 auto' }}>
           {submittedCandidateData ? (
-            <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', background: '#ffffff' }}>
+            <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', background: 'var(--bg-card)' }}>
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', margin: '0 auto 1.25rem' }}>
                 <i className="fa-solid fa-check"></i>
               </div>
-              <h3 style={{ marginBottom: '0.5rem', color: '#0f172a' }}>Resignation submitted</h3>
+              <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-main)' }}>Resignation submitted</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', marginBottom: '1.5rem' }}>
                 Your resignation has been submitted and forwarded to <strong>HR Operations & Management</strong> for clearance processing.
               </p>
@@ -503,15 +503,15 @@ export default function OffboardingView() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div>
                     <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Employee Name</span>
-                    <strong>{submittedCandidateData.empName}</strong>
+                    <strong style={{ color: 'var(--text-main)' }}>{submittedCandidateData.empName}</strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Department</span>
-                    <strong>{submittedCandidateData.department}</strong>
+                    <strong style={{ color: 'var(--text-main)' }}>{submittedCandidateData.department}</strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Last Working Day</span>
-                    <strong>{submittedCandidateData.lastWorkingDay}</strong>
+                    <strong style={{ color: 'var(--text-main)' }}>{submittedCandidateData.lastWorkingDay}</strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem' }}>Status</span>
@@ -529,10 +529,10 @@ export default function OffboardingView() {
               </button>
             </div>
           ) : (
-            <div className="glass-card" style={{ padding: '1.75rem', background: '#ffffff' }}>
+            <div className="glass-card" style={{ padding: '1.75rem', background: 'var(--bg-card)' }}>
               <form onSubmit={handleSubmitResignation}>
                 <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
                     Employee Full Name:
                   </label>
                   <input
@@ -641,13 +641,13 @@ export default function OffboardingView() {
       />
       {/* HR Initiate Resignation Card */}
       {showHRInitiateForm && (
-        <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#ffffff', padding: '1.5rem', borderLeft: '4px solid #f87917' }}>
+        <div className="glass-card" style={{ marginBottom: '1.5rem', background: 'var(--bg-card)', padding: '1.5rem', borderLeft: '4px solid #f87917' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div>
-              <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <i className="fa-solid fa-file-signature" style={{ color: '#c2410c' }}></i> Submit Resignation on Behalf of Employee
               </h3>
-              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                 Populate employee details to trigger ServiceNow hardware incident and multi-system offboarding.
               </p>
             </div>
@@ -794,9 +794,9 @@ export default function OffboardingView() {
         </div>
 
         {exitRequests.length === 0 ? (
-          <div className="glass-card" style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)', background: '#ffffff' }}>
+          <div className="glass-card" style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
             <i className="fa-solid fa-circle-check" style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '1rem', display: 'block' }}></i>
-            <h3 style={{ color: '#0f172a', marginBottom: '0.5rem' }}>No active exit clearances</h3>
+            <h3 style={{ color: 'var(--text-main)', marginBottom: '0.5rem' }}>No active exit clearances</h3>
             <p>No employee resignations or exit clearances currently pending.</p>
           </div>
         ) : (
@@ -807,14 +807,14 @@ export default function OffboardingView() {
               const isRevoking = revokingId === item.id;
 
               return (
-                <div key={item.id} className="glass-card" style={{ padding: '1.25rem', background: '#ffffff' }}>
+                <div key={item.id} className="glass-card" style={{ padding: '1.25rem', background: 'var(--bg-card)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <div>
-                      <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1rem' }}>
+                      <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1rem' }}>
                         {item.empName} ({item.department})
                       </h4>
                       <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                        Last Working Day: <strong style={{ color: '#0f172a' }}>{item.lastWorkingDay}</strong> • ID: <code>{item.empId || item.id}</code>
+                        Last Working Day: <strong style={{ color: 'var(--text-main)' }}>{item.lastWorkingDay}</strong> • ID: <code>{item.empId || item.id}</code>
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -946,7 +946,7 @@ export default function OffboardingView() {
             style={{
               maxWidth: '640px',
               width: '100%',
-              background: '#ffffff',
+              background: 'var(--bg-card)',
               borderRadius: '12px',
               padding: '1.2rem 1.35rem',
               maxHeight: '92vh',
@@ -955,9 +955,9 @@ export default function OffboardingView() {
             }}
           >
             {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.45rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.45rem' }}>
               <div>
-                <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '1.05rem' }}>
+                <h3 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '1.05rem' }}>
                   <i className="fa-solid fa-sitemap" style={{ color: '#c2410c' }}></i> Offboarding & Deprovisioning Pipeline
                 </h3>
                 <p style={{ margin: '2px 0 0 0', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
@@ -966,20 +966,20 @@ export default function OffboardingView() {
               </div>
               <button
                 onClick={() => setShowFlowModal(false)}
-                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: '#64748b', cursor: 'pointer', padding: '2px 6px' }}
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px 6px' }}
               >
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
             {/* Employee Quick Info Badge */}
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '7px', padding: '0.45rem 0.8rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+            <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '7px', padding: '0.45rem 0.8rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
               <div>
-                <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{activeFlowItem.empName}</strong>
+                <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{activeFlowItem.empName}</strong>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '5px' }}>({activeFlowItem.department})</span>
               </div>
-              <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                ID: <strong style={{ color: '#c2410c' }}>{activeFlowItem.empId || activeFlowItem.id}</strong> • LWD: <strong>{activeFlowItem.lastWorkingDay}</strong>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                ID: <strong style={{ color: '#c2410c' }}>{activeFlowItem.empId || activeFlowItem.id}</strong> • LWD: <strong style={{ color: 'var(--text-main)' }}>{activeFlowItem.lastWorkingDay}</strong>
               </div>
             </div>
 

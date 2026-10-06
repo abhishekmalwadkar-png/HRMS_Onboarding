@@ -378,9 +378,9 @@ export default function RecruitmentView() {
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(420px, 1.4fr)', gap: '1.5rem', alignItems: 'start' }}>
         
         {/* Left: Open Job Requisitions */}
-        <div className="glass-card" style={{ background: '#ffffff' }}>
+        <div className="glass-card" style={{ background: 'var(--bg-card)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <i className="fa-solid fa-briefcase" style={{ color: '#c2410c' }}></i> Open roles ({jobPostings.length})
             </h3>
             <span className="badge badge-verified" style={{ fontSize: '0.72rem', fontWeight: 700 }}>
@@ -402,7 +402,7 @@ export default function RecruitmentView() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
                   <div>
-                    <strong style={{ fontSize: '0.95rem', color: '#0f172a' }}>{job.title}</strong>
+                    <strong style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>{job.title}</strong>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                       <i className="fa-solid fa-building" style={{ fontSize: '0.75rem', marginRight: '4px' }}></i>
                       {job.dept} • <span style={{ color: '#c2410c', fontWeight: 600 }}>{job.applicants} Applicants</span>
@@ -418,12 +418,12 @@ export default function RecruitmentView() {
                     <span
                       key={idx}
                       style={{
-                        background: '#ffffff',
-                        border: '1px solid #cbd5e1',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-color)',
                         borderRadius: '4px',
                         padding: '2px 7px',
                         fontSize: '0.72rem',
-                        color: '#475569',
+                        color: 'var(--text-secondary)',
                         fontWeight: 500,
                       }}
                     >
@@ -437,9 +437,9 @@ export default function RecruitmentView() {
         </div>
 
         {/* Right: Shortlisted Candidates Pipeline */}
-        <div className="glass-card" style={{ background: '#ffffff' }}>
+        <div className="glass-card" style={{ background: 'var(--bg-card)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <i className="fa-solid fa-users-viewfinder" style={{ color: '#c2410c' }}></i> Candidates in pipeline ({candidates.length})
             </h3>
             <button
@@ -531,12 +531,12 @@ export default function RecruitmentView() {
                           <span
                             key={sIdx}
                             style={{
-                              background: '#ffffff',
-                              border: '1px solid #cbd5e1',
+                              background: 'var(--bg-card)',
+                              border: '1px solid var(--border-color)',
                               borderRadius: '4px',
                               padding: '2px 6px',
                               fontSize: '0.7rem',
-                              color: '#334155',
+                              color: 'var(--text-secondary)',
                             }}
                           >
                             {typeof sk === 'string' ? sk.trim() : sk}
@@ -632,7 +632,7 @@ export default function RecruitmentView() {
             style={{
               maxWidth: '650px',
               width: '100%',
-              background: '#ffffff',
+              background: 'var(--bg-card)',
               borderRadius: '14px',
               padding: '1.75rem',
               maxHeight: '90vh',
@@ -640,13 +640,13 @@ export default function RecruitmentView() {
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
-              <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <i className="fa-solid fa-robot" style={{ color: '#c2410c' }}></i> AI Resume Screening & Match Engine
               </h3>
               <button
                 onClick={() => setShowScreenModal(false)}
-                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: '#64748b', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: 'var(--text-muted)', cursor: 'pointer' }}
               >
                 <i className="fa-solid fa-xmark"></i>
               </button>
@@ -814,13 +814,13 @@ export default function RecruitmentView() {
                     </div>
                   </div>
 
-                  <div style={{ background: '#ffffff', borderRadius: '8px', padding: '0.85rem 1rem', border: '1px solid #bbf7d0', fontSize: '0.82rem', color: '#334155' }}>
+                  <div style={{ background: 'var(--bg-primary)', borderRadius: '8px', padding: '0.85rem 1rem', border: '1px solid var(--border-color)', fontSize: '0.82rem', color: 'var(--text-main)' }}>
                     <div style={{ marginBottom: '0.4rem' }}>
                       <strong>Best Matched Role:</strong> <span style={{ color: '#c2410c', fontWeight: 700 }}>{lastScreenedResult.role}</span> ({lastScreenedResult.department})
                     </div>
                     <div>
                       <strong>Extracted Key Skills:</strong>{' '}
-                      <span style={{ color: '#059669', fontWeight: 500 }}>
+                      <span style={{ color: 'var(--accent-emerald)', fontWeight: 500 }}>
                         {(lastScreenedResult.skills || []).join(', ')}
                       </span>
                     </div>
@@ -877,7 +877,7 @@ export default function RecruitmentView() {
             style={{
               maxWidth: '560px',
               width: '100%',
-              background: '#ffffff',
+              background: 'var(--bg-card)',
               borderRadius: '14px',
               padding: '1.75rem',
               maxHeight: '90vh',
@@ -885,13 +885,13 @@ export default function RecruitmentView() {
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
-              <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <i className="fa-solid fa-video" style={{ color: '#c2410c' }}></i> Schedule Google Meet Interview
               </h3>
               <button
                 onClick={() => setShowInterviewModal(false)}
-                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: '#64748b', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: 'var(--text-muted)', cursor: 'pointer' }}
               >
                 <i className="fa-solid fa-xmark"></i>
               </button>
@@ -1051,7 +1051,7 @@ export default function RecruitmentView() {
             style={{
               maxWidth: '640px',
               width: '100%',
-              background: '#ffffff',
+              background: 'var(--bg-card)',
               borderRadius: '12px',
               padding: '1.2rem 1.35rem',
               maxHeight: '92vh',
@@ -1060,9 +1060,9 @@ export default function RecruitmentView() {
             }}
           >
             {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.45rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.45rem' }}>
               <div>
-                <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '1.05rem' }}>
+                <h3 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '1.05rem' }}>
                   <i className="fa-solid fa-sitemap" style={{ color: '#c2410c' }}></i> AI Resume Screening & T4 Matching Pipeline
                 </h3>
                 <p style={{ margin: '2px 0 0 0', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
@@ -1071,19 +1071,19 @@ export default function RecruitmentView() {
               </div>
               <button
                 onClick={() => setShowFlowModal(false)}
-                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: '#64748b', cursor: 'pointer', padding: '2px 6px' }}
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px 6px' }}
               >
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
             {/* Candidate & Role Quick Info Badge */}
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '7px', padding: '0.45rem 0.8rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+            <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '7px', padding: '0.45rem 0.8rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
               <div>
-                <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{activeFlowCandidate.name || activeFlowCandidate.candidateName}</strong>
+                <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{activeFlowCandidate.name || activeFlowCandidate.candidateName}</strong>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '5px' }}>({activeFlowCandidate.department || 'Engineering'})</span>
               </div>
-              <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                 Role: <strong style={{ color: '#c2410c' }}>{activeFlowCandidate.role || activeFlowCandidate.appliedRole || 'Senior AI Engineer'}</strong> • Score: <span className="badge badge-verified" style={{ fontSize: '0.72rem', padding: '1px 6px' }}>{activeFlowCandidate.score || '94%'}</span>
               </div>
             </div>
