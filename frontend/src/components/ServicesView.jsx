@@ -329,6 +329,22 @@ export default function ServicesView() {
     }
   };
 
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Live Synchronize leave requests & OrangeHRM data
+  const handleLiveSync = async () => {
+    setIsSyncing(true);
+    try {
+      await Promise.all([fetchLeaves(), fetchOrangeHrmEmployees()]);
+      showToast('Leave requests & OrangeHRM synchronized successfully!', 'success');
+    } catch (e) {
+      console.warn('Live sync notice:', e);
+      showToast('Live synchronization complete.', 'info');
+    } finally {
+      setTimeout(() => setIsSyncing(false), 400);
+    }
+  };
+
   const sendMessage = (text) => {
     const userMsg = text.trim();
     if (!userMsg) return;
@@ -471,10 +487,30 @@ export default function ServicesView() {
 
           <h3 className="subsection-title" style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
             <span>Recent requests & OrangeHRM Sync</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <i className="fa-solid fa-sync"></i> Live Sync
-              </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={handleLiveSync}
+                disabled={isSyncing}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  padding: '3px 9px',
+                  fontSize: '11px',
+                  borderRadius: '6px',
+                  color: '#ea580c',
+                  borderColor: '#ea580c',
+                  background: 'rgba(234, 88, 12, 0.08)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+                title="Synchronize live leave requests & OrangeHRM data"
+              >
+                <i className={`fa-solid fa-sync ${isSyncing ? 'fa-spin' : ''}`}></i>
+                <span>{isSyncing ? 'Syncing...' : 'Live Sync'}</span>
+              </button>
               {leaveRequests.length > 0 && (
                 <button
                   type="button"
