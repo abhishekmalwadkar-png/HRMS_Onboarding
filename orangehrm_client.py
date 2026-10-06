@@ -495,7 +495,10 @@ class OrangeHRMClient:
                 "leaveTypeId": leave_type_id,
                 "fromDate": from_date,
                 "toDate": to_date,
-                "comment": comment or "Leave approved via MangoHRMS Portal"
+                "comment": comment or "Leave approved via MangoHRMS Portal",
+                "duration": {
+                    "type": "full_day"
+                }
             }).encode('utf-8')
 
             assign_req = urllib.request.Request(
