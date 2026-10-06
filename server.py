@@ -892,10 +892,16 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "requests": leaves
             }).encode('utf-8'))
 
-            # 3. Background Executor for OrangeHRM + T4 Leave Approval + Email Notification
+            # 3. Background Executor: T4 Leave Approval FIRST -> OrangeHRM Assign Leave SECOND -> Email
             def _async_leave_approval_worker(e_ident, e_num, l_type, f_date, t_date, c_text, r_id):
                 try:
-                    print(f"\n[LEAVE ASYNC] Assigning {l_type} in OrangeHRM for {e_ident} ({f_date} to {t_date})...")
+                    # Step 1: Trigger AutomationEdge T4 "HR Demo Leave Approval" RPA workflow FIRST
+                    print(f"\n[RPA TRIGGER 1ST] Immediately triggering T4 'HR Demo Leave Approval' for Emp #{e_num}...")
+                    ae_res = ae_client.trigger_leave_approval(e_num)
+                    print(f"[RPA TRIGGER 1ST COMPLETED] T4 'HR Demo Leave Approval' executed. Status: {ae_res.get('status') or ae_res.get('executionStatus')}")
+
+                    # Step 2: Hit OrangeHRM Assign Leave API SECOND
+                    print(f"\n[ORANGEHRM 2ND] Assigning {l_type} in OrangeHRM for {e_ident} ({f_date} to {t_date})...")
                     assign_res = orangehrm_client.assign_employee_leave(
                         employee_name_or_id=e_ident,
                         leave_type_name=l_type,
@@ -903,13 +909,9 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                         to_date=t_date,
                         comment=c_text
                     )
-                    resolved_num = assign_res.get('empNumber') or e_num
+                    print(f"[ORANGEHRM 2ND COMPLETED] OrangeHRM leave record assigned: {assign_res}")
 
-                    # Trigger T4 "HR Demo Leave Approval" RPA workflow
-                    print(f"[RPA TRIGGER] Triggering T4 'HR Demo Leave Approval' for Emp #{resolved_num}...")
-                    ae_client.trigger_leave_approval(resolved_num)
-
-                    # Trigger Email Notification
+                    # Step 3: Dispatch Email Notification
                     subj = f"Leave Request Approved & Assigned in OrangeHRM: {e_ident} ({l_type})"
                     office365_client._dispatch_mail(
                         subject=subj,

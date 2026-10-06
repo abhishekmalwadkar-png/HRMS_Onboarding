@@ -155,11 +155,15 @@ export default function ServicesView() {
       const randomType = LEAVE_TYPES[Math.floor(Math.random() * LEAVE_TYPES.length)];
       const randomReason = SAMPLE_REASONS[Math.floor(Math.random() * SAMPLE_REASONS.length)];
       
-      // Generate upcoming dates (e.g. 1-4 weeks from now)
+      // Ensure start date lands on a working weekday (Monday - Wednesday)
       const today = new Date();
-      const startOffset = Math.floor(Math.random() * 12) + 4;
-      const dur = Math.floor(Math.random() * 3) + 1;
-      const start = new Date(today.getTime() + startOffset * 86400000);
+      let startOffset = Math.floor(Math.random() * 10) + 7;
+      let start = new Date(today.getTime() + startOffset * 86400000);
+      while (start.getDay() === 0 || start.getDay() === 6 || start.getDay() > 3) {
+        startOffset += 1;
+        start = new Date(today.getTime() + startOffset * 86400000);
+      }
+      const dur = Math.floor(Math.random() * 2) + 1; // 1-2 weekdays
       const end = new Date(start.getTime() + (dur - 1) * 86400000);
 
       const startIso = start.toISOString().split('T')[0];
