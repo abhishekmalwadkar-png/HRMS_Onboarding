@@ -419,60 +419,6 @@ export default function ServicesView() {
             </button>
           }
         >
-          {/* Quick Select & Workflow Indicator Bar */}
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '10px',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              background: 'var(--bg-surface-elevated, #f8fafc)',
-              border: '1px solid var(--border-subtle, #e2e8f0)',
-              marginBottom: '16px'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 240px' }}>
-              <i className="fa-solid fa-users" style={{ color: '#ea580c', fontSize: '13px' }}></i>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary, #475569)', whiteSpace: 'nowrap' }}>
-                Select Employee:
-              </span>
-              <select
-                className="form-control"
-                style={{ fontSize: '12.5px', padding: '4px 8px', height: '32px' }}
-                value={empNumber}
-                onChange={(e) => {
-                  const num = parseInt(e.target.value, 10);
-                  const found = orangeHrmEmployees.find((x) => x.empNumber === num);
-                  if (found) {
-                    handleAutofillFromOrangeHRM(found);
-                  }
-                }}
-              >
-                {orangeHrmEmployees.length > 0 ? (
-                  orangeHrmEmployees.map((emp) => (
-                    <option key={emp.empNumber} value={emp.empNumber}>
-                      {emp.fullName} ({emp.department || 'Engineering'} · Emp #{emp.empNumber})
-                    </option>
-                  ))
-                ) : (
-                  <>
-                    <option value={41}>Karthik Swaminathan (Emp #41)</option>
-                    <option value={34}>Samantha Chang (Emp #34)</option>
-                    <option value={33}>Marcus Aurelius (Emp #33)</option>
-                  </>
-                )}
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#059669', fontWeight: '600' }}>
-              <i className="fa-solid fa-robot"></i>
-              <span>T4 RPA Workflows Active</span>
-            </div>
-          </div>
-
           <AnimatePresence>
             {leaveResult && (
               <StatusBanner tone="success" title="Leave request status" onDismiss={() => setLeaveResult(null)}>
@@ -483,7 +429,7 @@ export default function ServicesView() {
 
           <form onSubmit={handleApplyLeave} className="stack-form" noValidate>
             <div className="form-grid-2">
-              <Field id="leave-employee" label={`Employee Name (Emp #${empNumber})`} required>
+              <Field id="leave-employee" label="Employee Name" required>
                 <input
                   type="text"
                   className="form-control"
