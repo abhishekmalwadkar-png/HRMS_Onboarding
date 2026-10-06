@@ -588,13 +588,6 @@ export default function RecruitmentView() {
                     {/* Action Buttons */}
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
                       <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => viewScreeningFlowForCandidate(cand)}
-                        title="View sequential T4 RPA screening & match execution pipeline flow"
-                      >
-                        <i className="fa-solid fa-network-wired"></i> View screening flow
-                      </button>
-                      <button
                         className={`btn btn-sm btn-secondary ${isScheduled ? '' : 'btn-accent-outline'}`}
                         onClick={() => openInterviewModal(cand)}
                       >
