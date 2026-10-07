@@ -133,14 +133,9 @@ export default function CredentialsView() {
           <motion.div
             key={sys.id}
             variants={staggerItem}
-            className="ui-card"
+            className="cred-card"
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
               borderTop: `4px solid ${sys.tone}`,
-              position: 'relative',
-              overflow: 'hidden',
             }}
           >
             <div>
@@ -170,7 +165,7 @@ export default function CredentialsView() {
                     <i className={sys.icon} aria-hidden="true"></i>
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>{sys.name}</h3>
+                    <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>{sys.name}</h3>
                     <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{sys.badge}</span>
                   </div>
                 </div>
@@ -193,18 +188,7 @@ export default function CredentialsView() {
               </p>
 
               {/* Credential Fields */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.55rem',
-                  background: 'var(--bg-muted, rgba(0,0,0,0.02))',
-                  padding: '0.85rem',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-color, #e2e8f0)',
-                  marginBottom: '1.25rem',
-                }}
-              >
+              <div className="cred-box">
                 {sys.credentials.map((cred) => {
                   const isHidden = cred.isSecret && !showPasswords[cred.key];
                   const displayValue = isHidden ? '••••••••••••' : cred.value;
@@ -224,22 +208,7 @@ export default function CredentialsView() {
                         {cred.label}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', overflow: 'hidden' }}>
-                        <code
-                          style={{
-                            background: 'var(--surface, #ffffff)',
-                            padding: '3px 7px',
-                            borderRadius: '5px',
-                            border: '1px solid var(--border-color, #e2e8f0)',
-                            fontFamily: 'monospace',
-                            fontSize: '0.78rem',
-                            maxWidth: '170px',
-                            textOverflow: 'ellipsis',
-                            overflow: 'hidden',
-                            whiteSpace: 'nowrap',
-                            color: 'var(--text-primary)',
-                          }}
-                          title={cred.value}
-                        >
+                        <code className="cred-code" title={cred.value}>
                           {displayValue}
                         </code>
 
@@ -262,15 +231,10 @@ export default function CredentialsView() {
                         <button
                           onClick={() => copyToClipboard(cred.value, cred.key, cred.label)}
                           title={`Copy ${cred.label}`}
+                          className="cred-copy-btn"
                           style={{
-                            background: copiedField === cred.key ? '#16a34a' : 'transparent',
-                            color: copiedField === cred.key ? '#ffffff' : 'var(--text-secondary)',
-                            border: '1px solid var(--border-color, #e2e8f0)',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            padding: '2px 6px',
-                            fontSize: '0.72rem',
-                            transition: 'all 0.15s ease',
+                            background: copiedField === cred.key ? '#16a34a' : undefined,
+                            color: copiedField === cred.key ? '#ffffff' : undefined,
                           }}
                         >
                           <i className={`fa-solid ${copiedField === cred.key ? 'fa-check' : 'fa-copy'}`}></i>

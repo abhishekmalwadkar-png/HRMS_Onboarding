@@ -5536,3 +5536,81 @@ p, .page-description, .cell-sub {
     transform: none;
   }
 }
+
+/* ===================================================================
+   Credential Pool Styles (100% Theme Adaptive)
+   =================================================================== */
+.cred-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.cred-card:hover {
+  border-color: var(--border-orange-strong);
+  box-shadow: var(--shadow-md);
+}
+.cred-box {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+.cred-code {
+  background: var(--bg-input) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color) !important;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 0.78rem;
+  max-width: 170px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  display: inline-block;
+}
+.cred-copy-btn {
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.cred-copy-btn:hover {
+  background: var(--bg-accent-soft);
+  color: var(--accent-text);
+  border-color: var(--border-orange);
+}
+[data-theme="dark"] .cred-box {
+  background: rgba(11, 17, 32, 0.75);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .cred-code {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+[data-theme="dark"] .cred-copy-btn {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+[data-theme="dark"] .cred-copy-btn:hover {
+  background: rgba(248, 121, 23, 0.2);
+  color: #fdba74;
+}
