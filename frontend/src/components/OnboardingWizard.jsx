@@ -247,24 +247,127 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     }
   };
 
-  // Setup signature canvas
-  useEffect(() => {
-    if (currentStep === 2 && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.font = "italic bold 32px 'Caveat', cursive, 'Brush Script MT', sans-serif";
-      ctx.fillStyle = '#c2410c';
-      ctx.fillText(formData.fullName || 'Aarav Sharma', 40, canvas.height / 2 + 10);
+  const [hasDrawn, setHasDrawn] = useState(false);
+  const isDrawingRef = useRef(false);
 
-      ctx.beginPath();
-      ctx.strokeStyle = '#c2410c';
-      ctx.lineWidth = 2.5;
-      ctx.moveTo(35, canvas.height / 2 + 25);
-      ctx.quadraticCurveTo(canvas.width / 2, canvas.height / 2 + 40, canvas.width - 60, canvas.height / 2 + 20);
-      ctx.stroke();
+  // Helper to draw clean cursive auto-signature
+  const drawAutoSignature = (name) => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Subtle guideline
+    ctx.beginPath();
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.moveTo(30, canvas.height - 25);
+    ctx.lineTo(canvas.width - 30, canvas.height - 25);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Cursive signature
+    ctx.font = "italic bold 32px 'Caveat', cursive, 'Brush Script MT', sans-serif";
+    ctx.fillStyle = '#c2410c';
+    ctx.fillText(name || 'Aarav Sharma', 40, canvas.height / 2 + 8);
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#c2410c';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.moveTo(35, canvas.height / 2 + 25);
+    ctx.quadraticCurveTo(canvas.width / 2, canvas.height / 2 + 40, canvas.width - 60, canvas.height / 2 + 20);
+    ctx.stroke();
+  };
+
+  const clearSignature = () => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Subtle guideline
+    ctx.beginPath();
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.moveTo(30, canvas.height - 25);
+    ctx.lineTo(canvas.width - 30, canvas.height - 25);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    setHasDrawn(true);
+  };
+
+  // Setup signature canvas initial render
+  useEffect(() => {
+    if (currentStep === 2 && canvasRef.current && !hasDrawn) {
+      drawAutoSignature(formData.fullName);
     }
-  }, [currentStep, formData.fullName]);
+  }, [currentStep, formData.fullName, hasDrawn]);
+
+  // Pointer drawing events (supports mouse, stylus, and touch)
+  const getCanvasCoordinates = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  };
+
+  const handlePointerDown = (e) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    if (!hasDrawn) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Subtle guideline
+      ctx.beginPath();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.moveTo(30, canvas.height - 25);
+      ctx.lineTo(canvas.width - 30, canvas.height - 25);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      setHasDrawn(true);
+    }
+
+    isDrawingRef.current = true;
+    const pos = getCanvasCoordinates(e);
+    ctx.beginPath();
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2.8;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.moveTo(pos.x, pos.y);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDrawingRef.current) return;
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const pos = getCanvasCoordinates(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+  };
+
+  const handlePointerUp = (e) => {
+    if (isDrawingRef.current) {
+      e.preventDefault();
+      isDrawingRef.current = false;
+    }
+  };
 
   const handleInputChange = (e) => {
     const { id, value, type, checked } = e.target;
@@ -620,19 +723,55 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                 </div>
 
                 <div className="field">
-                  <span className="field-label" id="signature-label">
-                    Candidate digital sign-off <span className="required" aria-hidden="true">*</span>
-                  </span>
-                  <div className="signature-box">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <span className="field-label" id="signature-label" style={{ marginBottom: 0 }}>
+                      Candidate digital sign-off <span className="required" aria-hidden="true">*</span>
+                    </span>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-xs"
+                        style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', borderRadius: '4px' }}
+                        onClick={() => {
+                          setHasDrawn(false);
+                          drawAutoSignature(formData.fullName);
+                        }}
+                        title="Generate signature from candidate name"
+                      >
+                        <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Auto-sign
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-xs"
+                        style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', borderRadius: '4px' }}
+                        onClick={clearSignature}
+                        title="Clear canvas to draw freehand"
+                      >
+                        <i className="fa-solid fa-eraser" aria-hidden="true"></i> Clear
+                      </button>
+                    </div>
+                  </div>
+                  <div className="signature-box" style={{ touchAction: 'none', position: 'relative' }}>
                     <canvas
                       ref={canvasRef}
-                      width={600}
-                      height={100}
+                      width={700}
+                      height={110}
                       role="img"
                       aria-label={`Signature of ${formData.fullName}`}
+                      style={{
+                        width: '100%',
+                        height: '110px',
+                        display: 'block',
+                        cursor: 'crosshair',
+                        touchAction: 'none'
+                      }}
+                      onPointerDown={handlePointerDown}
+                      onPointerMove={handlePointerMove}
+                      onPointerUp={handlePointerUp}
+                      onPointerLeave={handlePointerUp}
                     />
                   </div>
-                  <span className="field-hint">Generated from the candidate's legal name for offer acceptance and background verification.</span>
+                  <span className="field-hint">Draw your signature with mouse/touch or use <strong>Auto-sign</strong> to generate from the candidate's legal name.</span>
                 </div>
               </motion.div>
             )}
