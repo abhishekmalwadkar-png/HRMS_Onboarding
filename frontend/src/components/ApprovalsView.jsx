@@ -602,15 +602,18 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
         footer={
           <>
             <button className="btn btn-secondary" onClick={() => setActiveFlowCandidate(null)}>Close</button>
-            <a
-              href={flowData?.orangeHrm?.profileUrl || 'http://10.41.5.39/orangehrm/web/index.php/pim/viewEmployeeList'}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={() => {
+                const targetUrl = flowData?.orangeHrm?.profileUrl || 'http://10.41.5.39/orangehrm/web/index.php/auth/login';
+                navigator.clipboard.writeText('Admin@1234').catch(() => {});
+                showToast('🔑 OrangeHRM: User: admin | Pass: Admin@1234 (Copied to clipboard)', 'success');
+                window.open(targetUrl, '_blank', 'noopener,noreferrer');
+              }}
               className="btn btn-primary"
+              title="Open OrangeHRM (Credentials: admin / Admin@1234 copied to clipboard)"
             >
               <i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Open OrangeHRM
-              <span className="sr-only"> (opens in a new tab)</span>
-            </a>
+            </button>
           </>
         }
       >

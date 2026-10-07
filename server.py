@@ -152,6 +152,33 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps(leaves).encode('utf-8'))
             elif self.path.startswith('/api/exit'):
                 self.wfile.write(json.dumps(db.get('exitRequests', [])).encode('utf-8'))
+            elif self.path.startswith('/api/orangehrm/token'):
+                try:
+                    session = orangehrm_client._get_authenticated_session()
+                    self.wfile.write(json.dumps({
+                        "status": "success",
+                        "authenticated": True,
+                        "user": orangehrm_client.username,
+                        "portalUrl": f"{orangehrm_client.base_url}/web/index.php/pim/viewEmployeeList",
+                        "loginUrl": f"{orangehrm_client.base_url}/web/index.php/auth/login",
+                        "message": "OrangeHRM session authenticated & verified successfully."
+                    }).encode('utf-8'))
+                except Exception as e:
+                    self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+            elif self.path.startswith('/api/rpa/token'):
+                try:
+                    token = ae_client.authenticate()
+                    self.wfile.write(json.dumps({
+                        "status": "success" if token else "error",
+                        "authenticated": bool(token),
+                        "token": token,
+                        "user": ae_client.username,
+                        "orgCode": ae_client.org_code,
+                        "portalUrl": "https://t4.automationedge.com/#/requests/list",
+                        "message": "AutomationEdge T4 token generated successfully." if token else "Authentication failed"
+                    }).encode('utf-8'))
+                except Exception as e:
+                    self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
             elif self.path.startswith('/api/rpa/config'):
                 self.wfile.write(json.dumps(ae_client.get_config_summary()).encode('utf-8'))
             elif self.path.startswith('/api/servicenow/config'):

@@ -80,6 +80,114 @@ class OrangeHRMClient:
         opener.open(req_val, timeout=10)
         return opener
 
+    def get_login_form_html(self, redirect_path=''):
+        """
+        Generates an auto-submitting HTML bridge that logs the user's browser
+        directly into OrangeHRM with stored admin credentials and session CSRF token.
+        """
+        self.reload_config()
+        token = ''
+        login_url = f"{self.base_url}/web/index.php/auth/login"
+        try:
+            req = urllib.request.Request(login_url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            })
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                html = resp.read().decode('utf-8', errors='ignore')
+                token_match = (
+                    re.search(r':token="&quot;([^&]+)&quot;"', html) or
+                    re.search(r'name="_token"\s+value="([^"]+)"', html) or
+                    re.search(r'value="([a-zA-Z0-9_\.\-]+)"', html)
+                )
+                token = token_match.group(1) if token_match else ''
+        except Exception as e:
+            print(f"[OrangeHRM AutoLogin] Could not fetch fresh CSRF token: {e}")
+
+        validate_url = f"{self.base_url}/web/index.php/auth/validate"
+        
+        return f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Logging into OrangeHRM...</title>
+  <style>
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #0f172a;
+      color: #ffffff;
+    }}
+    .login-card {{
+      background: #1e293b;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 32px 40px;
+      text-align: center;
+      max-width: 420px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }}
+    .spinner {{
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(249, 115, 22, 0.2);
+      border-top-color: #f97316;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }}
+    @keyframes spin {{
+      to {{ transform: rotate(360deg); }}
+    }}
+    h2 {{
+      margin: 0 0 8px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+    }}
+    p {{
+      color: #94a3b8;
+      font-size: 0.88rem;
+      margin: 0 0 20px;
+      line-height: 1.4;
+    }}
+    .btn {{
+      display: inline-block;
+      background: #f97316;
+      color: #fff;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.88rem;
+      cursor: pointer;
+      text-decoration: none;
+    }}
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="spinner"></div>
+    <h2>Authenticating with OrangeHRM</h2>
+    <p>Signing in as <strong>{self.username}</strong> and loading the employee directory…</p>
+    <form id="authForm" method="POST" action="{validate_url}">
+      <input type="hidden" name="_token" value="{token}" />
+      <input type="hidden" name="username" value="{self.username}" />
+      <input type="hidden" name="password" value="{self.password}" />
+      <noscript>
+        <button type="submit" class="btn">Continue to OrangeHRM</button>
+      </noscript>
+    </form>
+  </div>
+  <script>
+    document.getElementById('authForm').submit();
+  </script>
+</body>
+</html>"""
+
     def create_employee_profile(self, employee_data, o365_email=None):
         """
         Creates an employee profile on OrangeHRM with name, employee ID, and job/personal info.

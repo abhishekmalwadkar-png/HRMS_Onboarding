@@ -188,6 +188,7 @@ export default function DashboardView({ employees, isLoading, onNavigate }) {
         <ul className="dash-hero-systems" aria-label="Connected systems">
           {[
             { icon: 'fa-solid fa-ticket', label: 'ServiceNow' },
+            { icon: 'fa-solid fa-sitemap', label: 'Active Directory' },
             { icon: 'fa-solid fa-robot', label: 'AutomationEdge T4' },
             { icon: 'fa-brands fa-microsoft', label: 'Microsoft 365' },
             { icon: 'fa-solid fa-user-check', label: 'OrangeHRM' },

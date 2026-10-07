@@ -13,6 +13,7 @@ import ServicesView from './components/ServicesView';
 import AnalyticsView from './components/AnalyticsView';
 import DashboardView from './components/DashboardView';
 import WhatsAppView from './components/WhatsAppView';
+import CredentialsView from './components/CredentialsView';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -147,6 +148,10 @@ export default function App() {
 
           {currentView === 'recruitment' && isHR && (
             <RecruitmentView />
+          )}
+
+          {currentView === 'credentials' && isHR && (
+            <CredentialsView />
           )}
 
           {currentView === 'services' && isHR && (

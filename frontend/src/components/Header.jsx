@@ -1,10 +1,28 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { PAGE_HEADER_SLOT_ID } from './ui';
 
 export default function Header({ toggleSidebar }) {
   const { currentUser, theme, toggleTheme } = useAuth();
+  const { showToast } = useToast();
   const displayName = currentUser?.name?.split(' (')[0] || 'User';
+
+  const aeConfig = {
+    url: 'https://t4.automationedge.com/#/requests/list',
+    orgCode: 'MSP_EVENT',
+    username: 'Msp',
+    password: 'Msp@12345',
+  };
+
+  const handleAeServerClick = (e) => {
+    e.preventDefault();
+    // Copy password to clipboard for quick paste
+    navigator.clipboard.writeText(aeConfig.password).catch(() => {});
+    showToast('🔑 AE Server credentials ready! (Org: MSP_EVENT | User: Msp) — Opening portal...', 'success');
+    // Open direct URL in new tab
+    window.open(aeConfig.url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <header className="top-header">
@@ -23,12 +41,10 @@ export default function Header({ toggleSidebar }) {
 
       <div className="top-header-tools">
         {/* Direct AE Server Button */}
-        <a
-          href="https://t4.automationedge.com/#/requests/list"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={handleAeServerClick}
           className="t4-server-btn"
-          title="Open AutomationEdge Server Requests"
+          title="Open AutomationEdge Server"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -37,12 +53,11 @@ export default function Header({ toggleSidebar }) {
             borderRadius: '8px',
             background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
             color: '#ffffff',
-            textDecoration: 'none',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             fontSize: '12.5px',
             fontWeight: '600',
             letterSpacing: '0.2px',
             boxShadow: '0 2px 8px rgba(234, 88, 12, 0.25)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
             transition: 'all 0.2s ease',
             cursor: 'pointer'
           }}
@@ -58,7 +73,7 @@ export default function Header({ toggleSidebar }) {
           <i className="fa-solid fa-server" style={{ fontSize: '12px' }}></i>
           <span>AE server</span>
           <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '10px', opacity: 0.85 }}></i>
-        </a>
+        </button>
 
         <button
           className="header-icon-btn"

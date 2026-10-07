@@ -12,7 +12,7 @@ const STATUS_OPTIONS = [
 ];
 
 // One system card in the employee dossier
-function SystemCard({ tone, icon, title, status, children, href, linkLabel }) {
+function SystemCard({ tone, icon, title, status, children, href, linkLabel, onOpen }) {
   return (
     <motion.div className={`system-card system-card-${tone}`} variants={staggerItem}>
       <div className="system-card-head">
@@ -20,10 +20,16 @@ function SystemCard({ tone, icon, title, status, children, href, linkLabel }) {
         <span className="badge system-card-status">{status}</span>
       </div>
       <div className="system-card-body">{children}</div>
-      <a href={href} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
-        <i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> {linkLabel}
-        <span className="sr-only"> (opens in a new tab)</span>
-      </a>
+      {onOpen ? (
+        <button onClick={onOpen} className="btn btn-secondary btn-sm" style={{ width: 'fit-content', cursor: 'pointer' }}>
+          <i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> {linkLabel}
+        </button>
+      ) : (
+        <a href={href} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
+          <i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> {linkLabel}
+          <span className="sr-only"> (opens in a new tab)</span>
+        </a>
+      )}
     </motion.div>
   );
 }
@@ -292,8 +298,13 @@ export default function DirectoryView({ employees }) {
               icon="fa-solid fa-user-check"
               title="OrangeHRM PIM"
               status={sel.orangeHrmStatus || (sel.orangeHrmEmpNumber ? 'Profile active' : 'Created on approval')}
-              href={sel.orangeHrmProfileUrl || 'http://10.41.5.39/orangehrm/web/index.php/pim/viewEmployeeList'}
               linkLabel="Open OrangeHRM profile"
+              onOpen={() => {
+                const targetUrl = sel.orangeHrmProfileUrl || 'http://10.41.5.39/orangehrm/web/index.php/auth/login';
+                navigator.clipboard.writeText('Admin@1234').catch(() => {});
+                showToast('🔑 OrangeHRM: User: admin | Pass: Admin@1234 (Copied to clipboard)', 'success');
+                window.open(targetUrl, '_blank', 'noopener,noreferrer');
+              }}
             >
               <div>Employee number: <strong>{sel.orangeHrmEmpNumber ? `#${sel.orangeHrmEmpNumber}` : 'Not created yet'}</strong></div>
               <div>Uses the Microsoft 365 work email</div>

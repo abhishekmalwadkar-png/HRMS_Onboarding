@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { view: 'approvals', icon: 'fa-clipboard-check', label: 'Approvals', hrOnly: true },
   { view: 'recruitment', icon: 'fa-user-plus', label: 'Recruitment', hrOnly: true },
   { view: 'dashboard', icon: 'fa-users-gear', label: 'Directory', hrOnly: true },
+  { view: 'credentials', icon: 'fa-key', label: 'Credential Pool', hrOnly: true },
   { view: 'services', icon: 'fa-headset', label: 'Services & AI', hrOnly: true },
   { view: 'exit', icon: 'fa-person-walking-arrow-right', label: 'Offboarding' },
   { view: 'analytics', icon: 'fa-chart-pie', label: 'HR Analytics', hrOnly: true },
