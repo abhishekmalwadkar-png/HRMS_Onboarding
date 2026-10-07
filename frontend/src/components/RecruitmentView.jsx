@@ -647,7 +647,7 @@ export default function RecruitmentView() {
 
             {!lastScreenedResult ? (
               <div>
-                <p style={{ color: '#475569', fontSize: '0.88rem', margin: '0 0 1.2rem 0' }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', margin: '0 0 1.2rem 0' }}>
                   Upload a candidate resume (.pdf, .docx, .txt) or test with instant pre-configured candidate profiles. Our AI engine scans skills and benchmarks against all open job requisitions.
                 </p>
 
@@ -655,11 +655,11 @@ export default function RecruitmentView() {
                 <div
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    border: '2px dashed #f87917',
+                    border: '2px dashed var(--brand-orange, #f87917)',
                     borderRadius: '10px',
                     padding: '1.75rem 1rem',
                     textAlign: 'center',
-                    background: '#f8fafc',
+                    background: 'var(--bg-primary)',
                     cursor: 'pointer',
                     marginBottom: '1.25rem',
                     transition: 'all 0.2s ease',
@@ -672,18 +672,18 @@ export default function RecruitmentView() {
                     accept=".pdf,.docx,.txt"
                     style={{ display: 'none' }}
                   />
-                  <i className="fa-solid fa-cloud-arrow-up" style={{ fontSize: '2.2rem', color: '#c2410c', marginBottom: '0.5rem', display: 'block' }}></i>
-                  <strong style={{ color: '#0f172a', fontSize: '0.92rem' }}>
+                  <i className="fa-solid fa-cloud-arrow-up" style={{ fontSize: '2.2rem', color: 'var(--brand-orange, #f87917)', marginBottom: '0.5rem', display: 'block' }}></i>
+                  <strong style={{ color: 'var(--text-main)', fontSize: '0.92rem' }}>
                     {selectedFile ? `Selected: ${selectedFile.name}` : 'Click to Browse or Drag & Drop Resume'}
                   </strong>
-                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '4px' }}>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                     Supports PDF, DOCX, and TXT files (Max 15MB)
                   </div>
                 </div>
 
                 {/* Instant Sample Resumes Options */}
                 <div style={{ marginBottom: '1.25rem' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.5rem' }}>
                     ⚡ Instant Test Resumes:
                   </span>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.5rem' }}>
@@ -694,8 +694,8 @@ export default function RecruitmentView() {
                       onClick={() => handleRunScreening('ai-engineer')}
                       style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', textAlign: 'left' }}
                     >
-                      <strong style={{ display: 'block', color: '#c2410c' }}>Vikram Adve</strong>
-                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Senior AI / LLMs (5.5 yrs)</span>
+                      <strong style={{ display: 'block', color: 'var(--brand-orange, #f87917)' }}>Vikram Adve</strong>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Senior AI / LLMs (5.5 yrs)</span>
                     </button>
                     <button
                       type="button"
@@ -704,8 +704,8 @@ export default function RecruitmentView() {
                       onClick={() => handleRunScreening('servicenow-architect')}
                       style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', textAlign: 'left' }}
                     >
-                      <strong style={{ display: 'block', color: '#c2410c' }}>Sameer Kulkarni</strong>
-                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>ServiceNow Architect (6 yrs)</span>
+                      <strong style={{ display: 'block', color: 'var(--brand-orange, #f87917)' }}>Sameer Kulkarni</strong>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>ServiceNow Architect (6 yrs)</span>
                     </button>
                     <button
                       type="button"
@@ -714,8 +714,8 @@ export default function RecruitmentView() {
                       onClick={() => handleRunScreening('product-manager')}
                       style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', textAlign: 'left' }}
                     >
-                      <strong style={{ display: 'block', color: '#c2410c' }}>Ananya Sen</strong>
-                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Lead Product Manager (6+ yrs)</span>
+                      <strong style={{ display: 'block', color: 'var(--brand-orange, #f87917)' }}>Ananya Sen</strong>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Lead Product Manager (6+ yrs)</span>
                     </button>
                   </div>
                 </div>
