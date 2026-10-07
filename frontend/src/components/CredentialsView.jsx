@@ -32,7 +32,6 @@ export default function CredentialsView() {
       url: 'https://t4.automationedge.com/#/requests/list',
       loginUrl: 'https://t4.automationedge.com/#/login',
       credentials: [
-        { key: 't4_org', label: 'Org Code', value: 'MSP_EVENT', isSecret: false },
         { key: 't4_user', label: 'Username', value: 'Msp', isSecret: false },
         { key: 't4_pass', label: 'Password', value: 'Msp@12345', isSecret: true },
         { key: 't4_url', label: 'Server API URL', value: 'https://t4.automationedge.com/aeengine', isSecret: false },
@@ -42,7 +41,7 @@ export default function CredentialsView() {
           fetch('/api/rpa/token').catch(() => {});
         } catch (e) {}
         navigator.clipboard.writeText('Msp@12345').catch(() => {});
-        showToast('🔑 T4 Server session authenticated (Org: MSP_EVENT | User: Msp) — Password copied!', 'success');
+        showToast('🔑 T4 Server session authenticated (User: Msp) — Password copied!', 'success');
         window.open('https://t4.automationedge.com/#/requests/list', '_blank', 'noopener,noreferrer');
       },
       launchLabel: 'Launch & Login to T4 Server',

@@ -19,7 +19,7 @@ export default function Header({ toggleSidebar }) {
     e.preventDefault();
     // Copy password to clipboard for quick paste
     navigator.clipboard.writeText(aeConfig.password).catch(() => {});
-    showToast('🔑 AE Server credentials ready! (Org: MSP_EVENT | User: Msp) — Opening portal...', 'success');
+    showToast('🔑 AE Server credentials ready! (User: Msp) — Opening portal...', 'success');
     // Open direct URL in new tab
     window.open(aeConfig.url, '_blank', 'noopener,noreferrer');
   };
