@@ -2286,8 +2286,8 @@ a:focus-visible,
   margin-bottom: 0;
 }
 .kpi-label {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  font-size: 0.82rem;
+  color: #1e293b;
   font-weight: 600;
 }
 .kpi-value {
@@ -2299,8 +2299,15 @@ a:focus-visible,
   letter-spacing: -0.02em;
 }
 .kpi-note {
-  font-size: 0.74rem;
-  color: var(--text-muted);
+  font-size: 0.75rem;
+  color: #334155;
+  font-weight: 500;
+}
+[data-theme="dark"] .kpi-label {
+  color: #e2e8f0;
+}
+[data-theme="dark"] .kpi-note {
+  color: #94a3b8;
 }
 .tone-success { color: var(--accent-emerald-dark); }
 .tone-accent { color: var(--accent-primary); }
