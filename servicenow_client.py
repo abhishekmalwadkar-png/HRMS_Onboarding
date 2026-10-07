@@ -15,6 +15,7 @@ from orangehrm_client import orangehrm_client
 from office365_client import office365_client
 from ae_rpa_client import ae_client
 from generate_offer_letter import generate_offer_letter_pdf
+from task_queue import retry_on_failure
 
 ENV_FILE = os.path.join(os.path.dirname(__file__), '.env')
 

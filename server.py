@@ -13,6 +13,7 @@ from servicenow_client import sn_client
 from office365_client import office365_client
 from orangehrm_client import orangehrm_client
 import resume_screener
+from task_queue import task_queue, retry_on_failure
 
 PORT = int(os.environ.get('PORT', 8081))
 # Bind address: '' = all interfaces (default). Set HOST=127.0.0.1 behind Nginx so only Nginx can reach it.
@@ -169,6 +170,19 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             elif self.path.startswith('/api/orangehrm/employees'):
                 emps = orangehrm_client.get_active_employees()
                 self.wfile.write(json.dumps(emps).encode('utf-8'))
+            elif self.path.startswith('/api/tasks/queue'):
+                self.wfile.write(json.dumps({
+                    "status": "success",
+                    "metrics": task_queue.get_metrics(),
+                    "tasks": task_queue.list_tasks(limit=50)
+                }).encode('utf-8'))
+            elif self.path.startswith('/api/tasks/status'):
+                task_id = self.path.split('taskId=', 1)[1].split('&', 1)[0] if 'taskId=' in self.path else ''
+                task_info = task_queue.get_task(task_id) if task_id else None
+                self.wfile.write(json.dumps({
+                    "status": "success" if task_info else "error",
+                    "task": task_info
+                }).encode('utf-8'))
             elif self.path.startswith('/api/db'):
                 self.wfile.write(json.dumps(db).encode('utf-8'))
             else:

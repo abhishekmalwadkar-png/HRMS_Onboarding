@@ -10,6 +10,7 @@ import urllib.error
 import ssl
 import time
 import uuid
+from task_queue import retry_on_failure
 
 ENV_FILE = os.path.join(os.path.dirname(__file__), '.env')
 
@@ -85,6 +86,7 @@ class AutomationEdgeClient:
             "mode": "Live AutomationEdge T4" if self.is_configured() else "Ready (Simulation / Placeholder Mode)"
         }
 
+    @retry_on_failure(max_retries=2, initial_delay=1.5)
     def authenticate(self):
         """
         Authenticate with AutomationEdge T4 Engine using form-urlencoded credentials.
