@@ -50,5 +50,11 @@ yarn-error.log*
 Thumbs.db
 *.log
 
-# Deployment logs (deploy\windows\start.ps1)
+# Deployment logs & offline scripts
 logs/
+deploy_app.py
+setup_and_run.py
+run_app.py
+installer.py
+nginx/
+*.zip
