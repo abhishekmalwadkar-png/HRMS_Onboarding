@@ -536,5 +536,180 @@
       "leaveId": "2"
     }
   ],
-  "exitRequests": []
+  "exitRequests": [
+    {
+      "id": "EXIT-480",
+      "empId": "EMP-8141",
+      "empName": "Raghav Patil",
+      "department": "Engineering",
+      "resignationDate": "2026-10-07",
+      "lastWorkingDay": "2026-11-06",
+      "reason": "Transitioning to independent specialized consulting.",
+      "itClearance": true,
+      "itClearanceStatus": "User Submitted Laptop",
+      "financeClearance": false,
+      "accessRevoked": true,
+      "o365Deleted": true,
+      "orangeHrmDeleted": true,
+      "emailSent": true,
+      "fnfStatus": "Pending Initiation",
+      "aeSnReqWorkflow": {
+        "status": "success",
+        "mode": "live_t4_rpa",
+        "workflowName": "HR Demo Offboarding SN Req",
+        "automationRequestId": 3305586,
+        "sourceId": "SID_1791365132724_3b3f9f6b72c4",
+        "executionStatus": "Complete",
+        "agentName": "mahesh@mspevent-win-1",
+        "message": "Employee EMP-8141 Offboarding initiated and request submitted on ServiceNow",
+        "errorDetails": null,
+        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3305586",
+        "serverUrl": "https://t4.automationedge.com/aeengine",
+        "params": {
+          "EmpID": "EMP-8141"
+        }
+      },
+      "serviceNowReq": "REQ0011965",
+      "serviceNowRitm": "RITM0016137",
+      "laptopTicket": "INC0040525",
+      "laptopTicketSysId": "26c336dd33f783105e900e570e5c7b9b",
+      "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident.do?sys_id=26c336dd33f783105e900e570e5c7b9b",
+      "assignedTo": "Alejandra Prenatt",
+      "laptopIncidentState": "Resolved",
+      "t4RevokePipeline": {
+        "status": "success",
+        "employeeId": "EMP-8141",
+        "employeeName": "Raghav Patil",
+        "adUsername": "Raghav.Patil",
+        "steps": [
+          {
+            "step": 1,
+            "workflow": "HR Demo OffboardingRemoveADUser",
+            "params": {
+              "AD username": "Raghav.Patil"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR Demo OffboardingRemoveADUser",
+              "automationRequestId": 3305588,
+              "sourceId": "SID_1791365148907_2ad58acfbc75",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "AD User Raghav.Patil Removed",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3305588",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "ADUserName": "Raghav.Patil"
+              }
+            }
+          },
+          {
+            "step": 2,
+            "workflow": "HR DEMO offboarding Delete O365 user",
+            "params": {
+              "emp_id": "EMP-8141",
+              "emp_name": "Raghav Patil"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR DEMO offboarding Delete O365 user",
+              "automationRequestId": 3305590,
+              "sourceId": "SID_1791365158085_f28c2a8e5031",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "User deleted from O365",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3305590",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "emp_id": "EMP-8141",
+                "emp_name": "Raghav Patil"
+              }
+            }
+          },
+          {
+            "step": 3,
+            "workflow": "HR DEMO Offboarding Delete OrangeHRM User",
+            "params": {
+              "emp_id": "EMP-8141",
+              "emp_name": "Raghav Patil"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR DEMO Offboarding Delete OrangeHRM User",
+              "automationRequestId": 3305593,
+              "sourceId": "SID_1791365164983_0c395b1ad820",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "User data deleted from OrangeHRM",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3305593",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "emp_id": "EMP-8141",
+                "emp_name": "Raghav Patil"
+              }
+            }
+          }
+        ],
+        "adRemoval": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR Demo OffboardingRemoveADUser",
+          "automationRequestId": 3305588,
+          "sourceId": "SID_1791365148907_2ad58acfbc75",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "AD User Raghav.Patil Removed",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3305588",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "ADUserName": "Raghav.Patil"
+          }
+        },
+        "o365Delete": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR DEMO offboarding Delete O365 user",
+          "automationRequestId": 3305590,
+          "sourceId": "SID_1791365158085_f28c2a8e5031",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "User deleted from O365",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3305590",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "emp_id": "EMP-8141",
+            "emp_name": "Raghav Patil"
+          }
+        },
+        "orangeHrmDelete": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR DEMO Offboarding Delete OrangeHRM User",
+          "automationRequestId": 3305593,
+          "sourceId": "SID_1791365164983_0c395b1ad820",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "User data deleted from OrangeHRM",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3305593",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "emp_id": "EMP-8141",
+            "emp_name": "Raghav Patil"
+          }
+        }
+      },
+      "relievingLetterIssued": true,
+      "relievingLetterPdf": "D:\\HRMS_Onboarding_V1\\generated_relieving_letters\\Relieving_Letter_Raghav_Patil_MNG-REL-2026-65252.pdf",
+      "relievingLetterDate": "2026-10-07 14:57:41"
+    }
+  ]
 }

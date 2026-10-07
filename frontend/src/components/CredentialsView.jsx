@@ -89,7 +89,6 @@ export default function CredentialsView() {
         { key: 'sn_inst', label: 'Instance URL', value: 'https://ven04528.service-now.com', isSecret: false },
         { key: 'sn_user', label: 'Username', value: 'AE_Dev_Vaibhav_Tore', isSecret: false },
         { key: 'sn_pass', label: 'Password', value: 'Pune@123', isSecret: true },
-        { key: 'sn_cat', label: 'Catalog Item SysId', value: 'a217c0abebaf0b10b02df1b4cad0cd68', isSecret: false },
       ],
       onLaunch: () => {
         navigator.clipboard.writeText('Pune@123').catch(() => {});
