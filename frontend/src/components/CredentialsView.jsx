@@ -54,21 +54,14 @@ export default function CredentialsView() {
       bgLight: 'rgba(234, 88, 12, 0.08)',
       borderColor: 'rgba(234, 88, 12, 0.25)',
       description: 'Cloud RPA automation server for Active Directory user provisioning & email notifications.',
-      url: 'https://t4.automationedge.com/#/requests/list',
-      loginUrl: 'https://t4.automationedge.com/#/login',
+      targetUrl: 'https://t4.automationedge.com/#/requests/list',
       credentials: [
         { key: 't4_user', label: 'Username', value: 'Msp', isSecret: false },
         { key: 't4_pass', label: 'Password', value: 'Msp@12345', isSecret: true },
         { key: 't4_url', label: 'Server API URL', value: 'https://t4.automationedge.com/aeengine', isSecret: false },
       ],
-      onLaunch: async () => {
-        try {
-          fetch('/api/rpa/token').catch(() => {});
-        } catch (e) {}
-        safeCopyText('Msp@12345');
-        showToast('🔑 T4 Server session authenticated (User: Msp) — Password copied!', 'success');
-        window.open('https://t4.automationedge.com/#/requests/list', '_blank', 'noopener,noreferrer');
-      },
+      passToCopy: 'Msp@12345',
+      toastMsg: '🔑 T4 Server credentials (User: Msp) — Password copied! Opening portal...',
       launchLabel: 'Launch & Login to T4 Server',
     },
     {
@@ -80,22 +73,15 @@ export default function CredentialsView() {
       bgLight: 'rgba(22, 163, 74, 0.08)',
       borderColor: 'rgba(22, 163, 74, 0.25)',
       description: 'Employee Information Management (PIM) and leave management portal.',
-      url: 'http://10.41.5.39/orangehrm/web/index.php/pim/viewEmployeeList',
-      loginUrl: 'http://10.41.5.39/orangehrm/web/index.php/auth/login',
+      targetUrl: 'http://10.41.5.39/orangehrm/web/index.php/auth/login',
       credentials: [
         { key: 'ohrm_user', label: 'Username', value: 'admin', isSecret: false },
         { key: 'ohrm_pass', label: 'Password', value: 'Admin@1234', isSecret: true },
         { key: 'ohrm_url', label: 'Portal URL', value: 'http://10.41.5.39/orangehrm', isSecret: false },
         { key: 'ohrm_dir', label: 'PIM Directory URL', value: 'http://10.41.5.39/orangehrm/web/index.php/pim/viewEmployeeList', isSecret: false },
       ],
-      onLaunch: async () => {
-        try {
-          fetch('/api/orangehrm/token').catch(() => {});
-        } catch (e) {}
-        safeCopyText('Admin@1234');
-        showToast('🔑 OrangeHRM session authenticated (User: admin) — Password copied (Ctrl+V to sign in)!', 'success');
-        window.open('http://10.41.5.39/orangehrm/web/index.php/auth/login', '_blank', 'noopener,noreferrer');
-      },
+      passToCopy: 'Admin@1234',
+      toastMsg: '🔑 OrangeHRM: User: admin | Pass copied (Ctrl+V to sign in)!',
       launchLabel: 'Launch & Login to OrangeHRM',
     },
     {
@@ -107,18 +93,14 @@ export default function CredentialsView() {
       bgLight: 'rgba(2, 132, 199, 0.08)',
       borderColor: 'rgba(2, 132, 199, 0.25)',
       description: 'IT Service Catalog, onboarding request management (REQ/RITM), and hardware ticketing.',
-      url: 'https://ven04528.service-now.com/navpage.do',
-      loginUrl: 'https://ven04528.service-now.com',
+      targetUrl: 'https://ven04528.service-now.com/navpage.do',
       credentials: [
         { key: 'sn_inst', label: 'Instance URL', value: 'https://ven04528.service-now.com', isSecret: false },
         { key: 'sn_user', label: 'Username', value: 'AE_Dev_Vaibhav_Tore', isSecret: false },
         { key: 'sn_pass', label: 'Password', value: 'Pune@123', isSecret: true },
       ],
-      onLaunch: () => {
-        safeCopyText('Pune@123');
-        showToast('⚡ ServiceNow: User: AE_Dev_Vaibhav_Tore | Pass copied to clipboard!', 'success');
-        window.open('https://ven04528.service-now.com/navpage.do', '_blank', 'noopener,noreferrer');
-      },
+      passToCopy: 'Pune@123',
+      toastMsg: '⚡ ServiceNow: User: AE_Dev_Vaibhav_Tore | Pass copied to clipboard!',
       launchLabel: 'Launch & Login to ServiceNow',
     },
   ];
@@ -270,11 +252,18 @@ export default function CredentialsView() {
               </div>
             </div>
 
-            {/* Launch Action Button */}
-            <button
-              onClick={sys.onLaunch}
+            {/* Launch Action Button (Native <a> tag to guarantee opening without browser popup blocker) */}
+            <a
+              href={sys.targetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                safeCopyText(sys.passToCopy);
+                showToast(sys.toastMsg, 'success');
+              }}
               className="btn"
               style={{
+                textDecoration: 'none',
                 width: '100%',
                 background: `linear-gradient(135deg, ${sys.tone} 0%, #1c1f2a 160%)`,
                 color: '#ffffff',
@@ -293,7 +282,7 @@ export default function CredentialsView() {
             >
               <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '0.8rem' }}></i>
               {sys.launchLabel}
-            </button>
+            </a>
           </motion.div>
         ))}
       </motion.div>
