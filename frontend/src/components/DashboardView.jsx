@@ -1,10 +1,44 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, animate, useReducedMotion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
-import { PageHeader, Card, EmptyState, Avatar, Skeleton, statusBadgeClass, staggerContainer, staggerItem, trackSpotlight, EASE_OUT } from './ui';
+import { PageHeader, Card, EmptyState, Avatar, Skeleton, statusBadgeClass, staggerContainer, staggerItem, staggerTableRow, trackSpotlight, EASE_OUT } from './ui';
 
 const isApproved = (e) => e.status === 'Approved' || e.status === 'Completed' || e.status === 'Verified';
 const isPending = (e) => e.status === 'Pending Review' || e.status === 'Pending' || e.status === 'Pending ServiceNow Review';
+
+const MOTIVATIONAL_QUOTES = [
+  { quote: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+  { quote: "Excellence is not an act, but a habit.", author: "Aristotle" },
+  { quote: "Small daily improvements over time lead to stunning results.", author: "Robin Sharma" },
+  { quote: "Efficiency is doing things right; effectiveness is doing the right things.", author: "Peter Drucker" },
+  { quote: "Alone we can do so little; together we can do so much.", author: "Helen Keller" },
+  { quote: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier" },
+  { quote: "Great things in business are never done by one person. They're done by a team.", author: "Steve Jobs" },
+  { quote: "Focus on being productive instead of busy.", author: "Tim Ferriss" },
+  { quote: "Opportunities don't happen, you create them.", author: "Chris Grosser" },
+  { quote: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
+  { quote: "Your attitude, not your aptitude, will determine your altitude.", author: "Zig Ziglar" },
+  { quote: "Do what you can, with what you have, where you are.", author: "Theodore Roosevelt" },
+  { quote: "Quality is not an act, it is a habit.", author: "Aristotle" },
+  { quote: "Continuous improvement is better than delayed perfection.", author: "Mark Twain" }
+];
+
+const EMBER_PARTICLES = [
+  { id: 1, left: '8%', bottom: '15%', size: 4, delay: 0, duration: 7, drift: 35 },
+  { id: 2, left: '22%', bottom: '25%', size: 3, delay: 1.5, duration: 8.5, drift: -24 },
+  { id: 3, left: '38%', bottom: '12%', size: 5, delay: 0.8, duration: 6.8, drift: 40 },
+  { id: 4, left: '52%', bottom: '30%', size: 3.5, delay: 2.2, duration: 9, drift: -20 },
+  { id: 5, left: '65%', bottom: '18%', size: 4.5, delay: 3, duration: 7.8, drift: 36 },
+  { id: 6, left: '76%', bottom: '32%', size: 3.5, delay: 1.1, duration: 8.2, drift: -28 },
+  { id: 7, left: '86%', bottom: '20%', size: 4, delay: 2.7, duration: 6.5, drift: 30 },
+  { id: 8, left: '93%', bottom: '40%', size: 2.5, delay: 0.4, duration: 7.2, drift: -16 },
+  { id: 9, left: '18%', bottom: '45%', size: 3, delay: 3.8, duration: 8.4, drift: 25 },
+  { id: 10, left: '58%', bottom: '50%', size: 3.8, delay: 4.2, duration: 9.5, drift: -32 },
+  { id: 11, left: '32%', bottom: '60%', size: 2.5, delay: 2.8, duration: 7.5, drift: 22 },
+  { id: 12, left: '82%', bottom: '55%', size: 4.2, delay: 1.8, duration: 8.8, drift: 26 },
+  { id: 13, left: '46%', bottom: '22%', size: 3.2, delay: 3.4, duration: 7.6, drift: -18 },
+  { id: 14, left: '70%', bottom: '48%', size: 4, delay: 0.6, duration: 8.6, drift: 32 },
+];
 
 // Counts a number up from 0 (skipped when the OS asks for reduced motion)
 function CountUp({ value, suffix = '' }) {
@@ -137,6 +171,11 @@ export default function DashboardView({ employees, isLoading, onNavigate }) {
   const show = (node, width = '3rem') => (isLoading ? <Skeleton width={width} /> : node);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const dailyQuote = useMemo(() => {
+    const today = new Date();
+    const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+    return MOTIVATIONAL_QUOTES[dayOfYear % MOTIVATIONAL_QUOTES.length];
+  }, []);
 
   return (
     <section className="view-section active page">
@@ -149,8 +188,8 @@ export default function DashboardView({ employees, isLoading, onNavigate }) {
             <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('whatsapp')}>
               <i className="fa-brands fa-whatsapp text-accent" aria-hidden="true"></i> WhatsApp flows
             </button>
-            <button className="btn btn-primary btn-sm" onClick={() => onNavigate('wizard')}>
-              <i className="fa-solid fa-user-plus" aria-hidden="true"></i> New onboarding
+            <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('wizard')}>
+              <i className="fa-solid fa-user-plus text-accent" aria-hidden="true"></i> New onboarding
             </button>
           </>
         }
@@ -168,12 +207,8 @@ export default function DashboardView({ employees, isLoading, onNavigate }) {
             {new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
           </span>
           <h2>{greeting}, {firstName}</h2>
-          <p>
-            {isLoading
-              ? 'Loading today’s onboarding activity…'
-              : stats.pending.length
-                ? `${stats.pending.length} candidate${stats.pending.length > 1 ? 's are' : ' is'} waiting for your review, and ${stats.fullyPct}% of approved hires are fully provisioned.`
-                : `No candidates are waiting. ${stats.fullyPct}% of approved hires are fully provisioned.`}
+          <p className="dash-hero-quote" style={{ margin: '0.35rem 0', color: '#f1f5f9', fontSize: '0.95rem', lineHeight: '1.45', maxWidth: '65ch' }}>
+            {dailyQuote.quote}
           </p>
           <div className="dash-hero-actions">
             <button className="btn dash-hero-btn" onClick={() => onNavigate('approvals')}>
@@ -185,6 +220,25 @@ export default function DashboardView({ employees, isLoading, onNavigate }) {
             </button>
           </div>
         </div>
+        {/* Floating Luminous Ember Particles */}
+        <div className="dash-hero-particles" aria-hidden="true">
+          {EMBER_PARTICLES.map((p) => (
+            <span
+              key={p.id}
+              className="dash-hero-ember"
+              style={{
+                left: p.left,
+                bottom: p.bottom,
+                width: `${p.size}px`,
+                height: `${p.size}px`,
+                animationDelay: `${p.delay}s`,
+                animationDuration: `${p.duration}s`,
+                '--drift-x': `${p.drift}px`,
+              }}
+            />
+          ))}
+        </div>
+
         <ul className="dash-hero-systems" aria-label="Connected systems">
           {[
             { icon: 'fa-solid fa-ticket', label: 'ServiceNow' },
@@ -285,9 +339,9 @@ export default function DashboardView({ employees, isLoading, onNavigate }) {
                     <th scope="col">Updated</th>
                   </tr>
                 </thead>
-                <tbody>
+                <motion.tbody variants={staggerContainer} initial="hidden" animate="show">
                   {stats.recent.map((e) => (
-                    <tr key={e.id}>
+                    <motion.tr key={e.id} variants={staggerTableRow}>
                       <td>
                         <div className="cell-person">
                           <Avatar name={e.fullName} size={32} />
@@ -301,9 +355,9 @@ export default function DashboardView({ employees, isLoading, onNavigate }) {
                       <td>{e.o365Email || <span className="cell-sub">Not created</span>}</td>
                       <td>{e.laptopTicket ? <span className="cell-mono">{e.laptopTicket}</span> : <span className="cell-sub">—</span>}</td>
                       <td className="cell-sub">{e.approvedAt || e.submittedAt || '—'}</td>
-                    </tr>
+                    </motion.tr>
                   ))}
-                </tbody>
+                </motion.tbody>
               </table>
             </div>
           )}

@@ -12,8 +12,33 @@ export default function CredentialsView() {
     setShowPasswords((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const safeCopyText = (text) => {
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  };
+
+  const fallbackCopy = (text) => {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      textArea.style.top = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    } catch (e) {}
+  };
+
   const copyToClipboard = (text, key, label) => {
-    navigator.clipboard.writeText(text).catch(() => {});
+    safeCopyText(text);
     setCopiedField(key);
     showToast(`✓ Copied ${label} to clipboard`, 'success');
     setTimeout(() => setCopiedField(null), 2200);
@@ -40,7 +65,7 @@ export default function CredentialsView() {
         try {
           fetch('/api/rpa/token').catch(() => {});
         } catch (e) {}
-        navigator.clipboard.writeText('Msp@12345').catch(() => {});
+        safeCopyText('Msp@12345');
         showToast('🔑 T4 Server session authenticated (User: Msp) — Password copied!', 'success');
         window.open('https://t4.automationedge.com/#/requests/list', '_blank', 'noopener,noreferrer');
       },
@@ -67,7 +92,7 @@ export default function CredentialsView() {
         try {
           fetch('/api/orangehrm/token').catch(() => {});
         } catch (e) {}
-        navigator.clipboard.writeText('Admin@1234').catch(() => {});
+        safeCopyText('Admin@1234');
         showToast('🔑 OrangeHRM session authenticated (User: admin) — Password copied (Ctrl+V to sign in)!', 'success');
         window.open('http://10.41.5.39/orangehrm/web/index.php/auth/login', '_blank', 'noopener,noreferrer');
       },
@@ -90,7 +115,7 @@ export default function CredentialsView() {
         { key: 'sn_pass', label: 'Password', value: 'Pune@123', isSecret: true },
       ],
       onLaunch: () => {
-        navigator.clipboard.writeText('Pune@123').catch(() => {});
+        safeCopyText('Pune@123');
         showToast('⚡ ServiceNow: User: AE_Dev_Vaibhav_Tore | Pass copied to clipboard!', 'success');
         window.open('https://ven04528.service-now.com/navpage.do', '_blank', 'noopener,noreferrer');
       },

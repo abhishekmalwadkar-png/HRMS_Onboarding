@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "HRMS Employee Onboarding & Offboarding Lifecycle Flow",
+    "subtitle": "Step-by-step end-to-end execution workflow from frontend submission to multi-system provisioning",
+    "output": "backend_workflow.html",
+    "viewBox": [720, 960],
+    "animation": "trace"
+  },
+  "lanes": [
+    { "id": "ui_lane", "label": "1. User / Frontend (React)" },
+    { "id": "api_lane", "label": "2. API Gateway & Validation" },
+    { "id": "queue_lane", "label": "3. Async Task Queue Orchestrator" },
+    { "id": "workers_lane", "label": "4. Integration Adapters" },
+    { "id": "rpa_cloud_lane", "label": "5. External Systems & Bots" },
+    { "id": "storage_lane", "label": "6. Persistence & Audit Log" }
+  ],
+  "phases": [
+    { "id": "intake_phase", "label": "Intake & Verify", "fromCol": 0, "toCol": 1 },
+    { "id": "dispatch_phase", "label": "Queue & PDF Generation", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "provision_phase", "label": "Multi-System Execution", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "parallel_sync", "label": "Parallel Bot & Cloud Provisioning", "lane": "workers_lane", "fromCol": 4, "toCol": 5, "variant": "emphasis" }
+  ],
+  "mainPath": ["hr_user", "vite_ui", "rest_server", "task_dispatcher", "ae_rpa", "external_bot", "audit_complete"],
+  "nodes": [
+    { "id": "hr_user", "lane": "ui_lane", "col": 0, "type": "external", "label": "HR Admin", "sublabel": "initiates onboarding" },
+    { "id": "vite_ui", "lane": "ui_lane", "col": 1, "type": "frontend", "label": "React Web App", "sublabel": "form validation & preview" },
+    { "id": "rest_server", "lane": "api_lane", "col": 1, "type": "backend", "label": "server.py :8081", "sublabel": "BaseHTTP handler", "tag": "REST API" },
+    { "id": "task_dispatcher", "lane": "queue_lane", "col": 2, "type": "messagebus", "label": "Task Queue", "sublabel": "task_queue.py worker pool", "tag": "Non-blocking" },
+    { "id": "db_persist", "lane": "storage_lane", "col": 2, "type": "database", "label": "employees.json", "sublabel": "record persistence" },
+    { "id": "ae_rpa", "lane": "workers_lane", "col": 3, "type": "backend", "label": "AE RPA Adapter", "sublabel": "ae_rpa_client.py" },
+    { "id": "o365_adapter", "lane": "workers_lane", "col": 4, "type": "backend", "label": "Office 365 Adapter", "sublabel": "office365_client.py" },
+    { "id": "snow_adapter", "lane": "workers_lane", "col": 5, "type": "backend", "label": "ServiceNow Adapter", "sublabel": "servicenow_client.py" },
+    { "id": "external_bot", "lane": "rpa_cloud_lane", "col": 3, "type": "cloud", "label": "AutomationEdge Bot", "sublabel": "RPA execution workflow" },
+    { "id": "external_m365", "lane": "rpa_cloud_lane", "col": 4, "type": "cloud", "label": "Microsoft Graph", "sublabel": "Mailbox & Teams account" },
+    { "id": "external_snow", "lane": "rpa_cloud_lane", "col": 5, "type": "cloud", "label": "ServiceNow Cloud", "sublabel": "IT Asset & Laptop Ticket" },
+    { "id": "audit_complete", "lane": "storage_lane", "col": 5, "type": "database", "label": "Audit Logs", "sublabel": "real-time task tracking" }
+  ],
+  "edges": [
+    { "from": "hr_user", "to": "vite_ui", "variant": "default" },
+    { "from": "vite_ui", "to": "rest_server", "label": "POST /api/onboard", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "route": "drop" },
+    { "from": "rest_server", "to": "task_dispatcher", "label": "enqueue", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "route": "drop" },
+    { "from": "task_dispatcher", "to": "db_persist", "label": "write state", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "route": "drop" },
+    { "from": "task_dispatcher", "to": "ae_rpa", "label": "start RPA", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "route": "drop" },
+    { "from": "ae_rpa", "to": "o365_adapter", "variant": "default" },
+    { "from": "o365_adapter", "to": "snow_adapter", "variant": "default" },
+    { "from": "ae_rpa", "to": "external_bot", "label": "trigger workflow", "variant": "security", "fromSide": "bottom", "toSide": "top", "route": "drop" },
+    { "from": "o365_adapter", "to": "external_m365", "label": "create mailbox", "variant": "security", "fromSide": "bottom", "toSide": "top", "route": "drop" },
+    { "from": "snow_adapter", "to": "external_snow", "label": "raise asset incident", "variant": "security", "fromSide": "bottom", "toSide": "top", "route": "drop" },
+    { "from": "external_snow", "to": "audit_complete", "label": "log completion", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "route": "drop" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "1. Submission & Fast Response",
+      "items": [
+        "HR Admin fills out candidate details on React UI",
+        "Frontend triggers live validation & autofill matching",
+        "server.py instantly responds with Job ID while queuing background tasks"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "2. Parallel Background Workers",
+      "items": [
+        "Task Queue dispatches dedicated worker threads for each system",
+        "ReportLab compiles watermarked offer letter PDF with signature blocks",
+        "AutomationEdge RPA initiates automated form filling in legacy enterprise systems"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "3. Cloud Sync & Observability",
+      "items": [
+        "Office 365 provisions email address, sets temp password, and sends welcome email",
+        "ServiceNow creates hardware provisioning and badge request tickets",
+        "Audit log entries update in real time with polling/event stream to the dashboard"
+      ]
+    }
+  ]
+}

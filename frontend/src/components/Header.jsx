@@ -1,12 +1,41 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { PAGE_HEADER_SLOT_ID } from './ui';
 
 export default function Header({ toggleSidebar }) {
-  const { currentUser, theme, toggleTheme } = useAuth();
+  const { currentUser, logout, theme, toggleTheme } = useAuth();
   const { showToast } = useToast();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
   const displayName = currentUser?.name?.split(' (')[0] || 'User';
+  const roleLabel = currentUser?.badge || (currentUser?.role === 'hr' ? 'HR Administrator' : 'Employee');
+  const email = currentUser?.email || 'pooja.deshmukh@automationedge.ai';
+  const avatar = currentUser?.avatar || displayName.charAt(0).toUpperCase();
+
+  // Close dropdown on outside click or Escape key
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsDropdownOpen(false);
+      }
+    };
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDropdownOpen]);
 
   const aeConfig = {
     url: 'https://t4.automationedge.com/#/requests/list',
@@ -18,24 +47,22 @@ export default function Header({ toggleSidebar }) {
   const handleAeServerClick = (e) => {
     e.preventDefault();
     // Copy password to clipboard for quick paste
-    navigator.clipboard.writeText(aeConfig.password).catch(() => {});
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(aeConfig.password).catch(() => {});
+    }
     showToast('🔑 AE Server credentials ready! (User: Msp) — Opening portal...', 'success');
     // Open direct URL in new tab
     window.open(aeConfig.url, '_blank', 'noopener,noreferrer');
   };
 
+  const handleLogout = () => {
+    setIsDropdownOpen(false);
+    logout();
+    showToast('Logged out successfully', 'info');
+  };
+
   return (
     <header className="top-header">
-      <button
-        className="sidebar-toggle-btn"
-        onClick={toggleSidebar}
-        id="sidebarToggle"
-        title="Toggle sidebar"
-        aria-label="Toggle navigation menu"
-      >
-        <i className="fa-solid fa-bars" aria-hidden="true"></i>
-      </button>
-
       {/* Filled by the active page's <PageHeader> */}
       <div id={PAGE_HEADER_SLOT_ID} className="top-header-slot"></div>
 
@@ -83,10 +110,54 @@ export default function Header({ toggleSidebar }) {
         >
           <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'}`} aria-hidden="true"></i>
         </button>
-        <span className="header-user" title={displayName}>
-          <span className="header-user-avatar" aria-hidden="true">{displayName.charAt(0).toUpperCase()}</span>
-          <span className="header-user-name">{displayName}</span>
-        </span>
+
+        {/* User Profile Dropdown Menu */}
+        <div className="header-user-menu-wrapper" ref={dropdownRef}>
+          <button
+            className={`header-user-btn ${isDropdownOpen ? 'active' : ''}`}
+            onClick={() => setIsDropdownOpen((prev) => !prev)}
+            aria-expanded={isDropdownOpen}
+            aria-haspopup="true"
+            title={`Account: ${displayName}`}
+          >
+            <span className="header-user-avatar" aria-hidden="true">{avatar}</span>
+            <span className="header-user-name">{displayName}</span>
+            <i className={`fa-solid fa-chevron-down header-user-chevron ${isDropdownOpen ? 'rotate' : ''}`} aria-hidden="true"></i>
+          </button>
+
+          <AnimatePresence>
+            {isDropdownOpen && (
+              <motion.div
+                className="header-user-dropdown"
+                initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                transition={{ duration: 0.16, ease: 'easeOut' }}
+              >
+                <div className="dropdown-user-header">
+                  <div className="dropdown-user-avatar">{avatar}</div>
+                  <div className="dropdown-user-info">
+                    <div className="dropdown-user-name">{displayName}</div>
+                    <div className="dropdown-user-email">{email}</div>
+                    <span className="dropdown-user-badge">{roleLabel}</span>
+                  </div>
+                </div>
+
+                <div className="dropdown-divider"></div>
+
+                <div className="dropdown-menu-list">
+                  <button
+                    className="dropdown-menu-item logout-item"
+                    onClick={handleLogout}
+                  >
+                    <i className="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>Log out</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </header>
   );

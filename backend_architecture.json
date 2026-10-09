@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "HRMS Onboarding & ITSM Orchestrator - Backend Architecture & Flow",
+    "subtitle": "End-to-end request orchestration, async task queue, RPA execution, and enterprise cloud integrations",
+    "output": "backend_flow.html",
+    "visual_preset": "blueprint",
+    "animation": "trace",
+    "quality_profile": "standard"
+  },
+  "components": [
+    { "id": "client_ui", "type": "frontend", "label": "React Frontend", "sublabel": "Vite + Dark/Light UI", "pos": [40, 300], "size": [130, 62], "tag": "port :5173" },
+    { "id": "http_server", "type": "backend", "label": "HTTP API Server", "sublabel": "server.py :8081", "pos": [280, 300], "size": [135, 62], "tag": "REST Gateway" },
+    { "id": "data_store", "type": "database", "label": "JSON Store & Audit", "sublabel": "employees.json + logs", "pos": [280, 120], "size": [135, 62], "tag": "Local Storage" },
+    { "id": "pdf_engine", "type": "backend", "label": "Doc Generator", "sublabel": "ReportLab Engine", "pos": [280, 480], "size": [135, 62], "tag": "Offer & Relieving" },
+    { "id": "task_queue", "type": "messagebus", "label": "Task Queue Engine", "sublabel": "task_queue.py", "pos": [530, 300], "size": [135, 62], "tag": "Async Worker" },
+    { "id": "rpa_client", "type": "backend", "label": "AE RPA Client", "sublabel": "ae_rpa_client.py", "pos": [780, 120], "size": [135, 62], "tag": "Auth & Dispatch" },
+    { "id": "o365_client", "type": "backend", "label": "Office 365 Client", "sublabel": "office365_client.py", "pos": [780, 240], "size": [135, 62], "tag": "Graph & SMTP" },
+    { "id": "itsm_client", "type": "backend", "label": "ServiceNow Client", "sublabel": "servicenow_client.py", "pos": [780, 360], "size": [135, 62], "tag": "ITSM REST" },
+    { "id": "orange_client", "type": "backend", "label": "OrangeHRM Client", "sublabel": "orangehrm_client.py", "pos": [780, 480], "size": [135, 62], "tag": "HRIS Sync" },
+    { "id": "ae_bot", "type": "cloud", "label": "AutomationEdge RPA", "sublabel": "Workflow Engine", "pos": [1050, 120], "size": [145, 62], "tag": "Agentic Bot" },
+    { "id": "m365_cloud", "type": "cloud", "label": "Microsoft 365", "sublabel": "Mailbox Provisioning", "pos": [1050, 240], "size": [145, 62], "tag": "Cloud Directory" },
+    { "id": "snow_cloud", "type": "cloud", "label": "ServiceNow Cloud", "sublabel": "Assets & Incidents", "pos": [1050, 360], "size": [145, 62], "tag": "ITSM Cloud" },
+    { "id": "ohrm_cloud", "type": "cloud", "label": "OrangeHRM Cloud", "sublabel": "Enterprise Master HR", "pos": [1050, 480], "size": [145, 62], "tag": "Employee Master" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "HRMS Python Application Runtime (Localhost / Server)", "wraps": ["http_server", "data_store", "pdf_engine", "task_queue", "rpa_client", "o365_client", "itsm_client", "orange_client"] },
+    { "kind": "security-group", "label": "Integration Connectors", "wraps": ["rpa_client", "o365_client", "itsm_client", "orange_client"] },
+    { "kind": "region", "label": "External Enterprise Cloud Ecosystem", "wraps": ["ae_bot", "m365_cloud", "snow_cloud", "ohrm_cloud"] }
+  ],
+  "connections": [
+    { "from": "client_ui", "to": "http_server", "label": "REST API", "variant": "emphasis" },
+    { "from": "http_server", "to": "data_store", "label": "persist state", "variant": "dashed", "labelAt": [348, 220] },
+    { "from": "http_server", "to": "pdf_engine", "label": "build PDF", "variant": "dashed", "labelAt": [348, 415] },
+    { "from": "http_server", "to": "task_queue", "label": "dispatch job", "variant": "emphasis" },
+    { "from": "task_queue", "to": "rpa_client", "label": "run RPA", "variant": "emphasis" },
+    { "from": "task_queue", "to": "o365_client", "label": "send email", "variant": "emphasis" },
+    { "from": "task_queue", "to": "itsm_client", "label": "create ticket", "variant": "emphasis" },
+    { "from": "task_queue", "to": "orange_client", "label": "sync profile", "variant": "emphasis" },
+    { "from": "rpa_client", "to": "ae_bot", "label": "execute bot", "variant": "security" },
+    { "from": "o365_client", "to": "m365_cloud", "label": "provision user", "variant": "security" },
+    { "from": "itsm_client", "to": "snow_cloud", "label": "ITSM table API", "variant": "security" },
+    { "from": "orange_client", "to": "ohrm_cloud", "label": "OAuth2 sync", "variant": "security" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "1. Ingestion & Validation", "items": ["Frontend submits candidate/employee data to server.py endpoints", "Form inputs are validated and stored in employees.json and autofill caches", "Offer/Relieving letters are instantly compiled via ReportLab PDF engine"] },
+    { "dot": "rose", "title": "2. Orchestration & Queue", "items": ["Non-blocking Task Queue dispatches parallel background jobs", "RPA triggers execute AutomationEdge bot flows for automated data entry", "Real-time task statuses and audit logs stream back to the UI"] },
+    { "dot": "emerald", "title": "3. Multi-Cloud Provisioning", "items": ["Office 365 provisions corporate email & sends welcome kits", "ServiceNow generates asset & hardware provisioning tickets", "OrangeHRM syncs master HR records across global systems"] }
+  ]
+}

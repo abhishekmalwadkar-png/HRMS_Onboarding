@@ -6,11 +6,36 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export const EASE_OUT = [0.16, 1, 0.3, 1];
 
-// Stagger container + item for grids/lists of cards (60ms stagger, 400ms, no overshoot on data UI)
-export const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
+// Stagger container + item for grids/lists of cards (40ms stagger with orchestrated spring cascade)
+export const staggerContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.04,
+      delayChildren: 0.02,
+    },
+  },
+};
+
 export const staggerItem = {
-  hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT } },
+  hidden: { opacity: 0, y: 16, scale: 0.985 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.38, ease: EASE_OUT },
+  },
+};
+
+export const staggerTableRow = {
+  hidden: { opacity: 0, x: -8, y: 4 },
+  show: {
+    opacity: 1,
+    x: 0,
+    y: 0,
+    transition: { duration: 0.32, ease: EASE_OUT },
+  },
 };
 
 export const PAGE_HEADER_SLOT_ID = 'page-header-slot';

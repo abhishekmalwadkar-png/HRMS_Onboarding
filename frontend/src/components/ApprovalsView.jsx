@@ -605,7 +605,9 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
             <button
               onClick={() => {
                 const targetUrl = flowData?.orangeHrm?.profileUrl || 'http://10.41.5.39/orangehrm/web/index.php/auth/login';
-                navigator.clipboard.writeText('Admin@1234').catch(() => {});
+                if (navigator?.clipboard?.writeText) {
+                  navigator.clipboard.writeText('Admin@1234').catch(() => {});
+                }
                 showToast('🔑 OrangeHRM: User: admin | Pass: Admin@1234 (Copied to clipboard)', 'success');
                 window.open(targetUrl, '_blank', 'noopener,noreferrer');
               }}

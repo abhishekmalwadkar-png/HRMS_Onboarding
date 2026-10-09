@@ -171,248 +171,6 @@
   ],
   "recruitment": [
     {
-      "id": "CAND-584",
-      "name": "Sameer Kulkarni",
-      "candidateName": "Sameer Kulkarni",
-      "email": "sameer.kulkarni@valuedx.com",
-      "phone": "+91 98230 45678",
-      "experienceYears": 6.0,
-      "skills": [
-        "ServiceNow",
-        "ITSM",
-        "Service Catalog",
-        "Workflow Design",
-        "GlideScript",
-        "JavaScript",
-        "REST APIs",
-        "IntegrationHub",
-        "CMDB"
-      ],
-      "role": "Enterprise ServiceNow Architect",
-      "appliedRole": "Enterprise ServiceNow Architect",
-      "department": "IT Systems",
-      "score": "81%",
-      "matchScore": "81%",
-      "stage": "Interview Scheduled (Google Meet)",
-      "status": "Screened",
-      "recommendation": "Suitable for Technical Review",
-      "matchedSkills": [
-        "ServiceNow",
-        "ITSM",
-        "Service Catalog",
-        "Workflow Design",
-        "GlideScript",
-        "JavaScript",
-        "REST APIs",
-        "IntegrationHub",
-        "CMDB"
-      ],
-      "missingSkills": [
-        "ITIL Certified",
-        "Service Portal",
-        "Incident Management",
-        "Change Management"
-      ],
-      "allJobMatches": [
-        {
-          "jobId": "JOB-203",
-          "jobTitle": "Enterprise ServiceNow Architect",
-          "dept": "IT Systems",
-          "matchPercentage": "81%",
-          "matchScoreNum": 81,
-          "matchedSkills": [
-            "ServiceNow",
-            "ITSM",
-            "Service Catalog",
-            "Workflow Design",
-            "GlideScript",
-            "JavaScript",
-            "REST APIs",
-            "IntegrationHub",
-            "CMDB"
-          ],
-          "missingSkills": [
-            "ITIL Certified",
-            "Service Portal",
-            "Incident Management",
-            "Change Management"
-          ],
-          "recommendation": "Suitable for Technical Review"
-        },
-        {
-          "jobId": "JOB-201",
-          "jobTitle": "Senior AI Engineer",
-          "dept": "Engineering",
-          "matchPercentage": "45%",
-          "matchScoreNum": 45,
-          "matchedSkills": [],
-          "missingSkills": [
-            "Python",
-            "PyTorch",
-            "TensorFlow",
-            "Generative AI"
-          ],
-          "recommendation": "Potential Fit"
-        },
-        {
-          "jobId": "JOB-202",
-          "jobTitle": "Lead Product Manager",
-          "dept": "Product",
-          "matchPercentage": "45%",
-          "matchScoreNum": 45,
-          "matchedSkills": [],
-          "missingSkills": [
-            "Product Strategy",
-            "Agile",
-            "Scrum",
-            "Roadmapping"
-          ],
-          "recommendation": "Potential Fit"
-        },
-        {
-          "jobId": "JOB-204",
-          "jobTitle": "Senior Cloud & DevOps Engineer",
-          "dept": "Infrastructure",
-          "matchPercentage": "45%",
-          "matchScoreNum": 45,
-          "matchedSkills": [],
-          "missingSkills": [
-            "Kubernetes",
-            "Docker",
-            "AWS",
-            "Azure"
-          ],
-          "recommendation": "Potential Fit"
-        }
-      ],
-      "screenedAt": "2026-10-06 11:38:04",
-      "rawTextSnippet": "\n                Sameer Kulkarni\n                Email: sameer.kulkarni@valuedx.com | Phone: +91 97654 33210 | Pune, India\n                Enterprise ServiceNow Architect & Lead Consultant\n                Summary: 6 years of expertise architecting ServiceNow ITSM, Service Catalog, ITIL processes, Workflow Automation, IntegrationHub REST APIs, CMDB, and Service Portal UI customization.\n            ",
-      "t4RecruitmentPipeline": {
-        "status": "success",
-        "jobName": "Enterprise ServiceNow Architect",
-        "candidateName": "Sameer Kulkarni",
-        "steps": [
-          {
-            "step": 1,
-            "workflow": "HR Demo Recruitment Get JD",
-            "params": {
-              "job_name": "Enterprise ServiceNow Architect"
-            },
-            "result": {
-              "status": "success",
-              "mode": "live_t4_rpa",
-              "workflowName": "HR Demo Recruitment Get JD",
-              "automationRequestId": 3300066,
-              "sourceId": "SID_1791266885531_f5d630bc2d8f",
-              "executionStatus": "Complete",
-              "agentName": "mahesh@mspevent-win-1",
-              "message": "JD extracted from portal",
-              "errorDetails": null,
-              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300066",
-              "serverUrl": "https://t4.automationedge.com/aeengine",
-              "params": {
-                "job_name": "Enterprise ServiceNow Architect"
-              }
-            }
-          },
-          {
-            "step": 2,
-            "workflow": "HR Demo Recruitment Match JD",
-            "params": {
-              "job_name": "Enterprise ServiceNow Architect"
-            },
-            "result": {
-              "status": "success",
-              "mode": "live_t4_rpa",
-              "workflowName": "HR Demo Recruitment Match JD",
-              "automationRequestId": 3300067,
-              "sourceId": "SID_1791266892812_e1e5a9c77555",
-              "executionStatus": "Complete",
-              "agentName": "mahesh@mspevent-win-1",
-              "message": "JD matched with candidate",
-              "errorDetails": null,
-              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300067",
-              "serverUrl": "https://t4.automationedge.com/aeengine",
-              "params": {
-                "job_name": "Enterprise ServiceNow Architect"
-              }
-            }
-          }
-        ],
-        "getJd": {
-          "status": "success",
-          "mode": "live_t4_rpa",
-          "workflowName": "HR Demo Recruitment Get JD",
-          "automationRequestId": 3300066,
-          "sourceId": "SID_1791266885531_f5d630bc2d8f",
-          "executionStatus": "Complete",
-          "agentName": "mahesh@mspevent-win-1",
-          "message": "JD extracted from portal",
-          "errorDetails": null,
-          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300066",
-          "serverUrl": "https://t4.automationedge.com/aeengine",
-          "params": {
-            "job_name": "Enterprise ServiceNow Architect"
-          }
-        },
-        "matchJd": {
-          "status": "success",
-          "mode": "live_t4_rpa",
-          "workflowName": "HR Demo Recruitment Match JD",
-          "automationRequestId": 3300067,
-          "sourceId": "SID_1791266892812_e1e5a9c77555",
-          "executionStatus": "Complete",
-          "agentName": "mahesh@mspevent-win-1",
-          "message": "JD matched with candidate",
-          "errorDetails": null,
-          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300067",
-          "serverUrl": "https://t4.automationedge.com/aeengine",
-          "params": {
-            "job_name": "Enterprise ServiceNow Architect"
-          }
-        }
-      },
-      "getJdResult": {
-        "status": "success",
-        "mode": "live_t4_rpa",
-        "workflowName": "HR Demo Recruitment Get JD",
-        "automationRequestId": 3300066,
-        "sourceId": "SID_1791266885531_f5d630bc2d8f",
-        "executionStatus": "Complete",
-        "agentName": "mahesh@mspevent-win-1",
-        "message": "JD extracted from portal",
-        "errorDetails": null,
-        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300066",
-        "serverUrl": "https://t4.automationedge.com/aeengine",
-        "params": {
-          "job_name": "Enterprise ServiceNow Architect"
-        }
-      },
-      "matchJdResult": {
-        "status": "success",
-        "mode": "live_t4_rpa",
-        "workflowName": "HR Demo Recruitment Match JD",
-        "automationRequestId": 3300067,
-        "sourceId": "SID_1791266892812_e1e5a9c77555",
-        "executionStatus": "Complete",
-        "agentName": "mahesh@mspevent-win-1",
-        "message": "JD matched with candidate",
-        "errorDetails": null,
-        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3300067",
-        "serverUrl": "https://t4.automationedge.com/aeengine",
-        "params": {
-          "job_name": "Enterprise ServiceNow Architect"
-        }
-      },
-      "meetingLink": "https://meet.google.com/ylp-kspy-uhz",
-      "interviewDate": "2026-10-08",
-      "interviewTime": "03:00 PM - 03:45 PM IST",
-      "interviewType": "Technical & AI Architecture Screening",
-      "interviewScheduled": true,
-      "emailSent": true,
-      "emailRecipient": "abhishek.malwadkar@valuedx.com"
-    },
-    {
       "id": "CAND-901",
       "name": "Aarav Sharma",
       "candidateName": "Aarav Sharma",
@@ -422,7 +180,7 @@
       "department": "Engineering",
       "score": "94%",
       "matchScore": "94%",
-      "stage": "Interview Scheduled (Google Meet)",
+      "stage": "Offer Accepted",
       "skills": [
         "Python",
         "PyTorch",
@@ -430,14 +188,7 @@
         "LangChain",
         "FastAPI"
       ],
-      "experienceYears": 5.5,
-      "meetingLink": "https://meet.google.com/tsg-ihxz-eyb",
-      "interviewDate": "Wednesday, October 14, 2026",
-      "interviewTime": "02:00 PM - 03:00 PM IST",
-      "interviewType": "Technical & AI Architecture Screening",
-      "interviewScheduled": true,
-      "emailSent": true,
-      "emailRecipient": "abhishek.malwadkar@valuedx.com"
+      "experienceYears": 5.5
     },
     {
       "id": "CAND-902",
@@ -449,7 +200,7 @@
       "department": "Product",
       "score": "89%",
       "matchScore": "89%",
-      "stage": "Interview Scheduled (Google Meet)",
+      "stage": "Technical Interview",
       "skills": [
         "Product Strategy",
         "Agile",
@@ -457,14 +208,7 @@
         "Scrum",
         "User Stories"
       ],
-      "experienceYears": 6.0,
-      "meetingLink": "https://meet.google.com/zwo-ogbf-huj",
-      "interviewDate": "2026-10-08",
-      "interviewTime": "03:00 PM - 03:45 PM IST",
-      "interviewType": "Technical & AI Architecture Screening",
-      "interviewScheduled": true,
-      "emailSent": true,
-      "emailRecipient": "abhishek.malwadkar@valuedx.com"
+      "experienceYears": 6.0
     },
     {
       "id": "CAND-903",
@@ -476,7 +220,7 @@
       "department": "IT Systems",
       "score": "91%",
       "matchScore": "91%",
-      "stage": "Interview Scheduled (Google Meet)",
+      "stage": "HR Screening",
       "skills": [
         "ServiceNow",
         "ITSM",
@@ -484,14 +228,7 @@
         "Service Catalog",
         "IntegrationHub"
       ],
-      "experienceYears": 5.0,
-      "meetingLink": "https://meet.google.com/bsu-xwir-nox",
-      "interviewDate": "2026-10-08",
-      "interviewTime": "03:00 PM - 03:45 PM IST",
-      "interviewType": "Technical & AI Architecture Screening",
-      "interviewScheduled": true,
-      "emailSent": true,
-      "emailRecipient": "abhishek.malwadkar@valuedx.com"
+      "experienceYears": 5.0
     }
   ],
   "leaveRequests": [

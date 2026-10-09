@@ -21,7 +21,7 @@ export default function App() {
   const isHR = currentUser?.role === 'hr';
   const [currentView, setCurrentView] = useState(() => (isHR ? 'home' : 'wizard'));
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    return localStorage.getItem('mangohrms_sidebar_collapsed') === 'true';
+    return localStorage.getItem('mangohrms_sidebar_collapsed') !== 'false';
   });
 
   // Below this width the sidebar is an overlay opened from the header menu button (matches index.css)
@@ -112,9 +112,9 @@ export default function App() {
         <motion.div
           key={currentView}
           className="app-container"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0, transition: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }}
-          exit={{ opacity: 0, y: -6, transition: { duration: 0.15, ease: 'easeIn' } }}
+          initial={{ opacity: 0, y: 10, scale: 0.995, filter: 'blur(2px)' }}
+          animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] } }}
+          exit={{ opacity: 0, y: -6, scale: 0.995, filter: 'blur(1px)', transition: { duration: 0.16, ease: 'easeIn' } }}
         >
           {currentView === 'home' && isHR && (
             <DashboardView employees={employees} isLoading={isLoadingEmployees} onNavigate={navigateTo} />

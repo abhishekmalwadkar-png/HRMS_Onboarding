@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { useToast } from '../context/ToastContext';
-import { PageHeader, Card, EmptyState, Modal, Avatar, Pagination, statusBadgeClass, staggerContainer, staggerItem } from './ui';
+import { PageHeader, Card, EmptyState, Modal, Avatar, Pagination, statusBadgeClass, staggerContainer, staggerItem, staggerTableRow } from './ui';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -187,9 +187,14 @@ export default function DirectoryView({ employees }) {
                     <th scope="col"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
-                <tbody>
+                <motion.tbody
+                  key={`${validCurrentPage}-${deptFilter}-${statusFilter}-${q}`}
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="show"
+                >
                   {paginatedEmployees.map((c) => (
-                    <tr key={c.id}>
+                    <motion.tr key={c.id} variants={staggerTableRow}>
                       <td>
                         <div className="cell-person">
                           <Avatar name={c.fullName} size={36} />
@@ -226,9 +231,9 @@ export default function DirectoryView({ employees }) {
                           <span className="sr-only"> profile of {c.fullName}</span>
                         </button>
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))}
-                </tbody>
+                </motion.tbody>
               </table>
             </div>
             <Pagination
@@ -301,7 +306,9 @@ export default function DirectoryView({ employees }) {
               linkLabel="Open OrangeHRM profile"
               onOpen={() => {
                 const targetUrl = sel.orangeHrmProfileUrl || 'http://10.41.5.39/orangehrm/web/index.php/auth/login';
-                navigator.clipboard.writeText('Admin@1234').catch(() => {});
+                if (navigator?.clipboard?.writeText) {
+                  navigator.clipboard.writeText('Admin@1234').catch(() => {});
+                }
                 showToast('🔑 OrangeHRM: User: admin | Pass: Admin@1234 (Copied to clipboard)', 'success');
                 window.open(targetUrl, '_blank', 'noopener,noreferrer');
               }}
