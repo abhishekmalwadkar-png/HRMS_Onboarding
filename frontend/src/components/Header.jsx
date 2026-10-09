@@ -15,13 +15,15 @@ export default function Header({ toggleSidebar }) {
     password: 'Msp@12345',
   };
 
-  const handleAeServerClick = (e) => {
-    e.preventDefault();
-    // Copy password to clipboard for quick paste
-    navigator.clipboard.writeText(aeConfig.password).catch(() => {});
+  const safeCopyText = (text) => {
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
+  };
+
+  const handleAeServerClick = () => {
+    safeCopyText(aeConfig.password);
     showToast('🔑 AE Server credentials ready! (User: Msp) — Opening portal...', 'success');
-    // Open direct URL in new tab
-    window.open(aeConfig.url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -41,11 +43,15 @@ export default function Header({ toggleSidebar }) {
 
       <div className="top-header-tools">
         {/* Direct AE Server Button */}
-        <button
+        <a
+          href={aeConfig.url}
+          target="_blank"
+          rel="noopener noreferrer"
           onClick={handleAeServerClick}
           className="t4-server-btn"
           title="Open AutomationEdge Server"
           style={{
+            textDecoration: 'none',
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
@@ -58,22 +64,13 @@ export default function Header({ toggleSidebar }) {
             fontWeight: '600',
             letterSpacing: '0.2px',
             boxShadow: '0 2px 8px rgba(234, 88, 12, 0.25)',
-            transition: 'all 0.2s ease',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-1px)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(234, 88, 12, 0.35)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(234, 88, 12, 0.25)';
+            cursor: 'pointer',
           }}
         >
           <i className="fa-solid fa-server" style={{ fontSize: '12px' }}></i>
           <span>AE server</span>
           <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '10px', opacity: 0.85 }}></i>
-        </button>
+        </a>
 
         <button
           className="header-icon-btn"
