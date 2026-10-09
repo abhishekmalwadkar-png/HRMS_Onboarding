@@ -97,21 +97,6 @@ export default function Header({ toggleSidebar }) {
           <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '10px', opacity: 0.85 }}></i>
         </a>
 
-        {/* Download Android APK Button */}
-        <a
-          href="/HRMS_Onboarding.apk"
-          download="HRMS_Onboarding.apk"
-          onClick={() => {
-            showToast('⬇️ Downloading HRMS Android App (.apk)...', 'success');
-          }}
-          className="apk-download-btn"
-          title="Download HRMS Android APK App"
-          aria-label="Download HRMS Android APK App"
-        >
-          <i className="fa-brands fa-android apk-icon" aria-hidden="true"></i>
-          <span className="apk-label">Get Android APK</span>
-        </a>
-
         <button
           className="header-icon-btn"
           onClick={toggleTheme}
@@ -156,20 +141,6 @@ export default function Header({ toggleSidebar }) {
                 <div className="dropdown-divider"></div>
 
                 <div className="dropdown-menu-list">
-                  <a
-                    href="/HRMS_Onboarding.apk"
-                    download="HRMS_Onboarding.apk"
-                    className="dropdown-menu-item"
-                    style={{ textDecoration: 'none' }}
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      showToast('⬇️ Downloading HRMS Android App (.apk)...', 'success');
-                    }}
-                  >
-                    <i className="fa-brands fa-android" style={{ color: '#22c55e' }}></i>
-                    <span>Download Android APK</span>
-                  </a>
-
                   <button
                     className="dropdown-menu-item logout-item"
                     onClick={handleLogout}

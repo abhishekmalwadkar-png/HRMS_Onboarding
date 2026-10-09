@@ -4915,55 +4915,6 @@ a:focus-visible,
   border-color: var(--border-orange-strong);
 }
 
-/* Header APK Download Button */
-.apk-download-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: rgba(34, 197, 94, 0.12);
-  color: #16a34a;
-  border: 1px solid rgba(34, 197, 94, 0.28);
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="dark"] .apk-download-btn {
-  background: rgba(34, 197, 94, 0.16);
-  color: #4ade80;
-  border-color: rgba(74, 222, 128, 0.35);
-}
-
-.apk-download-btn:hover {
-  background: rgba(34, 197, 94, 0.22);
-  border-color: #22c55e;
-  transform: translateY(-1.5px);
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
-  color: #15803d;
-}
-
-[data-theme="dark"] .apk-download-btn:hover {
-  background: rgba(34, 197, 94, 0.26);
-  border-color: #4ade80;
-  color: #86efac;
-  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
-}
-
-.apk-download-btn .apk-icon {
-  font-size: 14px;
-  transition: transform 0.2s ease;
-}
-
-.apk-download-btn:hover .apk-icon {
-  transform: scale(1.18);
-}
-
 .t4-server-btn {
   transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
