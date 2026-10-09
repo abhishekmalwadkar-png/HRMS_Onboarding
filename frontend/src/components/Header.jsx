@@ -68,11 +68,15 @@ export default function Header({ toggleSidebar }) {
 
       <div className="top-header-tools">
         {/* Direct AE Server Button */}
-        <button
+        <a
+          href={aeConfig.url}
+          target="_blank"
+          rel="noopener noreferrer"
           onClick={handleAeServerClick}
           className="t4-server-btn"
           title="Open AutomationEdge Server"
           style={{
+            textDecoration: 'none',
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
@@ -85,22 +89,28 @@ export default function Header({ toggleSidebar }) {
             fontWeight: '600',
             letterSpacing: '0.2px',
             boxShadow: '0 2px 8px rgba(234, 88, 12, 0.25)',
-            transition: 'all 0.2s ease',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-1px)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(234, 88, 12, 0.35)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(234, 88, 12, 0.25)';
+            cursor: 'pointer',
           }}
         >
           <i className="fa-solid fa-server" style={{ fontSize: '12px' }}></i>
           <span>AE server</span>
           <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '10px', opacity: 0.85 }}></i>
-        </button>
+        </a>
+
+        {/* Download Android APK Button */}
+        <a
+          href="/HRMS_Onboarding.apk"
+          download="HRMS_Onboarding.apk"
+          onClick={() => {
+            showToast('⬇️ Downloading HRMS Android App (.apk)...', 'success');
+          }}
+          className="apk-download-btn"
+          title="Download HRMS Android APK App"
+          aria-label="Download HRMS Android APK App"
+        >
+          <i className="fa-brands fa-android apk-icon" aria-hidden="true"></i>
+          <span className="apk-label">Get Android APK</span>
+        </a>
 
         <button
           className="header-icon-btn"
@@ -146,6 +156,20 @@ export default function Header({ toggleSidebar }) {
                 <div className="dropdown-divider"></div>
 
                 <div className="dropdown-menu-list">
+                  <a
+                    href="/HRMS_Onboarding.apk"
+                    download="HRMS_Onboarding.apk"
+                    className="dropdown-menu-item"
+                    style={{ textDecoration: 'none' }}
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      showToast('⬇️ Downloading HRMS Android App (.apk)...', 'success');
+                    }}
+                  >
+                    <i className="fa-brands fa-android" style={{ color: '#22c55e' }}></i>
+                    <span>Download Android APK</span>
+                  </a>
+
                   <button
                     className="dropdown-menu-item logout-item"
                     onClick={handleLogout}

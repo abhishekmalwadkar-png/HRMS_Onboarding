@@ -2,6 +2,7 @@ import http.server
 import socketserver
 import json
 import os
+import shutil
 import time
 import random
 import threading
@@ -214,6 +215,25 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps(db).encode('utf-8'))
             else:
                 self.wfile.write(json.dumps({}).encode('utf-8'))
+        elif self.path.split('?')[0] in ('/app-debug.apk', '/HRMS_Onboarding.apk', '/download-apk', '/api/download-apk'):
+            apk_path = os.path.join(os.path.dirname(__file__), 'app-debug.apk')
+            if not os.path.exists(apk_path):
+                apk_path = os.path.join(os.path.dirname(__file__), 'frontend', 'public', 'HRMS_Onboarding.apk')
+            if os.path.exists(apk_path):
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/vnd.android.package-archive')
+                self.send_header('Content-Disposition', 'attachment; filename="HRMS_Onboarding.apk"')
+                self.send_header('Content-Length', str(os.path.getsize(apk_path)))
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                with open(apk_path, 'rb') as f:
+                    shutil.copyfileobj(f, self.wfile)
+                return
+            else:
+                self.send_response(404)
+                self.end_headers()
+                self.wfile.write(b'APK file not found')
+                return
         else:
             super().do_GET()
 
