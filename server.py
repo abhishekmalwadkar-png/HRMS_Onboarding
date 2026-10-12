@@ -938,66 +938,97 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
         elif self.path == '/api/exit/demo':
             now_ts = int(time.time())
             date_today = time.strftime('%Y-%m-%d')
-            demo_items = [
-                {
-                    "id": f"EXIT-{now_ts % 900 + 101}",
-                    "empId": "EMP-1042",
-                    "empName": "Rohit Sharma",
-                    "department": "Engineering",
-                    "role": "Staff DevOps Engineer",
+
+            # 1. Fetch live employees present in OrangeHRM
+            orange_emps = []
+            try:
+                orange_emps = orangehrm_client.get_active_employees()
+            except Exception as oe:
+                print(f"[OrangeHRM Fetch for Demo Exit Note]: {oe}")
+
+            # Also consider approved employees in database that were synced to OrangeHRM
+            db_emps = [e for e in db.get('employees', []) if e.get('orangeHrmEmpNumber') or e.get('status') == 'Approved']
+
+            # Avoid re-adding employees that already have an active exit clearance
+            active_exit_names = {str(x.get('empName', '')).strip().lower() for x in db.get('exitRequests', [])}
+
+            candidate_pool = []
+            seen_names = set()
+
+            for emp in orange_emps:
+                name = str(emp.get('fullName') or '').strip()
+                if name and name.lower() not in seen_names and name.lower() not in active_exit_names:
+                    seen_names.add(name.lower())
+                    candidate_pool.append({
+                        "fullName": name,
+                        "empId": emp.get('empId') or f"EMP-{emp.get('empNumber', '1000')}",
+                        "empNumber": emp.get('empNumber'),
+                        "department": emp.get('department') or "Engineering",
+                        "jobTitle": emp.get('jobTitle') or "Software Specialist"
+                    })
+
+            for emp in db_emps:
+                name = str(emp.get('fullName') or emp.get('name') or '').strip()
+                if name and name.lower() not in seen_names and name.lower() not in active_exit_names:
+                    seen_names.add(name.lower())
+                    candidate_pool.append({
+                        "fullName": name,
+                        "empId": emp.get('id') or f"EMP-{emp.get('orangeHrmEmpNumber', '2000')}",
+                        "empNumber": emp.get('orangeHrmEmpNumber'),
+                        "department": emp.get('department') or "Engineering",
+                        "jobTitle": emp.get('jobTitle') or "Staff Engineer"
+                    })
+
+            # If still fewer than 3, pick from all OrangeHRM employees
+            if len(candidate_pool) < 3:
+                for emp in orange_emps:
+                    name = str(emp.get('fullName') or '').strip()
+                    if name:
+                        candidate_pool.append({
+                            "fullName": name,
+                            "empId": emp.get('empId') or f"EMP-{emp.get('empNumber', '1000')}",
+                            "empNumber": emp.get('empNumber'),
+                            "department": emp.get('department') or "Engineering",
+                            "jobTitle": emp.get('jobTitle') or "Software Specialist"
+                        })
+                    if len(candidate_pool) >= 5:
+                        break
+
+            # Select up to 3 employees
+            selected_emps = candidate_pool[:3]
+            sample_reasons = [
+                "Pursuing higher executive fellowship and cloud architecture research.",
+                "Accepted senior leadership position at enterprise partner organization.",
+                "Relocating internationally / family relocation abroad.",
+                "Transitioning to specialized independent AI consultancy.",
+                "Pursuing entrepreneurial venture in enterprise automation."
+            ]
+
+            created_demo_exits = []
+
+            for i, emp in enumerate(selected_emps):
+                emp_name = emp.get('fullName')
+                emp_id = emp.get('empId') or f"EMP-{1000 + i}"
+                dept = emp.get('department') or "Engineering"
+                role = emp.get('jobTitle') or "Senior Specialist"
+                reason = sample_reasons[i % len(sample_reasons)]
+                lwd_date = time.strftime('%Y-%m-%d', time.localtime(now_ts + (20 + i * 5) * 86400))
+                exit_id = f"EXIT-{now_ts % 900 + 100 + i}"
+
+                item_payload = {
+                    "id": exit_id,
+                    "empId": emp_id,
+                    "empNumber": emp.get('empNumber'),
+                    "empName": emp_name,
+                    "department": dept,
+                    "role": role,
+                    "jobTitle": role,
                     "resignationDate": date_today,
-                    "lastWorkingDay": "2026-11-15",
-                    "reason": "Pursuing higher studies & executive cloud fellowship",
-                    "laptopTicket": f"INC004{random.randint(1000, 9999)}",
-                    "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident_list.do",
+                    "lastWorkingDay": lwd_date,
+                    "reason": reason,
                     "itClearance": False,
                     "itClearanceStatus": "Clearance waiting from IT department",
                     "laptopIncidentState": "In Progress",
-                    "assignedTo": "IT Asset Specialist",
-                    "accessRevoked": False,
-                    "o365Deleted": False,
-                    "orangeHrmDeleted": False,
-                    "emailSent": False,
-                    "relievingLetterIssued": False,
-                    "fnfStatus": "Pending Initiation"
-                },
-                {
-                    "id": f"EXIT-{now_ts % 900 + 102}",
-                    "empId": "EMP-2158",
-                    "empName": "Neha Kulkarni",
-                    "department": "Product",
-                    "role": "Senior Product Designer",
-                    "resignationDate": date_today,
-                    "lastWorkingDay": "2026-11-20",
-                    "reason": "Relocating to international office / family relocation",
-                    "laptopTicket": f"INC004{random.randint(1000, 9999)}",
-                    "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident_list.do",
-                    "itClearance": False,
-                    "itClearanceStatus": "Clearance waiting from IT department",
-                    "laptopIncidentState": "In Progress",
-                    "assignedTo": "IT Asset Specialist",
-                    "accessRevoked": False,
-                    "o365Deleted": False,
-                    "orangeHrmDeleted": False,
-                    "emailSent": False,
-                    "relievingLetterIssued": False,
-                    "fnfStatus": "Pending Initiation"
-                },
-                {
-                    "id": f"EXIT-{now_ts % 900 + 103}",
-                    "empId": "EMP-3891",
-                    "empName": "Vikram Singhania",
-                    "department": "IT Systems",
-                    "role": "Enterprise Systems Architect",
-                    "resignationDate": date_today,
-                    "lastWorkingDay": "2026-11-30",
-                    "reason": "Accepted opportunity as Director of Infrastructure",
-                    "laptopTicket": f"INC004{random.randint(1000, 9999)}",
-                    "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident_list.do",
-                    "itClearance": False,
-                    "itClearanceStatus": "Clearance waiting from IT department",
-                    "laptopIncidentState": "In Progress",
-                    "assignedTo": "IT Asset Specialist",
                     "accessRevoked": False,
                     "o365Deleted": False,
                     "orangeHrmDeleted": False,
@@ -1005,10 +1036,30 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                     "relievingLetterIssued": False,
                     "fnfStatus": "Pending Initiation"
                 }
-            ]
+
+                # 1. Trigger AutomationEdge T4 Workflow: "HR Demo Offboarding SN Req" (asynchronous)
+                try:
+                    ae_sn_req_res = ae_client.trigger_workflow("HR Demo Offboarding SN Req", {"EmpID": str(emp_id)})
+                    item_payload['aeSnReqWorkflow'] = ae_sn_req_res
+                except Exception as ae_err:
+                    print(f"[Demo Offboarding T4 Note]: {ae_err}")
+
+                # 2. Create ACTUAL ServiceNow Parent Request & Laptop Recovery Incident!
+                try:
+                    sn_res = sn_client.create_offboarding_request(item_payload)
+                    item_payload['serviceNowReq'] = sn_res.get('serviceNowReq')
+                    item_payload['serviceNowRitm'] = sn_res.get('serviceNowRitm')
+                    item_payload['laptopTicket'] = sn_res.get('laptopTicket')
+                    item_payload['laptopTicketSysId'] = sn_res.get('laptopTicketSysId')
+                    item_payload['laptopTicketUrl'] = sn_res.get('laptopTicketUrl')
+                    item_payload['assignedTo'] = sn_res.get('assignedTo')
+                except Exception as sn_err:
+                    print(f"[Demo Offboarding ServiceNow Note]: {sn_err}")
+
+                created_demo_exits.append(item_payload)
 
             exits = db.get('exitRequests', [])
-            for item in reversed(demo_items):
+            for item in reversed(created_demo_exits):
                 exits.insert(0, item)
             db['exitRequests'] = exits
             self.write_db(db)
@@ -1016,8 +1067,8 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({
                 "status": "success",
-                "message": "Added 3 demo resignation requests",
-                "data": demo_items,
+                "message": f"Created {len(created_demo_exits)} live resignation requests for OrangeHRM employees in ServiceNow",
+                "data": created_demo_exits,
                 "allRequests": exits
             }).encode('utf-8'))
 

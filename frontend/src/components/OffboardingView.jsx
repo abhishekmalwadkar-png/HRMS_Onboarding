@@ -122,13 +122,14 @@ export default function OffboardingView() {
 
   const handleAddDemoResignations = async () => {
     setIsAddingDemo(true);
+    showToast('Creating live ServiceNow requests for OrangeHRM employees...', 'info');
     try {
       const res = await fetch('/api/exit/demo', { method: 'POST' });
       if (res.ok) {
         const json = await res.json();
         const items = json.allRequests || (Array.isArray(json.data) ? [...json.data, ...exitRequests] : exitRequests);
         setExitRequests(items);
-        showToast('✓ Added 3 demo resignation requests ready for HR approval & deprovisioning.', 'success');
+        showToast('✓ Created 3 live resignation requests for OrangeHRM employees in ServiceNow!', 'success');
         return;
       }
       throw new Error(`Server returned ${res.status}`);
@@ -723,7 +724,7 @@ export default function OffboardingView() {
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
           >
             <i className={`fa-solid ${isAddingDemo ? 'fa-spinner fa-spin' : 'fa-user-minus'}`} aria-hidden="true"></i>
-            {isAddingDemo ? 'Adding demo…' : 'Add demo resignations'}
+            {isAddingDemo ? 'Creating in ServiceNow…' : 'Add demo resignations'}
           </button>
         }
       />
@@ -764,7 +765,7 @@ export default function OffboardingView() {
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
             >
               <i className={`fa-solid ${isAddingDemo ? 'fa-spinner fa-spin' : 'fa-user-minus'}`} aria-hidden="true"></i>
-              {isAddingDemo ? 'Adding demo…' : 'Add demo resignations'}
+              {isAddingDemo ? 'Creating in ServiceNow…' : 'Add demo resignations'}
             </button>
           </div>
         ) : (
@@ -785,7 +786,23 @@ export default function OffboardingView() {
                         Last Working Day: <strong style={{ color: 'var(--text-main)' }}>{item.lastWorkingDay}</strong> • ID: <code>{item.empId || item.id}</code>
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {item.serviceNowReq && (
+                        <span
+                          className="badge"
+                          style={{
+                            fontSize: '0.78rem',
+                            padding: '0.35rem 0.65rem',
+                            fontWeight: 700,
+                            background: 'rgba(59, 130, 246, 0.12)',
+                            color: '#2563eb',
+                            border: '1px solid rgba(59, 130, 246, 0.25)',
+                          }}
+                          title="ServiceNow Parent Offboarding Request"
+                        >
+                          <i className="fa-solid fa-file-invoice"></i> SN Req: <strong>{item.serviceNowReq}</strong>
+                        </span>
+                      )}
                       {item.laptopTicket && (
                         <button
                           type="button"
