@@ -113,6 +113,33 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             json.dump(db, f, indent=2)
 
     def do_GET(self):
+        # Direct ServiceNow Single-Click Auto-Login Bridge (Serves auto-submitting session page)
+        if self.path.split('?')[0] in ('/api/servicenow/direct-login', '/servicenow/direct-login', '/servicenow-login'):
+            query = self.path.split('?')[1] if '?' in self.path else ''
+            import urllib.parse
+            params = urllib.parse.parse_qs(query)
+            target = params.get('target', [None])[0] or params.get('url', [None])[0] or params.get('destination', [None])[0]
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
+            self.end_headers()
+            html = sn_client.generate_direct_login_html(target_url=target)
+            self.wfile.write(html.encode('utf-8'))
+            return
+
+        # Direct AutomationEdge T4 Single-Click Auto-Login Bridge
+        if self.path.split('?')[0] in ('/api/rpa/direct-login', '/rpa/direct-login', '/t4-login', '/t4/direct-login'):
+            query = self.path.split('?')[1] if '?' in self.path else ''
+            import urllib.parse
+            params = urllib.parse.parse_qs(query)
+            target = params.get('target', [None])[0] or params.get('url', [None])[0] or "https://t4.automationedge.com/#/requests/list"
+            self.send_response(302)
+            self.send_header('Location', target)
+            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
+            self.end_headers()
+            return
+
         if self.path.startswith('/api/'):
             db = self.read_db()
             self.send_response(200)
@@ -121,7 +148,13 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Cache-Control', 'no-store')
             self.end_headers()
 
-            if self.path.startswith('/api/employees'):
+            if self.path.startswith('/api/servicenow/token'):
+                try:
+                    token_info = sn_client.get_token_info()
+                    self.wfile.write(json.dumps(token_info).encode('utf-8'))
+                except Exception as e:
+                    self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+            elif self.path.startswith('/api/employees'):
                 self.wfile.write(json.dumps(db.get('employees', [])).encode('utf-8'))
             elif self.path.startswith('/api/servicenow/sync-approvals'):
                 changed, synced = sn_client.check_and_sync_servicenow_approvals(db.get('employees', []))

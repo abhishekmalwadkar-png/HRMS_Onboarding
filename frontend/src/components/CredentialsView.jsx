@@ -2,15 +2,36 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { PageHeader, Card, staggerContainer, staggerItem } from './ui';
+import { openT4Direct } from '../utils/t4Auth';
 
 export default function CredentialsView() {
   const { showToast } = useToast();
-  const [showPasswords, setShowPasswords] = useState({});
-  const [copiedField, setCopiedField] = useState(null);
+  const [snConfig, setSnConfig] = useState(null);
+  const [t4Config, setT4Config] = useState(null);
 
-  const togglePassword = (key) => {
-    setShowPasswords((prev) => ({ ...prev, [key]: !prev[key] }));
+  const fetchConfig = () => {
+    fetch('/api/servicenow/config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.username) {
+          setSnConfig(data);
+        }
+      })
+      .catch(() => {});
+
+    fetch('/api/rpa/config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.username) {
+          setT4Config(data);
+        }
+      })
+      .catch(() => {});
   };
+
+  React.useEffect(() => {
+    fetchConfig();
+  }, []);
 
   const safeCopyText = (text) => {
     if (navigator?.clipboard?.writeText) {
@@ -37,11 +58,53 @@ export default function CredentialsView() {
     } catch (e) {}
   };
 
-  const copyToClipboard = (text, key, label) => {
-    safeCopyText(text);
-    setCopiedField(key);
-    showToast(`✓ Copied ${label} to clipboard`, 'success');
-    setTimeout(() => setCopiedField(null), 2200);
+  const handleLaunch = (sys, e) => {
+    if (sys.id === 'servicenow') {
+      e.preventDefault();
+      const instanceUrl = (snConfig?.instanceUrl || sys.credentials.find((c) => c.key === 'sn_inst')?.value || 'https://ven04528.service-now.com').replace(/\/$/, '');
+      const username = snConfig?.username || sys.credentials.find((c) => c.key === 'sn_user')?.value || 'AE_Dev_Vaibhav_Tore';
+      const password = snConfig?.password || sys.passToCopy;
+      const sysAction = snConfig?.sysAction || 'sysverb_login';
+      const loginUrl = snConfig?.loginUrl || '/nav_to.do?uri=sc_request_list.do';
+
+      // Direct silent form POST to ServiceNow /login.do dynamically using .env configuration
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `${instanceUrl}/login.do`;
+      form.target = '_blank';
+      form.style.display = 'none';
+
+      const fields = {
+        user_name: username,
+        user_password: password,
+        sys_action: sysAction,
+        sysparm_login_url: loginUrl,
+      };
+
+      Object.entries(fields).forEach(([key, val]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = val;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+
+      showToast(`⚡ Logging directly into ServiceNow Requests tab...`, 'success');
+      return;
+    }
+
+    if (sys.id === 't4') {
+      e.preventDefault();
+      openT4Direct(sys.targetUrl, showToast);
+      return;
+    }
+
+    safeCopyText(sys.passToCopy);
+    showToast(sys.toastMsg, 'success');
   };
 
   const systems = [
@@ -54,14 +117,8 @@ export default function CredentialsView() {
       bgLight: 'rgba(234, 88, 12, 0.08)',
       borderColor: 'rgba(234, 88, 12, 0.25)',
       description: 'Cloud RPA automation server for Active Directory user provisioning & email notifications.',
-      targetUrl: 'https://t4.automationedge.com/#/requests/list',
-      credentials: [
-        { key: 't4_user', label: 'Username', value: 'Msp', isSecret: false },
-        { key: 't4_pass', label: 'Password', value: 'Msp@12345', isSecret: true },
-        { key: 't4_url', label: 'Server API URL', value: 'https://t4.automationedge.com/aeengine', isSecret: false },
-      ],
-      passToCopy: 'Msp@12345',
-      toastMsg: '🔑 T4 Server credentials (User: Msp) — Password copied! Opening portal...',
+      targetUrl: t4Config?.targetUrl || 'https://t4.automationedge.com/#/requests/list',
+      passToCopy: t4Config?.password || 'Msp@12345',
       launchLabel: 'Launch & Login to T4 Server',
     },
     {
@@ -93,14 +150,16 @@ export default function CredentialsView() {
       bgLight: 'rgba(2, 132, 199, 0.08)',
       borderColor: 'rgba(2, 132, 199, 0.25)',
       description: 'IT Service Catalog, onboarding request management (REQ/RITM), and hardware ticketing.',
-      targetUrl: 'https://ven04528.service-now.com/navpage.do',
+      targetUrl: snConfig?.instanceUrl ? `${snConfig.instanceUrl}${snConfig.loginUrl || '/nav_to.do?uri=sc_request_list.do'}` : 'https://ven04528.service-now.com/nav_to.do?uri=sc_request_list.do',
       credentials: [
-        { key: 'sn_inst', label: 'Instance URL', value: 'https://ven04528.service-now.com', isSecret: false },
-        { key: 'sn_user', label: 'Username', value: 'AE_Dev_Vaibhav_Tore', isSecret: false },
-        { key: 'sn_pass', label: 'Password', value: 'Pune@123', isSecret: true },
+        { key: 'sn_inst', label: 'Instance URL', value: snConfig?.instanceUrl || 'https://ven04528.service-now.com', isSecret: false },
+        { key: 'sn_user', label: 'Username', value: snConfig?.username || 'AE_Dev_Vaibhav_Tore', isSecret: false },
+        { key: 'sn_pass', label: 'Password', value: snConfig?.password || 'Pune@123', isSecret: true },
+        { key: 'sn_action', label: 'sys_action', value: snConfig?.sysAction || 'sysverb_login', isSecret: false },
+        { key: 'sn_login_url', label: 'sysparm_login_url', value: snConfig?.loginUrl || '/nav_to.do?uri=sc_request_list.do', isSecret: false },
       ],
-      passToCopy: 'Pune@123',
-      toastMsg: '⚡ ServiceNow: User: AE_Dev_Vaibhav_Tore | Pass copied to clipboard!',
+      passToCopy: snConfig?.password || 'Pune@123',
+      toastMsg: `⚡ Logging directly into ServiceNow Requests as ${snConfig?.username || 'AE_Dev_Vaibhav_Tore'}...`,
       launchLabel: 'Launch & Login to ServiceNow',
     },
   ];
@@ -115,6 +174,7 @@ export default function CredentialsView() {
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => {
+              fetchConfig();
               showToast('Refreshed credential pool from .env configuration', 'success');
             }}
           >
@@ -189,67 +249,9 @@ export default function CredentialsView() {
                 </span>
               </div>
 
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.45 }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
                 {sys.description}
               </p>
-
-              {/* Credential Fields */}
-              <div className="cred-box">
-                {sys.credentials.map((cred) => {
-                  const isHidden = cred.isSecret && !showPasswords[cred.key];
-                  const displayValue = isHidden ? '••••••••••••' : cred.value;
-
-                  return (
-                    <div
-                      key={cred.key}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '0.5rem',
-                        fontSize: '0.82rem',
-                      }}
-                    >
-                      <span style={{ color: 'var(--text-muted)', minWidth: '100px', fontWeight: 500 }}>
-                        {cred.label}
-                      </span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', overflow: 'hidden' }}>
-                        <code className="cred-code" title={cred.value}>
-                          {displayValue}
-                        </code>
-
-                        {cred.isSecret && (
-                          <button
-                            onClick={() => togglePassword(cred.key)}
-                            title={showPasswords[cred.key] ? 'Hide password' : 'Show password'}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: 'var(--text-muted)',
-                              cursor: 'pointer',
-                              padding: '2px 4px',
-                            }}
-                          >
-                            <i className={`fa-solid ${showPasswords[cred.key] ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                          </button>
-                        )}
-
-                        <button
-                          onClick={() => copyToClipboard(cred.value, cred.key, cred.label)}
-                          title={`Copy ${cred.label}`}
-                          className="cred-copy-btn"
-                          style={{
-                            background: copiedField === cred.key ? '#16a34a' : undefined,
-                            color: copiedField === cred.key ? '#ffffff' : undefined,
-                          }}
-                        >
-                          <i className={`fa-solid ${copiedField === cred.key ? 'fa-check' : 'fa-copy'}`}></i>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
 
             {/* Launch Action Button (Native <a> tag to guarantee opening without browser popup blocker) */}
@@ -257,10 +259,7 @@ export default function CredentialsView() {
               href={sys.targetUrl}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => {
-                safeCopyText(sys.passToCopy);
-                showToast(sys.toastMsg, 'success');
-              }}
+              onClick={(e) => handleLaunch(sys, e)}
               className="btn"
               style={{
                 textDecoration: 'none',

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { PageHeader } from './ui';
+import { openServiceNowDirect } from '../utils/serviceNowAuth';
 
 export default function OffboardingView() {
   const { currentUser } = useAuth();
@@ -819,16 +820,18 @@ export default function OffboardingView() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       {item.laptopTicket && (
-                        <a
-                          href={item.laptopTicketUrl || `https://ven04528.service-now.com/nav_to.do?uri=incident_list.do`}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const target = item.laptopTicketUrl || `https://ven04528.service-now.com/nav_to.do?uri=incident_list.do`;
+                            openServiceNowDirect(target, () => showToast(`⚡ Opening ${item.laptopTicket} in ServiceNow...`, 'success'));
+                          }}
                           className="badge badge-verified"
-                          style={{ fontSize: '0.78rem', textDecoration: 'none', padding: '0.35rem 0.65rem', fontWeight: 700 }}
-                          title="Click to view ServiceNow Incident"
+                          style={{ fontSize: '0.78rem', textDecoration: 'none', padding: '0.35rem 0.65rem', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                          title="Auto-login & view ServiceNow Incident"
                         >
                           <i className="fa-solid fa-arrow-up-right-from-square"></i> ServiceNow: <strong>{item.laptopTicket}</strong>
-                        </a>
+                        </button>
                       )}
                       <span
                         onClick={() => inspectOffboardingFlow(item)}

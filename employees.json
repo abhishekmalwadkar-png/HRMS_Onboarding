@@ -1,6 +1,80 @@
 {
   "employees": [
     {
+      "id": "EMP-8313",
+      "fullName": "Arjun Singhania",
+      "email": "arjun.singhania@example.com",
+      "phone": "+91 98110 99887",
+      "dob": "1992-10-05",
+      "pan": "ABCDE010F",
+      "aadhaar": "4532 8901 2345",
+      "uan": "1012 7989 7084",
+      "emergencyName": "Meenakshi Singhania (Mother)",
+      "emergencyPhone": "+91 98110 99880",
+      "address": "B-14, Vasant Vihar, New Delhi, Delhi 110057",
+      "bankName": "Axis Bank",
+      "accountNumber": "221987345612",
+      "routingCode": "UTIB0000005",
+      "hardware": "Lenovo ThinkPad X1 Carbon Gen 12",
+      "idDocumentName": "Passport_India_Arjun_Singhania.pdf",
+      "uanDocumentName": "UAN_Card_Arjun_Singhania_EPFO.pdf",
+      "salarySlipDocName": "Salary_Slip_Arjun_Singhania_Recent.pdf",
+      "department": "Engineering",
+      "jobTitle": "Senior Cyber Security Specialist",
+      "manager": "David Miller (Director of Engineering)",
+      "startDate": "2026-11-01",
+      "salary": "\u20b932,00,000 INR / annum (\u20b932.0 LPA)",
+      "status": "Pending Review",
+      "serviceNowReq": "REQ0011989",
+      "serviceNowRitm": "RITM0011963",
+      "submittedAt": "10/12/2026, 11:43:44 AM",
+      "serviceNowReqId": "04d7bf7eebf3c310b02df1b4cad0cd55",
+      "serviceNowRitmId": "ccd7bf7eebf3c310b02df1b4cad0cd55",
+      "reqUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_request.do?sys_id=04d7bf7eebf3c310b02df1b4cad0cd55",
+      "ritmUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_req_item.do?sys_id=ccd7bf7eebf3c310b02df1b4cad0cd55",
+      "serviceNowStatus": "Pending Approval",
+      "serviceNowStage": "HR Document Verification",
+      "aeGetEmpDetailsReqId": 3328802,
+      "aeGetEmpDetailsStatus": "Complete"
+    },
+    {
+      "id": "EMP-4058",
+      "fullName": "Aarav Sharma",
+      "email": "aarav.sharma@example.com",
+      "phone": "+91 98230 45671",
+      "dob": "1994-06-15",
+      "pan": "ABCDE1234F",
+      "aadhaar": "4532 8901 2345",
+      "uan": "1012 9845 2310",
+      "emergencyName": "Sunita Sharma (Mother)",
+      "emergencyPhone": "+91 98230 45670",
+      "address": "Flat 402, Marvel Palms, Baner, Pune, Maharashtra 411045",
+      "bankName": "HDFC Bank Ltd",
+      "accountNumber": "918230491029",
+      "routingCode": "HDFC0001234",
+      "hardware": "Apple MacBook Pro M3 Max",
+      "idDocumentName": "Aadhaar_Card_Aarav_Sharma_Verified.pdf",
+      "uanDocumentName": "UAN_Card_Aarav_Sharma_EPFO.pdf",
+      "salarySlipDocName": "Salary_Slip_Recent_Months_Aarav_Sharma.pdf",
+      "department": "Engineering",
+      "jobTitle": "Staff AI Systems Engineer",
+      "manager": "Amit Deshmukh (VP of Engineering)",
+      "startDate": "2026-10-15",
+      "salary": "\u20b932,00,000 INR / annum (\u20b932.0 LPA)",
+      "status": "Pending Review",
+      "serviceNowReq": "REQ0011986",
+      "serviceNowRitm": "RITM0011960",
+      "submittedAt": "10/12/2026, 11:21:46 AM",
+      "serviceNowReqId": "3ac2b7f2333303105e900e570e5c7b50",
+      "serviceNowRitmId": "7ec2b7f2333303105e900e570e5c7b51",
+      "reqUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_request.do?sys_id=3ac2b7f2333303105e900e570e5c7b50",
+      "ritmUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_req_item.do?sys_id=7ec2b7f2333303105e900e570e5c7b51",
+      "serviceNowStatus": "Pending Approval",
+      "serviceNowStage": "HR Document Verification",
+      "aeGetEmpDetailsReqId": 3328719,
+      "aeGetEmpDetailsStatus": "Complete"
+    },
+    {
       "id": "EMP-4019",
       "fullName": "Priya Patel",
       "email": "priya.patel@example.com",
@@ -24,7 +98,7 @@
       "manager": "Nandita Sen (Chief Product Officer)",
       "startDate": "2026-11-05",
       "salary": "\u20b932,00,000 INR / annum (\u20b932.0 LPA)",
-      "status": "Approved",
+      "status": "Offboarded & Deprovisioned",
       "serviceNowReq": "REQ0011962",
       "serviceNowRitm": "RITM0011939",
       "submittedAt": "10/7/2026, 1:08:39 PM",
@@ -54,7 +128,10 @@
       "aeT4Workflow": "AD-Create User and Assin Role",
       "offerLetterEmailed": true,
       "offerLetterRecipient": "abhishek.malwadkar@valuedx.com",
-      "offerLetterPdf": "Offer_Letter_Priya_Patel_MNG-OFR-63131.pdf"
+      "offerLetterPdf": "Offer_Letter_Priya_Patel_MNG-OFR-63131.pdf",
+      "o365Deleted": true,
+      "orangeHrmDeleted": true,
+      "accessRevoked": true
     },
     {
       "id": "EMP-9698",
@@ -233,6 +310,20 @@
   ],
   "leaveRequests": [
     {
+      "id": "LR-912",
+      "employeeName": "Pooja Deshmukh",
+      "empNumber": 41,
+      "type": "Casual Leave",
+      "from": "2026-11-04",
+      "to": "2026-11-05",
+      "days": 2,
+      "reason": "Personal family event",
+      "status": "Approved",
+      "createdAt": "2026-10-12 09:55:48",
+      "orangeHrmAssigned": true,
+      "approvedAt": "2026-10-12 09:56:11"
+    },
+    {
       "id": "LR-664",
       "employeeName": "simran Employee",
       "empNumber": 16,
@@ -274,6 +365,180 @@
     }
   ],
   "exitRequests": [
+    {
+      "id": "EXIT-747",
+      "empId": "EMP-4019",
+      "empName": "Priya Patel",
+      "department": "Engineering",
+      "resignationDate": "2026-10-12",
+      "lastWorkingDay": "2026-11-11",
+      "reason": "Pursuing new career opportunity in enterprise cloud engineering.",
+      "itClearance": true,
+      "itClearanceStatus": "User Submitted Laptop",
+      "financeClearance": false,
+      "accessRevoked": true,
+      "o365Deleted": true,
+      "orangeHrmDeleted": true,
+      "emailSent": true,
+      "fnfStatus": "Pending Initiation",
+      "aeSnReqWorkflow": {
+        "status": "success",
+        "mode": "live_t4_rpa",
+        "workflowName": "HR Demo Offboarding SN Req",
+        "automationRequestId": 3328408,
+        "sourceId": "SID_1791779225102_05c720436869",
+        "executionStatus": "Complete",
+        "agentName": "mahesh@mspevent-win-1",
+        "message": "Employee EMP-4019 Offboarding initiated and request submitted on ServiceNow",
+        "errorDetails": null,
+        "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3328408",
+        "serverUrl": "https://t4.automationedge.com/aeengine",
+        "params": {
+          "EmpID": "EMP-4019"
+        }
+      },
+      "serviceNowReq": "REQ0011984",
+      "serviceNowRitm": "RITM0016229",
+      "laptopTicket": "INC0040535",
+      "laptopTicketSysId": "e36f137aeb33c310b02df1b4cad0cd8c",
+      "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident.do?sys_id=e36f137aeb33c310b02df1b4cad0cd8c",
+      "assignedTo": "Alene Rabeck",
+      "laptopIncidentState": "Resolved",
+      "t4RevokePipeline": {
+        "status": "success",
+        "employeeId": "EMP-4019",
+        "employeeName": "Priya Patel",
+        "adUsername": "Priya.Patel",
+        "steps": [
+          {
+            "step": 1,
+            "workflow": "HR Demo OffboardingRemoveADUser",
+            "params": {
+              "AD username": "Priya.Patel"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR Demo OffboardingRemoveADUser",
+              "automationRequestId": 3328410,
+              "sourceId": "SID_1791779271196_af13b4a63f7a",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "AD User Priya.Patel Removed",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3328410",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "ADUserName": "Priya.Patel"
+              }
+            }
+          },
+          {
+            "step": 2,
+            "workflow": "HR DEMO offboarding Delete O365 user",
+            "params": {
+              "emp_id": "EMP-4019",
+              "emp_name": "Priya Patel"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR DEMO offboarding Delete O365 user",
+              "automationRequestId": 3328411,
+              "sourceId": "SID_1791779277928_c098d21fb2a1",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "User deleted from O365",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3328411",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "emp_id": "EMP-4019",
+                "emp_name": "Priya Patel"
+              }
+            }
+          },
+          {
+            "step": 3,
+            "workflow": "HR DEMO Offboarding Delete OrangeHRM User",
+            "params": {
+              "emp_id": "EMP-4019",
+              "emp_name": "Priya Patel"
+            },
+            "result": {
+              "status": "success",
+              "mode": "live_t4_rpa",
+              "workflowName": "HR DEMO Offboarding Delete OrangeHRM User",
+              "automationRequestId": 3328414,
+              "sourceId": "SID_1791779286706_5450657ca987",
+              "executionStatus": "Complete",
+              "agentName": "mahesh@mspevent-win-1",
+              "message": "User data deleted from OrangeHRM",
+              "errorDetails": null,
+              "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3328414",
+              "serverUrl": "https://t4.automationedge.com/aeengine",
+              "params": {
+                "emp_id": "EMP-4019",
+                "emp_name": "Priya Patel"
+              }
+            }
+          }
+        ],
+        "adRemoval": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR Demo OffboardingRemoveADUser",
+          "automationRequestId": 3328410,
+          "sourceId": "SID_1791779271196_af13b4a63f7a",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "AD User Priya.Patel Removed",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3328410",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "ADUserName": "Priya.Patel"
+          }
+        },
+        "o365Delete": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR DEMO offboarding Delete O365 user",
+          "automationRequestId": 3328411,
+          "sourceId": "SID_1791779277928_c098d21fb2a1",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "User deleted from O365",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3328411",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "emp_id": "EMP-4019",
+            "emp_name": "Priya Patel"
+          }
+        },
+        "orangeHrmDelete": {
+          "status": "success",
+          "mode": "live_t4_rpa",
+          "workflowName": "HR DEMO Offboarding Delete OrangeHRM User",
+          "automationRequestId": 3328414,
+          "sourceId": "SID_1791779286706_5450657ca987",
+          "executionStatus": "Complete",
+          "agentName": "mahesh@mspevent-win-1",
+          "message": "User data deleted from OrangeHRM",
+          "errorDetails": null,
+          "instanceUrl": "https://t4.automationedge.com/#/workflowinstances/3328414",
+          "serverUrl": "https://t4.automationedge.com/aeengine",
+          "params": {
+            "emp_id": "EMP-4019",
+            "emp_name": "Priya Patel"
+          }
+        }
+      },
+      "relievingLetterIssued": true,
+      "relievingLetterPdf": "D:\\HRMS_Onboarding_V1\\generated_relieving_letters\\Relieving_Letter_Priya_Patel_MNG-REL-2026-79317.pdf",
+      "relievingLetterDate": "2026-10-12 09:58:54"
+    },
     {
       "id": "EXIT-480",
       "empId": "EMP-8141",

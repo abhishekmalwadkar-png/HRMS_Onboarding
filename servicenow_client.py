@@ -47,6 +47,8 @@ class ServiceNowClient:
         self.username = os.environ.get('SN_USERNAME', 'AE_Dev_Vaibhav_Tore')
         self.password = os.environ.get('SN_PASSWORD', 'Pune@123')
         self.catalog_item_sys_id = os.environ.get('SN_CATALOG_ITEM_SYS_ID', 'c2f5b4510a0a0b990001925b39bfb563')
+        self.sys_action = os.environ.get('SN_SYS_ACTION', 'sysverb_login')
+        self.login_url = os.environ.get('SN_LOGIN_URL', '/nav_to.do?uri=sc_request_list.do')
 
     def is_configured(self):
         return bool(self.instance_url and self.username and self.password and not self.username.startswith('your_'))
@@ -74,6 +76,153 @@ class ServiceNowClient:
         except Exception as e:
             print(f"[ServiceNow] Could not fetch user sys_id: {e}")
         return self._user_sys_id
+
+    def get_token_info(self):
+        self.reload_config()
+        user_sys_id = self._get_current_user_sys_id()
+        is_valid = bool(user_sys_id)
+        return {
+            "status": "success" if is_valid else "error",
+            "authenticated": is_valid,
+            "user": self.username,
+            "userSysId": user_sys_id,
+            "instanceUrl": self.instance_url,
+            "authType": "Session / Cookie (Browser UI) & Basic Auth (API)",
+            "directLoginUrl": f"{self.instance_url}/login.do",
+            "targetUrl": f"{self.instance_url}{self.login_url if self.login_url.startswith('/') else '/' + self.login_url}",
+            "message": "ServiceNow instance verified and authenticated." if is_valid else "Could not verify ServiceNow credentials."
+        }
+
+    def generate_direct_login_html(self, target_url=None):
+        self.reload_config()
+        clean_instance = self.instance_url.rstrip('/')
+        raw_dest = target_url or self.login_url or "/nav_to.do?uri=sc_request_list.do"
+        dest_url = raw_dest
+        if "uri=" in dest_url:
+            parts = dest_url.split("uri=")
+            inner = parts[1]
+            if "?" in inner:
+                p, q = inner.split("?", 1)
+                dest_url = f"/now/nav/ui/classic/params/target/{p}%3F{urllib.parse.quote(q)}"
+            else:
+                dest_url = f"/now/nav/ui/classic/params/target/{inner}"
+        elif not dest_url.startswith("/now/nav/"):
+            clean_p = dest_url.lstrip("/")
+            if "?" in clean_p:
+                p, q = clean_p.split("?", 1)
+                dest_url = f"/now/nav/ui/classic/params/target/{p}%3F{urllib.parse.quote(q)}"
+            else:
+                dest_url = f"/now/nav/ui/classic/params/target/{clean_p}"
+        encoded_goto = urllib.parse.quote(dest_url)
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logging in to ServiceNow...</title>
+  <style>
+    body {{
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at 50% 20%, #1e293b 0%, #0b0f19 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #f1f5f9;
+    }}
+    .auth-card {{
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 4px solid #0284c7;
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }}
+    .spinner {{
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(2, 132, 199, 0.2);
+      border-top-color: #0284c7;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1.5rem;
+    }}
+    @keyframes spin {{
+      to {{ transform: rotate(360deg); }}
+    }}
+    h2 {{
+      margin: 0 0 0.5rem;
+      font-size: 1.35rem;
+      font-weight: 600;
+    }}
+    p {{
+      margin: 0 0 1.5rem;
+      font-size: 0.9rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }}
+    .badge {{
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: rgba(2, 132, 199, 0.15);
+      color: #38bdf8;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }}
+    .manual-btn {{
+      display: inline-block;
+      background: #0284c7;
+      color: #ffffff;
+      padding: 0.65rem 1.25rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }}
+    .manual-btn:hover {{
+      background: #0369a1;
+    }}
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <div class="spinner"></div>
+    <span class="badge">Direct Enterprise Sign-In</span>
+    <h2>Connecting to ServiceNow</h2>
+    <p>Authenticating as <strong>{self.username}</strong> and launching your workspace session...</p>
+    
+    <form id="snDirectForm" method="POST" action="{clean_instance}/login.do?sysparm_goto_url={encoded_goto}">
+      <input type="hidden" name="user_name" value="{self.username}" />
+      <input type="hidden" name="user_password" value="{self.password}" />
+      <input type="hidden" name="sys_action" value="{self.sys_action}" />
+      <input type="hidden" name="sysparm_goto_url" value="{dest_url}" />
+      <input type="hidden" name="sysparm_login_url" value="{dest_url}" />
+      <input type="hidden" name="sysparm_target" value="{dest_url}" />
+      <button type="submit" class="manual-btn" id="manualBtn" style="display: none;">Click here if not redirected automatically</button>
+    </form>
+  </div>
+
+  <script>
+    setTimeout(function() {{
+      var btn = document.getElementById('manualBtn');
+      if (btn) btn.style.display = 'inline-block';
+    }}, 2500);
+    document.getElementById('snDirectForm').submit();
+  </script>
+</body>
+</html>
+"""
 
     def create_onboarding_request(self, employee_data):
         """
@@ -684,8 +833,13 @@ class ServiceNowClient:
         return {
             "instanceUrl": self.instance_url,
             "username": self.username,
+            "password": self.password,
+            "sysAction": self.sys_action,
+            "loginUrl": self.login_url,
             "catalogItemSysId": self.catalog_item_sys_id,
             "isConfigured": self.is_configured(),
+            "directLoginUrl": f"{self.instance_url}/login.do",
+            "authType": "Direct Form Login / Session Cookies",
             "mode": "ServiceNow PDI Connected" if self.is_configured() else "ServiceNow Ready"
         }
 

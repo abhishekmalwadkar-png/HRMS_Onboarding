@@ -3,6 +3,7 @@ import { useToast } from '../context/ToastContext';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
 import { PageHeader, Card, EmptyState, StatusBanner, Modal, staggerContainer, EASE_OUT } from './ui';
+import { openServiceNowDirect } from '../utils/serviceNowAuth';
 
 // Flow steps in execution order: ServiceNow -> AD -> Office 365 -> OrangeHRM -> Laptop Incident
 const FLOW_STEPS = ['step1', 'step2', 'step3', 'step4', 'step5'];
@@ -382,24 +383,30 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                   </div>
 
                   <div className="candidate-links">
-                    <a
-                      href={cand.reqUrl || `https://ven04528.service-now.com/nav_to.do?uri=sc_request_list.do?sysparm_query=number=${cand.serviceNowReq || 'REQ0010042'}`}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = cand.reqUrl || `https://ven04528.service-now.com/nav_to.do?uri=sc_request_list.do?sysparm_query=number=${cand.serviceNowReq || 'REQ0010042'}`;
+                        openServiceNowDirect(target, () => showToast(`⚡ Logging in to ServiceNow ${cand.serviceNowReq || 'Request'}...`, 'success'));
+                      }}
                       className="btn btn-secondary btn-sm"
+                      title={`Auto-login & open ${cand.serviceNowReq || 'ServiceNow Request'}`}
+                      style={{ cursor: 'pointer' }}
                     >
                       <i className="fa-solid fa-ticket text-accent" aria-hidden="true"></i> {cand.serviceNowReq || 'ServiceNow request'}
-                      <span className="sr-only"> (opens in a new tab)</span>
-                    </a>
-                    <a
-                      href={cand.ritmUrl || `https://ven04528.service-now.com/nav_to.do?uri=sc_req_item_list.do?sysparm_query=number=${cand.serviceNowRitm || 'RITM0010076'}`}
-                      target="_blank"
-                      rel="noreferrer"
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = cand.ritmUrl || `https://ven04528.service-now.com/nav_to.do?uri=sc_req_item_list.do?sysparm_query=number=${cand.serviceNowRitm || 'RITM0010076'}`;
+                        openServiceNowDirect(target, () => showToast(`⚡ Logging in to ServiceNow Item ${cand.serviceNowRitm || ''}...`, 'success'));
+                      }}
                       className="btn btn-secondary btn-sm"
+                      title="Auto-login & open Catalog Item"
+                      style={{ cursor: 'pointer' }}
                     >
                       <i className="fa-solid fa-box text-accent" aria-hidden="true"></i> Catalog item
-                      <span className="sr-only"> (opens in a new tab)</span>
-                    </a>
+                    </button>
                   </div>
                 </div>
 
@@ -518,7 +525,22 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                         <div className="cell-sub">{item.department || '—'}</div>
                       </td>
                       <td>
-                        <span className="badge badge-approved"><i className="fa-solid fa-check" aria-hidden="true"></i> {item.serviceNowReq || '—'}</span>
+                        {item.serviceNowReq ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const target = item.reqUrl || `https://ven04528.service-now.com/nav_to.do?uri=sc_request_list.do?sysparm_query=number=${item.serviceNowReq}`;
+                              openServiceNowDirect(target, () => showToast(`⚡ Opening ${item.serviceNowReq} in ServiceNow...`, 'success'));
+                            }}
+                            className="badge badge-approved"
+                            style={{ cursor: 'pointer', border: 'none', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981' }}
+                            title="Auto-login and open request in ServiceNow"
+                          >
+                            <i className="fa-solid fa-check" aria-hidden="true"></i> {item.serviceNowReq}
+                          </button>
+                        ) : (
+                          <span className="badge badge-approved">—</span>
+                        )}
                         {item.serviceNowRitm && <div className="cell-sub">Item {item.serviceNowRitm}</div>}
                       </td>
                       <td>

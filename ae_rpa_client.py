@@ -70,11 +70,16 @@ class AutomationEdgeClient:
         )
 
     def get_config_summary(self):
+        self.reload_config()
         return {
             "serverUrl": self.server_url,
             "orgCode": self.org_code,
             "username": self.username,
+            "password": self.password,
             "isConfigured": self.is_configured(),
+            "directLoginUrl": "/api/rpa/direct-login",
+            "targetUrl": "https://t4.automationedge.com/#/requests/list",
+            "authUrl": f"{self.server_url}/rest/authenticate?ep=true",
             "workflowResumeScreening": self.workflow_resume_screening,
             "workflowInterviewScheduling": self.workflow_interview_scheduling,
             "workflowCandidateCommunication": self.workflow_candidate_comm,
@@ -86,12 +91,39 @@ class AutomationEdgeClient:
             "mode": "Live AutomationEdge T4" if self.is_configured() else "Ready (Simulation / Placeholder Mode)"
         }
 
+    def _encrypt_credentials(self, username, password):
+        """
+        Encrypts credentials for AutomationEdge T4 rest/authenticate?ep=true endpoint
+        using AES-256-ECB and AutomationEdge's template key with UTC millisecond timestamp.
+        """
+        try:
+            import subprocess
+            code = f"""
+            const crypto = require('crypto');
+            const key = Buffer.from('F2879A436574537D0DD600CE69AF0D6531C7B7152A254DCBE18595B5600DE200', 'hex');
+            function enc(t) {{
+                const c = crypto.createCipheriv('aes-256-ecb', key, null);
+                return c.update(t, 'utf8', 'base64') + c.final('base64');
+            }}
+            const now = Date.now();
+            const u = enc({json.dumps(username)});
+            const p = enc(now + ':' + {json.dumps(password)});
+            console.log(JSON.stringify({{uname: u, pswd: p}}));
+            """
+            res = subprocess.check_output(['node', '-e', code], text=True, timeout=5)
+            return json.loads(res.strip())
+        except Exception as e:
+            print(f"[AE RPA] Credential encryption helper note: {e}")
+            return None
+
     @retry_on_failure(max_retries=2, initial_delay=1.5)
     def authenticate(self):
         """
-        Authenticate with AutomationEdge T4 Engine using form-urlencoded credentials.
-        AE REST endpoint: POST {serverUrl}/rest/authenticate
+        Authenticate with AutomationEdge T4 Engine using credentials from .env.
+        AE REST endpoint: POST {serverUrl}/rest/authenticate?ep=true
+        Payload: username and pass/password
         """
+        self.reload_config()
         if not self.is_configured():
             return None
 
@@ -99,7 +131,43 @@ class AutomationEdgeClient:
         if self.session_token and time.time() < self.token_expiry:
             return self.session_token
 
-        # Standard AutomationEdge T4 form-urlencoded authentication
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+        # 1. Primary: POST /rest/authenticate?ep=true with encrypted credentials from .env
+        enc = self._encrypt_credentials(self.username, self.password)
+        if enc:
+            try:
+                auth_url_ep = f"{self.server_url}/rest/authenticate?ep=true"
+                form_data_ep = urllib.parse.urlencode({
+                    "username": enc['uname'],
+                    "password": enc['pswd'],
+                    "pass": enc['pswd'],
+                    "captcha": ""
+                }).encode('utf-8')
+                req_ep = urllib.request.Request(
+                    auth_url_ep,
+                    data=form_data_ep,
+                    headers={
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json, text/plain, */*',
+                        'Accept-Language': 'en-US',
+                        'User-Agent': 'Mozilla/5.0'
+                    }
+                )
+                with urllib.request.urlopen(req_ep, context=ctx, timeout=12) as response:
+                    res_json = json.loads(response.read().decode('utf-8'))
+                    token = res_json.get('sessionToken') or res_json.get('token')
+                    if token:
+                        self.session_token = token
+                        self.token_expiry = time.time() + 3600
+                        print(f"[AE RPA] Live T4 ep=true Authentication Success! Token acquired (User: {self.username})")
+                        return token
+            except Exception as ep_err:
+                print(f"[AE RPA] ep=true attempt error: {ep_err}, falling back to standard authenticate")
+
+        # 2. Standard form-urlencoded authentication fallback
         auth_url = f"{self.server_url}/rest/authenticate"
         form_data = urllib.parse.urlencode({
             "username": self.username,
@@ -107,7 +175,6 @@ class AutomationEdgeClient:
             "captcha": ""
         }).encode('utf-8')
 
-        ctx = ssl.create_default_context()
         try:
             req = urllib.request.Request(
                 auth_url,
@@ -132,6 +199,23 @@ class AutomationEdgeClient:
             print(f"[AE RPA] Live T4 Auth Exception on {auth_url}: {e}")
 
         return None
+
+    def generate_direct_login_html(self, target_url="https://t4.automationedge.com/#/requests/list"):
+        self.reload_config()
+        clean_target = target_url or "https://t4.automationedge.com/#/requests/list"
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="0;url={clean_target}" />
+  <title>Opening AutomationEdge T4...</title>
+</head>
+<body style="margin:0;background:#0f172a;">
+  <script>
+    window.location.replace("{clean_target}");
+  </script>
+</body>
+</html>"""
 
     def trigger_workflow(self, workflow_name, params=None):
         """

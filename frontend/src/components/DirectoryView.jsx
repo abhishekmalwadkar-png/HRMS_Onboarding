@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { PageHeader, Card, EmptyState, Modal, Avatar, Pagination, statusBadgeClass, staggerContainer, staggerItem, staggerTableRow } from './ui';
+import { openServiceNowDirect } from '../utils/serviceNowAuth';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -265,7 +266,10 @@ export default function DirectoryView({ employees }) {
               icon="fa-solid fa-server"
               title="ServiceNow ITSM"
               status={sel.serviceNowStatus || sel.status || 'Pending approval'}
-              href={sel.reqUrl || `https://ven04528.service-now.com/nav_to.do?uri=sc_request_list.do?sysparm_query=number=${sel.serviceNowReq || ''}`}
+              onOpen={() => {
+                const target = sel.reqUrl || `https://ven04528.service-now.com/nav_to.do?uri=sc_request_list.do?sysparm_query=number=${sel.serviceNowReq || ''}`;
+                openServiceNowDirect(target, () => showToast(`⚡ Opening ${sel.serviceNowReq || 'ServiceNow Request'} with direct login...`, 'success'));
+              }}
               linkLabel="Open request"
             >
               <div>Request: <strong>{sel.serviceNowReq || '—'}</strong></div>
