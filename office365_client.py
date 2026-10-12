@@ -534,7 +534,7 @@ class Office365Client:
             <body style="font-family: Arial, Helvetica, sans-serif; color: #1c1917; background-color: #fbf9f6; padding: 24px;">
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; border: 1px solid #fed7aa; padding: 24px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);">
                     <div style="display: flex; align-items: center; border-bottom: 2px solid #ea580c; padding-bottom: 12px; margin-bottom: 18px;">
-                        <h2 style="color: #ea580c; margin: 0; font-size: 20px;">MangoHRMS Enterprise Onboarding & Offer Letter</h2>
+                        <h2 style="color: #ea580c; margin: 0; font-size: 20px;">AutomationEdge HR suite Enterprise Onboarding & Offer Letter</h2>
                     </div>
 
                     <p style="font-size: 14px; line-height: 1.5; color: #44403c;">
@@ -579,7 +579,7 @@ class Office365Client:
                     </p>
 
                     <p style="font-size: 13px; color: #78716c; margin-top: 20px; border-top: 1px solid #e8ded4; padding-top: 12px;">
-                        Dispatched via MangoHRMS Automated Onboarding Engine.<br/>
+                        Dispatched via AutomationEdge HR suite Automated Onboarding Engine.<br/>
                         Recipient: <strong>{recipient_email}</strong>
                     </p>
                 </div>

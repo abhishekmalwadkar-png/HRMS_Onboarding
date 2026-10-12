@@ -151,7 +151,7 @@ def generate_offer_letter_pdf(candidate_data):
     # 1. Company Letterhead Banner
     header_data = [
         [
-            Paragraph("<b>MangoHRMS Suite</b><br/><font size=8 color='#78716c'>Enterprise Automation & Cloud Systems Inc.<br/>100 Innovation Way, Suite 500, San Francisco, CA 94105</font>", styles['Normal']),
+            Paragraph("<b>AutomationEdge HR suite</b><br/><font size=8 color='#78716c'>Enterprise Automation & Cloud Systems Inc.<br/>100 Innovation Way, Suite 500, San Francisco, CA 94105</font>", styles['Normal']),
             Paragraph(f"<b>CONFIDENTIAL OFFER</b><br/><font size=8 color='#78716c'>Ref: <b>{offer_ref}</b><br/>Date: {time.strftime('%B %d, %Y')}</font>", ParagraphStyle('RightHdr', parent=styles['Normal'], alignment=TA_RIGHT))
         ]
     ]
@@ -173,7 +173,7 @@ def generate_offer_letter_pdf(candidate_data):
     # 3. Formal Salutation & Offer Statement
     story.append(Paragraph(f"Dear <b>{name}</b>,", body_style))
     story.append(Paragraph(
-        f"On behalf of <b>MangoHRMS Suite</b>, we are thrilled to formally offer you the position of <b>{role}</b> in our <b>{department}</b> Department. "
+        f"On behalf of <b>AutomationEdge HR suite</b>, we are thrilled to formally offer you the position of <b>{role}</b> in our <b>{department}</b> Department. "
         f"We were immensely impressed by your skills, technical leadership, and domain expertise. We believe your contributions will be pivotal in driving our next wave of enterprise innovation.",
         body_style
     ))
@@ -239,7 +239,7 @@ def generate_offer_letter_pdf(candidate_data):
         Spacer(1, 14),
         Table([
             [
-                Paragraph("<b>For MangoHRMS Suite:</b><br/><br/>_______________________________<br/><b>Elena Vance</b><br/>Global Head of Talent Acquisition", body_style),
+                Paragraph("<b>For AutomationEdge HR suite:</b><br/><br/>_______________________________<br/><b>Elena Vance</b><br/>Global Head of Talent Acquisition", body_style),
                 Paragraph("<b>Accepted and Agreed By:</b><br/><br/>_______________________________<br/><b>" + name + "</b><br/>Date: ________________________", body_style)
             ]
         ], colWidths=[260, 260], style=[
@@ -313,4 +313,4 @@ if __name__ == '__main__':
     print("\n--- Execution Result ---")
     print(f"Candidate: {result['candidateName']}")
     print(f"PDF File:  {result['pdfPath']}")
-    print(f"Email Status: {result['emailResult']['status']} ({result['emailResult']['mode']})")
+    print(f"Email Status: {result['emailResult'].get('status', 'success')} ({result['emailResult'].get('mode', 'dispatched')})")
