@@ -58,7 +58,7 @@ def generate_offer_letter_pdf(candidate_data):
         base_salary = candidate_data.get('baseSalary', '₹28,00,000 INR per annum')
         perf_bonus = candidate_data.get('perfBonus', '₹4,00,000 INR Annual Target')
     elif raw_salary and "$" in raw_salary:
-        annual_ctc = f"₹32,00,000 INR per annum ({raw_salary})"
+        annual_ctc = '₹32,00,000 INR per annum (₹32.0 LPA)'
         base_salary = candidate_data.get('baseSalary', '₹28,00,000 INR per annum')
         perf_bonus = candidate_data.get('perfBonus', '₹4,00,000 INR Annual Target')
     elif raw_salary and raw_salary.replace(',', '').replace('.', '').isdigit():
@@ -67,7 +67,7 @@ def generate_offer_letter_pdf(candidate_data):
         base_salary = candidate_data.get('baseSalary', f"₹{int(val*0.85):,} INR per annum")
         perf_bonus = candidate_data.get('perfBonus', f"₹{int(val*0.15):,} INR Annual Target")
     else:
-        annual_ctc = '₹32,00,000 INR per annum (₹32.0 LPA / $165,000 USD)'
+        annual_ctc = '₹32,00,000 INR per annum (₹32.0 LPA)'
         base_salary = candidate_data.get('baseSalary', '₹28,00,000 INR per annum (₹2,33,333 / month)')
         perf_bonus = candidate_data.get('perfBonus', '₹4,00,000 INR Annual Target Evaluation')
 
@@ -227,7 +227,7 @@ def generate_offer_letter_pdf(candidate_data):
     story.append(Paragraph(
         "• <b>IT Workstation:</b> You will be provisioned with your selected high-performance workstation (Apple MacBook Pro / Developer Laptop) & dual 4K monitor setup.<br/>"
         "• <b>Paid Time Off:</b> 25 days annual PTO, 12 casual leaves, and standard official holidays.<br/>"
-        "• <b>Learning & Growth:</b> $1,500 annual personal budget for cloud certifications and technical conferences.",
+        "• <b>Learning & Growth:</b> ₹1,25,000 annual personal budget for cloud certifications and technical conferences.",
         body_style
     ))
     story.append(Spacer(1, 10))
@@ -296,7 +296,7 @@ if __name__ == '__main__':
     parser.add_argument('--email', default='vikram.m@example.com', help='Candidate Email')
     parser.add_argument('--role', default='Senior Cloud AI Architect', help='Applied Job Role')
     parser.add_argument('--dept', default='Engineering', help='Department')
-    parser.add_argument('--salary', default='$165,000 USD', help='Annual Salary CTC')
+    parser.add_argument('--salary', default='₹32,00,000 INR', help='Annual Salary CTC')
     parser.add_argument('--start', default='2026-11-01', help='Joining Date')
 
     args = parser.parse_args()

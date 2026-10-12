@@ -510,12 +510,12 @@ class Office365Client:
             if salary_val and ("₹" in salary_val or "INR" in salary_val):
                 salary = salary_val
             elif salary_val and "$" in salary_val:
-                salary = f"₹32,00,000 INR / annum ({salary_val})"
+                salary = "₹32,00,000 INR / annum (₹32.0 LPA)"
             elif salary_val and salary_val.replace(',', '').replace('.', '').isdigit():
                 val = int(salary_val.replace(',', '').replace('.', ''))
                 salary = f"₹{val:,} INR / annum (₹{val/100000:.1f} LPA)"
             else:
-                salary = "₹32,00,000 INR / annum (₹32.0 LPA / $165,000 USD)"
+                salary = "₹32,00,000 INR / annum (₹32.0 LPA)"
 
             start_date = candidate_data.get('joiningDate') or candidate_data.get('startDate') or "October 15, 2026"
             hardware = candidate_data.get('hardware') or "Apple MacBook Pro M3 Max"

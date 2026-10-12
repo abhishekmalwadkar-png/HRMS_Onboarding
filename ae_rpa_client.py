@@ -334,7 +334,7 @@ class AutomationEdgeClient:
             "email": candidate_data.get("email", ""),
             "appliedRole": candidate_data.get("appliedRole", "Staff Engineer"),
             "department": candidate_data.get("department", "Engineering"),
-            "annualCtc": candidate_data.get("annualCtc", "$165,000"),
+            "annualCtc": candidate_data.get("annualCtc", "₹32,00,000 INR (₹32.0 LPA)"),
             "joiningDate": candidate_data.get("joiningDate", "2026-11-01"),
             "workLocation": candidate_data.get("workLocation", "Hybrid")
         }
