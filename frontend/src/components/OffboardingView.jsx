@@ -720,11 +720,11 @@ export default function OffboardingView() {
             onClick={handleAddDemoResignations}
             disabled={isAddingDemo}
             aria-busy={isAddingDemo}
-            title="Add 3 demo employee resignation requests for HR approval"
+            title="Check employee resignation requests for HR approval"
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
           >
-            <i className={`fa-solid ${isAddingDemo ? 'fa-spinner fa-spin' : 'fa-user-minus'}`} aria-hidden="true"></i>
-            {isAddingDemo ? 'Looking for requests of resignation…' : 'Add demo resignations'}
+            <i className={`fa-solid ${isAddingDemo ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} aria-hidden="true"></i>
+            {isAddingDemo ? 'Looking for requests of resignation…' : 'Check resignation requests'}
           </button>
         }
       />
@@ -764,8 +764,8 @@ export default function OffboardingView() {
               aria-busy={isAddingDemo}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
             >
-              <i className={`fa-solid ${isAddingDemo ? 'fa-spinner fa-spin' : 'fa-user-minus'}`} aria-hidden="true"></i>
-              {isAddingDemo ? 'Looking for requests of resignation…' : 'Add demo resignations'}
+              <i className={`fa-solid ${isAddingDemo ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} aria-hidden="true"></i>
+              {isAddingDemo ? 'Looking for requests of resignation…' : 'Check resignation requests'}
             </button>
           </div>
         ) : (
