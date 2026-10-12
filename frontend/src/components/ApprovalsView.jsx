@@ -133,11 +133,17 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
   const handleDownloadOfferLetter = async (cand) => {
     if (!cand) return;
     try {
-      showToast(`📄 Generating & downloading official offer letter for ${cand.fullName}...`, 'info');
-      if (cand.offerPdfUrl || cand.offerDownloadUrl) {
+      const existingUrl =
+        cand.offerPdfUrl ||
+        cand.offerDownloadUrl ||
+        flowData?.offerDownloadUrl ||
+        (flowData?.offerLetter?.pdfFilename ? `/generated_offers/${flowData.offerLetter.pdfFilename}` : null);
+
+      if (existingUrl) {
+        showToast(`📄 Downloading official offer letter for ${cand.fullName}...`, 'info');
         const link = document.createElement('a');
-        link.href = cand.offerPdfUrl || cand.offerDownloadUrl;
-        link.download = cand.offerLetterPdf || `Offer_Letter_${cand.fullName.replace(/\s+/g, '_')}.pdf`;
+        link.href = existingUrl;
+        link.download = cand.offerLetterPdf || flowData?.offerLetter?.pdfFilename || `Offer_Letter_${cand.fullName.replace(/\s+/g, '_')}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -253,6 +259,22 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
         setFlowData(result);
         setFlowStepStatus(statuses);
         setFlowStepErrors(errors);
+
+        setActiveFlowCandidate((prev) => {
+          if (!prev) return prev;
+          const pdfFn = result.offerLetter?.pdfFilename || result.offerPdfFilename;
+          return {
+            ...prev,
+            status: 'Approved',
+            offerPdfUrl: pdfFn ? `/generated_offers/${pdfFn}` : (result.offerDownloadUrl || prev.offerPdfUrl),
+            offerDownloadUrl: pdfFn ? `/generated_offers/${pdfFn}` : (result.offerDownloadUrl || prev.offerDownloadUrl),
+            offerLetterPdf: pdfFn || prev.offerLetterPdf,
+            laptopTicket: result.laptopProvisioning?.ticketNumber || prev.laptopTicket,
+            orangeHrmEmpNumber: result.orangeHrmEmpNumber || prev.orangeHrmEmpNumber,
+            o365Email: result.office365?.userPrincipalName || prev.o365Email,
+            aeT4RequestId: result.aeT4RequestId || prev.aeT4RequestId,
+          };
+        });
 
         const failedCount = Object.keys(errors).length;
         if (failedCount === 0) {
@@ -693,32 +715,82 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
         title="Onboarding provisioning pipeline"
         subtitle="ServiceNow → Active Directory → Microsoft 365 → OrangeHRM → laptop & offer letter"
         footer={
-          <>
-            <button className="btn btn-secondary" onClick={() => setActiveFlowCandidate(null)}>Close</button>
-            <button
-              type="button"
-              onClick={() => handleDownloadOfferLetter(activeFlowCandidate)}
-              className="btn btn-secondary"
-              title="Download official PDF offer letter"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
-            >
-              <i className="fa-solid fa-file-arrow-down text-accent" aria-hidden="true"></i> Download offer letter
-            </button>
-            <button
-              onClick={() => {
-                const targetUrl = flowData?.orangeHrm?.profileUrl || 'http://10.41.5.39/orangehrm/web/index.php/auth/login';
-                if (navigator?.clipboard?.writeText) {
-                  navigator.clipboard.writeText('Admin@1234').catch(() => {});
-                }
-                showToast('🔑 OrangeHRM: User: admin | Pass: Admin@1234 (Copied to clipboard)', 'success');
-                window.open(targetUrl, '_blank', 'noopener,noreferrer');
-              }}
-              className="btn btn-primary"
-              title="Open OrangeHRM (Credentials: admin / Admin@1234 copied to clipboard)"
-            >
-              <i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Open OrangeHRM
-            </button>
-          </>
+          (() => {
+            const cand = activeFlowCandidate;
+            const isAllStepsCompleted = Boolean(
+              !approvingId &&
+              (
+                (
+                  flowFinished &&
+                  !flowHasErrors &&
+                  flowStepStatus.step1 === 'completed' &&
+                  flowStepStatus.step2 === 'completed' &&
+                  flowStepStatus.step3 === 'completed' &&
+                  flowStepStatus.step4 === 'completed' &&
+                  (flowStepStatus.step5 === 'completed' || flowData?.offerLetter?.status === 'success')
+                ) ||
+                (
+                  cand &&
+                  (cand.status === 'Approved' || cand.status === 'Completed') &&
+                  !approvingId &&
+                  flowFinished
+                )
+              )
+            );
+
+            return (
+              <>
+                <button className="btn btn-secondary" onClick={() => setActiveFlowCandidate(null)}>Close</button>
+                <button
+                  type="button"
+                  disabled={!isAllStepsCompleted}
+                  onClick={() => {
+                    if (isAllStepsCompleted) {
+                      handleDownloadOfferLetter(cand);
+                    }
+                  }}
+                  className={`btn btn-secondary ${!isAllStepsCompleted ? 'disabled' : ''}`}
+                  title={
+                    isAllStepsCompleted
+                      ? "Download official PDF offer letter"
+                      : approvingId
+                      ? "Provisioning in progress: will unlock once all steps complete"
+                      : "Offer letter will be available once all provisioning steps complete"
+                  }
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    fontWeight: 600,
+                    opacity: isAllStepsCompleted ? 1 : 0.45,
+                    cursor: isAllStepsCompleted ? 'pointer' : 'not-allowed',
+                    transition: 'opacity 0.2s ease, filter 0.2s ease'
+                  }}
+                >
+                  <i
+                    className={`fa-solid ${isAllStepsCompleted ? 'fa-file-arrow-down text-accent' : 'fa-file-lines'}`}
+                    aria-hidden="true"
+                    style={{ opacity: isAllStepsCompleted ? 1 : 0.6 }}
+                  ></i>
+                  Download offer letter
+                </button>
+                <button
+                  onClick={() => {
+                    const targetUrl = flowData?.orangeHrm?.profileUrl || 'http://10.41.5.39/orangehrm/web/index.php/auth/login';
+                    if (navigator?.clipboard?.writeText) {
+                      navigator.clipboard.writeText('Admin@1234').catch(() => {});
+                    }
+                    showToast('🔑 OrangeHRM: User: admin | Pass: Admin@1234 (Copied to clipboard)', 'success');
+                    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                  }}
+                  className="btn btn-primary"
+                  title="Open OrangeHRM (Credentials: admin / Admin@1234 copied to clipboard)"
+                >
+                  <i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Open OrangeHRM
+                </button>
+              </>
+            );
+          })()
         }
       >
         {activeFlowCandidate && (() => {
