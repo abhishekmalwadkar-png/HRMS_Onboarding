@@ -536,8 +536,13 @@ class OrangeHRMClient:
         offer_doc_name = f"Offer_Letter_{safe_name}_Appointment.pdf"
         try:
             from generate_offer_letter import generate_offer_letter_pdf
-            offer_pdf_path = generate_offer_letter_pdf(employee_data)
-            if os.path.exists(offer_pdf_path):
+            cand_payload = dict(employee_data)
+            cand_payload['candidateName'] = emp_name
+            cand_payload['appliedRole'] = role
+            cand_payload['department'] = dept
+            offer_res = generate_offer_letter_pdf(cand_payload)
+            offer_pdf_path = offer_res[0] if isinstance(offer_res, (tuple, list)) else offer_res
+            if offer_pdf_path and os.path.exists(offer_pdf_path):
                 with open(offer_pdf_path, 'rb') as f:
                     offer_bytes = f.read()
                 res4 = self.attach_document(emp_number, offer_doc_name, offer_bytes, "Official Employment Offer Letter & Appointment Order")

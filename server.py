@@ -596,6 +596,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             payload['ritmUrl'] = sn_result.get('ritmUrl')
             payload['serviceNowStatus'] = sn_result.get('approvalStatus', 'Pending Approval')
             payload['serviceNowStage'] = sn_result.get('stage', 'HR Document Verification')
+            payload['attachedDocuments'] = sn_result.get('attachedDocuments', [])
 
             # 2. Trigger T4 Workflow: "HR Demo Req getEMPDetails" with name, email, contact
             ae_emp_result = {}

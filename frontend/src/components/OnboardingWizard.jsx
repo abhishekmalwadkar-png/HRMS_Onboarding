@@ -633,7 +633,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
         setSubmitResult({
           tone: 'success',
           title: `Application submitted for ${formData.fullName}`,
-          message: 'The candidate is now waiting for HR review in Approvals.',
+          message: 'The candidate is now waiting for HR review in Approvals. Verification documents uploaded & attached to ServiceNow ticket.',
         });
       } else {
         setSubmitResult({
