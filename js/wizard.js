@@ -167,23 +167,27 @@ async function autoFillDemoData(specificIndex) {
     const res = await fetch('/api/autofill?t=' + Date.now());
     if (res.ok) {
       const db = await res.json();
-      const profiles = db.autofillProfiles || [];
-      if (profiles.length > 0) {
-        let idx;
-        if (specificIndex !== undefined) {
-          idx = specificIndex % profiles.length;
-        } else {
-          // Select a random profile different from the last one
-          if (profiles.length === 1) {
-            idx = 0;
+      if (db && db.fullName) {
+        profile = db;
+      } else {
+        const profiles = db.autofillProfiles || [];
+        if (profiles.length > 0) {
+          let idx;
+          if (specificIndex !== undefined) {
+            idx = specificIndex % profiles.length;
           } else {
-            do {
-              idx = Math.floor(Math.random() * profiles.length);
-            } while (idx === lastAutofillIndex && profiles.length > 1);
+            // Select a random profile different from the last one
+            if (profiles.length === 1) {
+              idx = 0;
+            } else {
+              do {
+                idx = Math.floor(Math.random() * profiles.length);
+              } while (idx === lastAutofillIndex && profiles.length > 1);
+            }
           }
+          lastAutofillIndex = idx;
+          profile = profiles[idx];
         }
-        lastAutofillIndex = idx;
-        profile = profiles[idx];
       }
     }
   } catch (err) {

@@ -189,6 +189,26 @@ function EpfoEmblemSvg({ size = 68 }) {
   );
 }
 
+const FALLBACK_FIRST_NAMES = [
+  'Aarav', 'Aditya', 'Advait', 'Akash', 'Alok', 'Amit', 'Ananya', 'Aniket', 'Anjali', 'Arjun',
+  'Aryan', 'Ashwin', 'Ayush', 'Bhavna', 'Chetan', 'Deepak', 'Devendra', 'Divya', 'Gaurav', 'Harish',
+  'Ishaan', 'Karan', 'Karthik', 'Kavita', 'Kunal', 'Manish', 'Mayank', 'Meera', 'Mohit', 'Naveen',
+  'Neha', 'Nikhil', 'Nilesh', 'Omkar', 'Pankaj', 'Pooja', 'Pranav', 'Prateek', 'Priya', 'Priyanka',
+  'Rahul', 'Rajesh', 'Rakesh', 'Ramesh', 'Rhea', 'Rishabh', 'Ritu', 'Riya', 'Rohan', 'Rohit',
+  'Sachin', 'Sameer', 'Sanjay', 'Saurabh', 'Shalini', 'Shivam', 'Shreya', 'Siddharth', 'Simran', 'Sneha',
+  'Soham', 'Sumit', 'Sunil', 'Suresh', 'Swati', 'Tanvi', 'Tarun', 'Tushar', 'Varun', 'Vikram',
+  'Vinay', 'Vishal', 'Vivek', 'Yash'
+];
+
+const FALLBACK_LAST_NAMES = [
+  'Agarwal', 'Bansal', 'Bhandari', 'Bhatia', 'Bhosale', 'Chavan', 'Chopra', 'Deshmukh', 'Dubey', 'Gaikwad',
+  'Goel', 'Gokhale', 'Gupta', 'Gupte', 'Hegde', 'Iyer', 'Jadhav', 'Jain', 'Jindal', 'Joshi',
+  'Kadam', 'Kamath', 'Kapoor', 'Khanna', 'Kulkarni', 'Malhotra', 'Mane', 'Mehta', 'Menon', 'Mishra',
+  'Mittal', 'More', 'Mukherjee', 'Nair', 'Pandey', 'Patel', 'Patil', 'Pawar', 'Pillai', 'Prabhu',
+  'Rao', 'Reddy', 'Salunkhe', 'Sawant', 'Saxena', 'Sethi', 'Sharma', 'Shetty', 'Shinde', 'Singhal',
+  'Srivastava', 'Tambe', 'Tendulkar', 'Tiwari', 'Varma', 'Verma'
+];
+
 export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
   const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
@@ -198,6 +218,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
   const [previewDocKey, setPreviewDocKey] = useState(null); // 'idDoc' | 'uanDoc' | 'salaryDoc'
   const canvasRef = useRef(null);
   const lastIndexRef = useRef(-1);
+  const usedNamesRef = useRef(new Set());
 
   // Form State
   const [formData, setFormData] = useState({
@@ -406,14 +427,16 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
   };
 
   const handleAutoFill = async () => {
+    let profile = null;
     try {
       const res = await fetch('/api/autofill?t=' + Date.now());
       if (res.ok) {
         const data = await res.json();
-        const profiles = data.autofillProfiles || (Array.isArray(data) ? data : [data]);
-        let profile = data;
-
-        if (profiles.length > 0) {
+        // Check if server directly sent unique candidate profile with fullName
+        if (data && data.fullName) {
+          profile = data;
+        } else if (data && data.autofillProfiles && data.autofillProfiles.length > 0) {
+          const profiles = data.autofillProfiles;
           let nextIdx;
           if (profiles.length === 1) {
             nextIdx = 0;
@@ -425,49 +448,100 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
           lastIndexRef.current = nextIdx;
           profile = profiles[nextIdx];
         }
-
-        const bank = profile.bankName || (
-          profile.routingCode?.startsWith('HDFC') ? 'HDFC Bank' :
-          profile.routingCode?.startsWith('ICIC') ? 'ICICI Bank' :
-          profile.routingCode?.startsWith('SBIN') ? 'State Bank of India' :
-          profile.routingCode?.startsWith('AXIS') || profile.routingCode?.startsWith('UTIB') ? 'Axis Bank' :
-          profile.routingCode?.startsWith('KKBK') ? 'Kotak Mahindra Bank' : 'HDFC Bank'
-        );
-
-        setFormData((prev) => ({
-          ...prev,
-          fullName: profile.fullName || 'Aarav Sharma',
-          email: profile.email || `${(profile.fullName || 'candidate').toLowerCase().replace(/\s+/g, '.')}@example.com`,
-          phone: profile.phone || '+91 98230 45671',
-          dob: profile.dob || '1994-06-15',
-          pan: profile.pan || (profile.id ? 'ABCDE' + profile.id.replace(/\D/g, '') + 'F' : 'ABCDE1234F'),
-          aadhaar: profile.aadhaar || '4532 8901 2345',
-          uan: profile.uan || '1012 ' + Math.floor(1000 + Math.random() * 9000) + ' ' + Math.floor(1000 + Math.random() * 9000),
-          emergencyName: profile.emergencyName || 'Sunita Sharma (Mother)',
-          emergencyPhone: profile.emergencyPhone || '+91 98230 45670',
-          address: profile.address || 'Flat 402, Marvel Palms, Baner, Pune, Maharashtra 411045',
-          bankName: bank,
-          accountNumber: profile.bankAccount || profile.accountNumber || '918230491029',
-          routingCode: profile.routingCode || 'HDFC0001234',
-          hardware: profile.hardware || 'Apple MacBook Pro M3 Max',
-          department: profile.department || 'Engineering',
-          jobTitle: profile.jobTitle || 'Staff AI Systems Engineer',
-          manager: profile.manager || 'Amit Deshmukh (VP of Engineering)',
-          startDate: profile.startDate || '2026-10-15',
-          salary: profile.salary || '₹32,00,000 INR / annum (₹32.0 LPA)',
-        }));
-
-        setDocuments({
-          idDoc: { name: profile.idDocumentName || `Aadhaar_Passport_${(profile.fullName || 'Verified').replace(/\s+/g, '_')}.pdf`, size: '2.4 MB' },
-          uanDoc: { name: profile.uanDocumentName || `UAN_Card_${(profile.fullName || 'Candidate').replace(/\s+/g, '_')}_EPFO.pdf`, size: '1.6 MB' },
-          salaryDoc: { name: profile.salarySlipDocName || `Salary_Slip_${(profile.fullName || 'Candidate').replace(/\s+/g, '_')}_Recent.pdf`, size: '1.4 MB' },
-        });
-        setErrors({});
-        setSubmitResult(null);
       }
     } catch (err) {
-      console.warn('AutoFill fetch failed:', err);
+      console.warn('AutoFill fetch failed, switching to dynamic generator:', err);
     }
+
+    // Dynamic uniqueness check: if profile is missing or was already used in this session, generate fresh unique Indian name
+    if (!profile || !profile.fullName || usedNamesRef.current.has(profile.fullName.trim().toLowerCase())) {
+      let attempts = 0;
+      let fn = FALLBACK_FIRST_NAMES[Math.floor(Math.random() * FALLBACK_FIRST_NAMES.length)];
+      let ln = FALLBACK_LAST_NAMES[Math.floor(Math.random() * FALLBACK_LAST_NAMES.length)];
+      let candName = `${fn} ${ln}`;
+      while (usedNamesRef.current.has(candName.toLowerCase()) && attempts < 200) {
+        fn = FALLBACK_FIRST_NAMES[Math.floor(Math.random() * FALLBACK_FIRST_NAMES.length)];
+        ln = FALLBACK_LAST_NAMES[Math.floor(Math.random() * FALLBACK_LAST_NAMES.length)];
+        candName = `${fn} ${ln}`;
+        attempts++;
+      }
+      if (usedNamesRef.current.has(candName.toLowerCase())) {
+        ln = `${ln}${Math.floor(10 + Math.random() * 89)}`;
+        candName = `${fn} ${ln}`;
+      }
+
+      const randPanNum = Math.floor(1000 + Math.random() * 9000);
+      const panChars = 'FGHJKLMNPQRSTUVWXYZ';
+      const panChar = panChars.charAt(Math.floor(Math.random() * panChars.length));
+
+      profile = {
+        fullName: candName,
+        firstName: fn,
+        lastName: ln,
+        email: `${fn.toLowerCase()}.${ln.toLowerCase()}@valuedx.com`,
+        phone: `+91 ${Math.floor(95000 + Math.random() * 49999)} ${Math.floor(10000 + Math.random() * 89999)}`,
+        dob: '1995-07-20',
+        pan: `ABCDE${randPanNum}${panChar}`,
+        aadhaar: `${Math.floor(2000 + Math.random() * 7000)} ${Math.floor(1000 + Math.random() * 8999)} ${Math.floor(1000 + Math.random() * 8999)}`,
+        uan: `1012 ${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(1000 + Math.random() * 9000)}`,
+        emergencyName: `${FALLBACK_FIRST_NAMES[Math.floor(Math.random() * FALLBACK_FIRST_NAMES.length)]} ${ln} (Family)`,
+        emergencyPhone: `+91 98${Math.floor(10000000 + Math.random() * 89999999)}`,
+        address: 'Flat 402, Marvel Palms, Baner, Pune, Maharashtra 411045',
+        bankName: 'HDFC Bank',
+        bankAccount: `${Math.floor(100000000000 + Math.random() * 899999999999)}`,
+        routingCode: 'HDFC0001234',
+        hardware: 'Apple MacBook Pro M3 Max',
+        department: 'Engineering',
+        jobTitle: 'Staff AI Systems Engineer',
+        manager: 'Amit Deshmukh (VP of Engineering)',
+        startDate: '2026-10-25',
+        salary: '₹34,50,000 INR / annum (₹34.5 LPA)',
+      };
+    }
+
+    const safeFullName = profile.fullName;
+    usedNamesRef.current.add(safeFullName.trim().toLowerCase());
+    const cleanName = safeFullName.replace(/\s+/g, '_');
+
+    const bank = profile.bankName || (
+      profile.routingCode?.startsWith('HDFC') ? 'HDFC Bank' :
+      profile.routingCode?.startsWith('ICIC') ? 'ICICI Bank' :
+      profile.routingCode?.startsWith('SBIN') ? 'State Bank of India' :
+      profile.routingCode?.startsWith('AXIS') || profile.routingCode?.startsWith('UTIB') ? 'Axis Bank' :
+      profile.routingCode?.startsWith('KKBK') ? 'Kotak Mahindra Bank' : 'HDFC Bank'
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      fullName: safeFullName,
+      email: profile.email || `${safeFullName.toLowerCase().replace(/\s+/g, '.')}@valuedx.com`,
+      phone: profile.phone || '+91 98230 45671',
+      dob: profile.dob || '1995-07-20',
+      pan: profile.pan || (profile.id ? 'ABCDE' + profile.id.replace(/\D/g, '') + 'F' : 'ABCDE1234F'),
+      aadhaar: profile.aadhaar || '4532 8901 2345',
+      uan: profile.uan || '1012 ' + Math.floor(1000 + Math.random() * 9000) + ' ' + Math.floor(1000 + Math.random() * 9000),
+      emergencyName: profile.emergencyName || `Sunita ${safeFullName.split(' ').slice(1).join(' ') || 'Sharma'} (Mother)`,
+      emergencyPhone: profile.emergencyPhone || '+91 98230 45670',
+      address: profile.address || 'Flat 402, Marvel Palms, Baner, Pune, Maharashtra 411045',
+      bankName: bank,
+      accountNumber: profile.bankAccount || profile.accountNumber || '918230491029',
+      routingCode: profile.routingCode || 'HDFC0001234',
+      hardware: profile.hardware || 'Apple MacBook Pro M3 Max',
+      department: profile.department || 'Engineering',
+      jobTitle: profile.jobTitle || 'Staff AI Systems Engineer',
+      manager: profile.manager || 'Amit Deshmukh (VP of Engineering)',
+      startDate: profile.startDate || '2026-10-25',
+      salary: profile.salary || '₹32,00,000 INR / annum (₹32.0 LPA)',
+    }));
+
+    setDocuments({
+      idDoc: { name: profile.idDocumentName || `Aadhaar_Passport_${cleanName}.pdf`, size: '2.4 MB' },
+      uanDoc: { name: profile.uanDocumentName || `UAN_Card_${cleanName}_EPFO.pdf`, size: '1.6 MB' },
+      salaryDoc: { name: profile.salarySlipDocName || `Salary_Slip_${cleanName}_Recent.pdf`, size: '1.4 MB' },
+    });
+    setErrors({});
+    setSubmitResult(null);
+    showToast(`Auto-filled unique candidate: ${safeFullName}`, 'success');
   };
 
   useEffect(() => {

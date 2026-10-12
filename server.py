@@ -87,6 +87,66 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return index_path
         return super().translate_path(path)
 
+INDIAN_FIRST_NAMES = [
+    "Aarav", "Aditya", "Advait", "Akash", "Alok", "Amit", "Ananya", "Aniket", "Anjali", "Arjun",
+    "Aryan", "Ashwin", "Ayush", "Bhavna", "Chetan", "Deepak", "Devendra", "Divya", "Gaurav", "Harish",
+    "Ishaan", "Karan", "Karthik", "Kavita", "Kunal", "Manish", "Mayank", "Meera", "Mohit", "Naveen",
+    "Neha", "Nikhil", "Nilesh", "Omkar", "Pankaj", "Pooja", "Pranav", "Prateek", "Priya", "Priyanka",
+    "Rahul", "Rajesh", "Rakesh", "Ramesh", "Rhea", "Rishabh", "Ritu", "Riya", "Rohan", "Rohit",
+    "Sachin", "Sameer", "Sanjay", "Saurabh", "Shalini", "Shivam", "Shreya", "Siddharth", "Simran", "Sneha",
+    "Soham", "Sumit", "Sunil", "Suresh", "Swati", "Tanvi", "Tarun", "Tushar", "Varun", "Vikram",
+    "Vinay", "Vishal", "Vivek", "Yash"
+]
+
+INDIAN_LAST_NAMES = [
+    "Agarwal", "Bansal", "Bhandari", "Bhatia", "Bhosale", "Chavan", "Chopra", "Deshmukh", "Dubey", "Gaikwad",
+    "Goel", "Gokhale", "Gupta", "Gupte", "Hegde", "Iyer", "Jadhav", "Jain", "Jindal", "Joshi",
+    "Kadam", "Kamath", "Kapoor", "Khanna", "Kulkarni", "Malhotra", "Mane", "Mehta", "Menon", "Mishra",
+    "Mittal", "More", "Mukherjee", "Nair", "Pandey", "Patel", "Patil", "Pawar", "Pillai", "Prabhu",
+    "Rao", "Reddy", "Salunkhe", "Sawant", "Saxena", "Sethi", "Sharma", "Shetty", "Shinde", "Singhal",
+    "Srivastava", "Tambe", "Tendulkar", "Tiwari", "Varma", "Verma"
+]
+
+JOB_ROLES_POOL = [
+    ("Engineering", "Staff AI Systems Engineer", "Amit Deshmukh (VP of Engineering)", "Apple MacBook Pro M3 Max", "₹34,50,000 INR / annum (₹34.5 LPA)"),
+    ("Engineering", "Lead Cloud Solutions Architect", "Suresh Nair (Director of Cloud Infrastructure)", "Apple MacBook Pro M3 Max", "₹36,00,000 INR / annum (₹36.0 LPA)"),
+    ("Engineering", "Senior Machine Learning Specialist", "Amit Deshmukh (VP of Engineering)", "Apple MacBook Pro M3 Max", "₹29,00,000 INR / annum (₹29.0 LPA)"),
+    ("Engineering", "Full Stack DevOps Engineer", "David Miller (Director of Engineering)", "Dell Precision 5680 Workstation", "₹24,50,000 INR / annum (₹24.5 LPA)"),
+    ("Engineering", "Senior Backend Platform Engineer", "Amit Deshmukh (VP of Engineering)", "Apple MacBook Pro M3 Max", "₹27,00,000 INR / annum (₹27.0 LPA)"),
+    ("Data & AI", "Principal Data Platform Architect", "Priya Iyer (Head of Data & AI)", "Apple MacBook Pro M3 Max", "₹38,00,000 INR / annum (₹38.0 LPA)"),
+    ("Data & AI", "Lead Data Science Engineer", "Priya Iyer (Head of Data & AI)", "Apple MacBook Pro M3 Max", "₹28,50,000 INR / annum (₹28.5 LPA)"),
+    ("Quality Assurance", "Lead Automation QA Engineer", "Rohan Mehta (Director of QA)", "Lenovo ThinkPad P1 Gen 6", "₹21,00,000 INR / annum (₹21.0 LPA)"),
+    ("Cloud Infrastructure", "Senior Site Reliability Engineer", "Suresh Nair (Director of Cloud Infrastructure)", "Apple MacBook Pro M3 Max", "₹26,00,000 INR / annum (₹26.0 LPA)"),
+    ("Product Management", "Senior Technical Product Manager", "Pooja Deshmukh (VP of Product)", "Apple MacBook Pro M3 Max", "₹31,00,000 INR / annum (₹31.0 LPA)"),
+    ("Cybersecurity", "Enterprise Security Architect", "Vikram Malhotra (CISO)", "Lenovo ThinkPad P1 Gen 6", "₹33,00,000 INR / annum (₹33.0 LPA)")
+]
+
+BANKS_POOL = [
+    ("HDFC Bank", "HDFC0001234"),
+    ("ICICI Bank", "ICIC0000456"),
+    ("State Bank of India", "SBIN0008765"),
+    ("Axis Bank", "UTIB0001122"),
+    ("Kotak Mahindra Bank", "KKBK0000123")
+]
+
+ADDRESSES_POOL = [
+    "Flat 402, Marvel Palms, Baner, Pune, Maharashtra 411045",
+    "Tower 8, Apt 1104, Blue Ridge Town, Hinjawadi Phase 2, Pune, Maharashtra 411057",
+    "B-303, Rohan Tarang, Wakad, Pune, Maharashtra 411057",
+    "1200 Silicon Residency, Sector 5, HSR Layout, Bengaluru, Karnataka 560102",
+    "Apt 601, Prestige Oasis, Whitefield, Bengaluru, Karnataka 560066",
+    "Flat 15B, Lodha Bellissimo, Apollo Mills, Lower Parel, Mumbai, Maharashtra 400011",
+    "Plot 45, Jubilee Hills, Road No. 36, Hyderabad, Telangana 500033",
+    "Villa 12, Palm Meadows, Kharadi, Pune, Maharashtra 411014",
+    "B-12, Panchsheel Park, New Delhi, Delhi 110017",
+    "Row House 7, Amanora Sweet Water Villas, Hadapsar, Pune, Maharashtra 411028"
+]
+
+
+_OHRM_NAMES_CACHE = {"names": set(), "last_updated": 0}
+
+
+class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
     def read_autofill_db(self):
         if not os.path.exists(AUTOFILL_FILE):
             return {"autofillProfiles": []}
@@ -95,6 +155,128 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return json.load(f)
             except Exception:
                 return {"autofillProfiles": []}
+
+    def generate_unique_candidate_profile(self):
+        """
+        Dynamically generates a 100% unique Indian employee profile on every request.
+        Cross-checks existing employees in employees.json and OrangeHRM to guarantee zero duplicates.
+        """
+        existing_names = set()
+        try:
+            db = self.read_db()
+            for emp in db.get('employees', []):
+                n = emp.get('fullName') or emp.get('name')
+                if n:
+                    existing_names.add(n.strip().lower())
+            for c in db.get('recruitment', []):
+                n = c.get('fullName') or c.get('candidateName') or c.get('name')
+                if n:
+                    existing_names.add(n.strip().lower())
+        except Exception:
+            pass
+
+        # Check OrangeHRM active employees (cached 60s for instant UI responsiveness)
+        global _OHRM_NAMES_CACHE
+        now = time.time()
+        if now - _OHRM_NAMES_CACHE.get("last_updated", 0) > 60:
+            try:
+                ohrm_emps = orangehrm_client.get_active_employees()
+                names = set()
+                for oemp in ohrm_emps:
+                    n = oemp.get('fullName') or f"{oemp.get('firstName', '')} {oemp.get('lastName', '')}".strip()
+                    if n:
+                        names.add(n.strip().lower())
+                _OHRM_NAMES_CACHE["names"] = names
+                _OHRM_NAMES_CACHE["last_updated"] = now
+            except Exception:
+                pass
+        existing_names.update(_OHRM_NAMES_CACHE.get("names", set()))
+
+        # Pick a unique First + Last Name that has never been used
+        first_name = random.choice(INDIAN_FIRST_NAMES)
+        last_name = random.choice(INDIAN_LAST_NAMES)
+        full_name = f"{first_name} {last_name}"
+
+        attempts = 0
+        while full_name.lower() in existing_names and attempts < 300:
+            first_name = random.choice(INDIAN_FIRST_NAMES)
+            last_name = random.choice(INDIAN_LAST_NAMES)
+            full_name = f"{first_name} {last_name}"
+            attempts += 1
+
+        if full_name.lower() in existing_names:
+            first_name = f"{first_name}"
+            last_name = f"{last_name}{random.randint(10, 99)}"
+            full_name = f"{first_name} {last_name}"
+
+        dept, role, mgr, hardware, salary = random.choice(JOB_ROLES_POOL)
+        bank_name, ifsc = random.choice(BANKS_POOL)
+        addr = random.choice(ADDRESSES_POOL)
+
+        rand_id_num = random.randint(1000, 9999)
+        pan_char = random.choice("FGHJKLMNPQRSTUVWXYZ")
+        pan = f"ABCDE{rand_id_num}{pan_char}"
+
+        aadhaar_p1 = random.randint(2000, 8999)
+        aadhaar_p2 = random.randint(1000, 9999)
+        aadhaar_p3 = random.randint(1000, 9999)
+        aadhaar = f"{aadhaar_p1} {aadhaar_p2} {aadhaar_p3}"
+
+        uan = f"1012 {random.randint(1000, 9999)} {random.randint(1000, 9999)}"
+        phone = f"+91 {random.choice([98, 97, 96, 95, 99, 93])}{random.randint(10, 99)} {random.randint(10000, 99999)}"
+        account_num = f"{random.randint(100000000000, 999999999999)}"
+
+        clean_slug = f"{first_name.lower()}.{last_name.lower()}"
+        email = f"{clean_slug}@valuedx.com"
+
+        dob_year = random.randint(1991, 1999)
+        dob_month = random.randint(1, 12)
+        dob_day = random.randint(1, 28)
+        dob = f"{dob_year}-{dob_month:02d}-{dob_day:02d}"
+
+        relative_relation = random.choice(['Father', 'Mother', 'Spouse', 'Brother', 'Sister'])
+        relative_first = random.choice(INDIAN_FIRST_NAMES)
+        emergency_name = f"{relative_first} {last_name} ({relative_relation})"
+        emergency_phone = f"+91 {random.choice([98, 97, 96, 95])}{random.randint(10, 99)} {random.randint(10000, 99999)}"
+
+        unique_profile = {
+            "id": f"DEMO-{random.randint(100, 999)}",
+            "profileName": f"{full_name} ({role})",
+            "fullName": full_name,
+            "firstName": first_name,
+            "lastName": last_name,
+            "email": email,
+            "phone": phone,
+            "dob": dob,
+            "pan": pan,
+            "aadhaar": aadhaar,
+            "uan": uan,
+            "emergencyName": emergency_name,
+            "emergencyPhone": emergency_phone,
+            "address": addr,
+            "department": dept,
+            "jobTitle": role,
+            "manager": mgr,
+            "employmentType": "Full-Time Permanent",
+            "workLocation": random.choice(["Hybrid", "On-Site (Pune Tech Park)", "Remote"]),
+            "startDate": "2026-10-25",
+            "bankName": bank_name,
+            "bankAccount": account_num,
+            "accountNumber": account_num,
+            "routingCode": ifsc,
+            "hardware": hardware,
+            "healthPlan": "Platinum Premier PPO ($0 Deductible)",
+            "pfContribution": "12%",
+            "lndPerk": "Tech Conferences & Cloud Certifications",
+            "salary": salary,
+            "idDocumentName": f"Aadhaar_Passport_{first_name}_{last_name}.pdf",
+            "educationDocName": f"Degree_Certificate_{first_name}_{last_name}.pdf",
+            "taxDocumentName": f"Form16_Tax_Compliance_{first_name}_{last_name}.pdf",
+            "offerDocumentName": f"Signed_Offer_Letter_{first_name}_{last_name}.pdf",
+            "uanDocumentName": f"UAN_Card_{first_name}_{last_name}_EPFO.pdf",
+            "salarySlipDocName": f"Salary_Slip_{first_name}_{last_name}_Recent.pdf"
+        }
+        return unique_profile
 
     def read_db(self):
         if not os.path.exists(DATA_FILE):
@@ -220,11 +402,10 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             elif self.path.startswith('/api/integrations/health'):
                 self.wfile.write(json.dumps(check_integrations_health()).encode('utf-8'))
             elif self.path.startswith('/api/autofill'):
-                autofill_data = self.read_autofill_db()
-                profiles = autofill_data.get('autofillProfiles', [])
-                selected = dict(random.choice(profiles)) if profiles else {}
-                selected['autofillProfiles'] = profiles
-                self.wfile.write(json.dumps(selected).encode('utf-8'))
+                profile = self.generate_unique_candidate_profile()
+                profile_copy = dict(profile)
+                profile['autofillProfiles'] = [profile_copy]
+                self.wfile.write(json.dumps(profile).encode('utf-8'))
             elif self.path.startswith('/api/orangehrm/random-employee'):
                 emp = orangehrm_client.get_random_employee()
                 self.wfile.write(json.dumps(emp).encode('utf-8'))
