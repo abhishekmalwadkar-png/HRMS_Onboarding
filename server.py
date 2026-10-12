@@ -955,9 +955,14 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             candidate_pool = []
             seen_names = set()
 
+            # Exclude specific employees like Suhas Kajawe per requirement
+            def is_excluded_resignation_employee(name_str):
+                n = str(name_str or '').lower()
+                return 'suhas' in n or 'kajawe' in n or 'kajwe' in n
+
             for emp in orange_emps:
                 name = str(emp.get('fullName') or '').strip()
-                if name and name.lower() not in seen_names and name.lower() not in active_exit_names:
+                if name and not is_excluded_resignation_employee(name) and name.lower() not in seen_names and name.lower() not in active_exit_names:
                     seen_names.add(name.lower())
                     candidate_pool.append({
                         "fullName": name,
@@ -969,7 +974,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             for emp in db_emps:
                 name = str(emp.get('fullName') or emp.get('name') or '').strip()
-                if name and name.lower() not in seen_names and name.lower() not in active_exit_names:
+                if name and not is_excluded_resignation_employee(name) and name.lower() not in seen_names and name.lower() not in active_exit_names:
                     seen_names.add(name.lower())
                     candidate_pool.append({
                         "fullName": name,
@@ -979,11 +984,12 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "jobTitle": emp.get('jobTitle') or "Staff Engineer"
                     })
 
-            # If still fewer than 3, pick from all OrangeHRM employees
+            # If still fewer than 3, pick from all OrangeHRM employees (strictly excluding Suhas Kajawe)
             if len(candidate_pool) < 3:
                 for emp in orange_emps:
                     name = str(emp.get('fullName') or '').strip()
-                    if name:
+                    if name and not is_excluded_resignation_employee(name) and name.lower() not in seen_names:
+                        seen_names.add(name.lower())
                         candidate_pool.append({
                             "fullName": name,
                             "empId": emp.get('empId') or f"EMP-{emp.get('empNumber', '1000')}",
@@ -1058,7 +1064,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 created_demo_exits.append(item_payload)
 
-            exits = db.get('exitRequests', [])
+            exits = [item for item in db.get('exitRequests', []) if not is_excluded_resignation_employee(item.get('empName'))]
             for item in reversed(created_demo_exits):
                 exits.insert(0, item)
             db['exitRequests'] = exits
