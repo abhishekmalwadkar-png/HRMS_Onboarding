@@ -263,6 +263,19 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
       const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
       const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(file.name);
 
+      const reader = new FileReader();
+      reader.onload = () => {
+        const b64 = (reader.result || '').split(',')[1] || '';
+        setDocuments((prev) => ({
+          ...prev,
+          [docKey]: {
+            ...prev[docKey],
+            base64: b64,
+          },
+        }));
+      };
+      reader.readAsDataURL(file);
+
       setDocuments((prev) => ({
         ...prev,
         [docKey]: {
@@ -591,8 +604,11 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
       routingCode: formData.routingCode,
       hardware: formData.hardware,
       idDocumentName: documents.idDoc?.name || 'Aadhaar_Verified.pdf',
+      idDocBase64: documents.idDoc?.base64,
       uanDocumentName: documents.uanDoc?.name || 'UAN_Card_EPFO.pdf',
+      uanDocBase64: documents.uanDoc?.base64,
       salarySlipDocName: documents.salaryDoc?.name || 'Salary_Slip_Recent.pdf',
+      salaryDocBase64: documents.salaryDoc?.base64,
       department: formData.department || 'Engineering',
       jobTitle: formData.jobTitle || 'Staff AI Systems Engineer',
       manager: formData.manager || 'Amit Deshmukh (VP of Engineering)',

@@ -33,6 +33,9 @@ generated_offers/*.pdf
 !generated_offers/.gitkeep
 generated_relieving_letters/*.pdf
 !generated_relieving_letters/.gitkeep
+generated_payslips/*.pdf
+!generated_payslips/.gitkeep
+
 
 
 # Node & NPM dependencies

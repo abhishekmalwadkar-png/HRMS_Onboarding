@@ -317,10 +317,53 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             params = urllib.parse.parse_qs(query)
             target = params.get('target', [None])[0] or params.get('url', [None])[0] or "https://t4.automationedge.com/#/requests/list"
             self.send_response(302)
-            self.send_header('Location', target)
-            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
-            self.end_headers()
-            return
+        # Download Official Monthly Payslip for Offboarded Employee
+        if self.path.split('?')[0] in ('/api/exit/payslip', '/api/payslip/download'):
+            query = self.path.split('?')[1] if '?' in self.path else ''
+            import urllib.parse
+            params = urllib.parse.parse_qs(query)
+            target_id = params.get('id', [None])[0]
+            target_name = params.get('name', [None])[0]
+
+            db = self.read_db()
+            matched_emp = None
+            for item in db.get('exitRequests', []):
+                if (target_id and item.get('id') == target_id) or (target_name and item.get('empName') == target_name):
+                    matched_emp = item
+                    break
+            if not matched_emp:
+                for item in db.get('employees', []):
+                    if (target_id and item.get('id') == target_id) or (target_name and item.get('fullName') == target_name):
+                        matched_emp = item
+                        break
+
+            if not matched_emp:
+                matched_emp = {
+                    "empName": target_name or "Employee",
+                    "empId": target_id or "EMP-1042",
+                    "department": "Engineering",
+                    "role": "Senior Specialist",
+                    "serviceNowReq": "REQ0012000"
+                }
+
+            from generate_payslip import generate_payslip_pdf
+            pdf_path = generate_payslip_pdf(matched_emp)
+            if os.path.exists(pdf_path):
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/pdf')
+                filename = os.path.basename(pdf_path)
+                self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
+                self.send_header('Content-Length', str(os.path.getsize(pdf_path)))
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                with open(pdf_path, 'rb') as f:
+                    shutil.copyfileobj(f, self.wfile)
+                return
+            else:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(b'Could not generate payslip')
+                return
 
         if self.path.startswith('/api/'):
             db = self.read_db()

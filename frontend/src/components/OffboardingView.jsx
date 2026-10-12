@@ -826,6 +826,28 @@ export default function OffboardingView() {
                           <i className="fa-solid fa-arrow-up-right-from-square"></i> ServiceNow: <strong>{item.laptopTicket}</strong>
                         </button>
                       )}
+                      <a
+                        href={`/api/exit/payslip?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
+                        download
+                        className="badge"
+                        style={{
+                          fontSize: '0.78rem',
+                          textDecoration: 'none',
+                          padding: '0.35rem 0.65rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          background: 'rgba(16, 185, 129, 0.12)',
+                          color: '#059669',
+                          border: '1px solid rgba(16, 185, 129, 0.25)',
+                        }}
+                        title={`Download official monthly payslip for ${item.empName}`}
+                        onClick={() => showToast(`📄 Downloading payslip for ${item.empName}...`, 'info')}
+                      >
+                        <i className="fa-solid fa-file-invoice-dollar"></i> Payslip
+                      </a>
                       <span
                         onClick={() => inspectOffboardingFlow(item)}
                         className={`badge ${item.accessRevoked ? 'badge-verified' : 'badge-pending'}`}
@@ -909,6 +931,26 @@ export default function OffboardingView() {
                       <i className={`fa-solid ${issuingLetterId === item.id ? 'fa-spinner fa-spin' : (item.relievingLetterIssued ? 'fa-circle-check' : 'fa-file-export')}`}></i>{' '}
                       {issuingLetterId === item.id ? 'Generating…' : (item.relievingLetterIssued ? 'Relieving letter sent' : 'Issue relieving letter')}
                     </button>
+
+                    <a
+                      href={`/api/exit/payslip?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
+                      download
+                      className="btn btn-secondary btn-sm"
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        fontSize: '0.78rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        textDecoration: 'none',
+                        color: 'var(--text-main)',
+                        fontWeight: 600,
+                      }}
+                      title={`Download official monthly payslip for ${item.empName}`}
+                      onClick={() => showToast(`📄 Downloading payslip for ${item.empName}...`, 'info')}
+                    >
+                      <i className="fa-solid fa-file-invoice-dollar text-accent"></i> Download payslip
+                    </a>
                   </div>
                 </div>
               );
