@@ -715,7 +715,10 @@ class ServiceNowClient:
             }
             gen_res = generate_offer_letter_pdf(candidate_offer_data)
             pdf_file_path = gen_res[0] if isinstance(gen_res, tuple) else gen_res
+            pdf_filename = gen_res[1] if isinstance(gen_res, tuple) and len(gen_res) > 1 else os.path.basename(pdf_file_path)
             offer_letter_result = office365_client.send_offer_letter_email(candidate_offer_data, pdf_file_path, recipient_email=hr_recip)
+            offer_letter_result['pdfFilename'] = pdf_filename
+            offer_letter_result['downloadUrl'] = f"/generated_offers/{pdf_filename}"
             print(f"[APPROVAL FLOW - STEP 7/7 COMPLETE] Offer letter PDF dispatched to {hr_recip} ({offer_letter_result.get('status')})")
         except Exception as off_err:
             print(f"[APPROVAL FLOW - STEP 7/7 ERROR] Offer Letter Email: {off_err}")
@@ -734,6 +737,8 @@ class ServiceNowClient:
                 "status": "Dispatched"
             },
             "offerLetter": offer_letter_result,
+            "offerDownloadUrl": f"/generated_offers/{pdf_filename}" if 'pdf_filename' in locals() else None,
+            "offerPdfFilename": pdf_filename if 'pdf_filename' in locals() else None,
             "laptopProvisioning": {
                 "ticketNumber": laptop_ticket,
                 "ticketUrl": laptop_ticket_url,

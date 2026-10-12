@@ -216,6 +216,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
   const [errors, setErrors] = useState({});
   const [submitResult, setSubmitResult] = useState(null); // { tone, title, message }
   const [previewDocKey, setPreviewDocKey] = useState(null); // 'idDoc' | 'uanDoc' | 'salaryDoc'
+  const [showSimulated, setShowSimulated] = useState(false);
   const canvasRef = useRef(null);
   const lastIndexRef = useRef(-1);
   const usedNamesRef = useRef(new Set());
@@ -258,13 +259,24 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
       const sizeStr = file.size > 1024 * 1024
         ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
         : `${Math.round(file.size / 1024)} KB`;
+      const previewUrl = URL.createObjectURL(file);
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(file.name);
+
       setDocuments((prev) => ({
         ...prev,
         [docKey]: {
           name: file.name,
           size: sizeStr,
+          file,
+          previewUrl,
+          fileType: isPdf ? 'pdf' : isImage ? 'image' : 'other',
+          customUploaded: true,
         },
       }));
+      setShowSimulated(false);
+      const docTitle = DOCUMENTS.find((d) => d.key === docKey)?.title || 'document';
+      showToast(`Uploaded ${file.name} for ${docTitle}. Click "View" to preview your uploaded document.`, 'success');
     }
   };
 
@@ -912,26 +924,99 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
               border: '1px solid var(--border-color)',
             }}
           >
-            {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.65rem' }}>
-              <div>
-                <h3 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.05rem' }}>
-                  <i className="fa-solid fa-file-invoice text-accent"></i> Document Preview: {DOCUMENTS.find((d) => d.key === previewDocKey)?.title}
-                </h3>
-                <p style={{ margin: '2px 0 0 0', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                  Dynamic preview rendered with personal details for <strong>{formData.fullName || 'Candidate'}</strong>
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPreviewDocKey(null)}
-                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px 6px' }}
-                title="Close Preview"
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
+            {/* Modal Header & Content Switcher */}
+            {(() => {
+              const activeDoc = previewDocKey ? documents[previewDocKey] : null;
+              const hasCustomFile = Boolean(activeDoc?.customUploaded && activeDoc?.previewUrl);
+              const isShowingUploaded = hasCustomFile && !showSimulated;
 
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.65rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div>
+                      <h3 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.05rem' }}>
+                        <i className={`fa-solid ${isShowingUploaded ? 'fa-file-shield' : 'fa-file-invoice'} text-accent`}></i>
+                        Document Preview: {DOCUMENTS.find((d) => d.key === previewDocKey)?.title}
+                      </h3>
+                      <p style={{ margin: '2px 0 0 0', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                        {isShowingUploaded ? (
+                          <>Uploaded candidate document: <strong>{activeDoc.name}</strong> ({activeDoc.size})</>
+                        ) : (
+                          <>Dynamic preview rendered with personal details for <strong>{formData.fullName || 'Candidate'}</strong></>
+                        )}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                      {hasCustomFile && (
+                        <>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-xs"
+                            onClick={() => setShowSimulated(!showSimulated)}
+                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.55rem', border: '1px solid var(--border-color)' }}
+                            title="Toggle between your uploaded file and the simulated template"
+                          >
+                            <i className={`fa-solid ${showSimulated ? 'fa-file-arrow-up' : 'fa-wand-magic-sparkles'} text-accent`}></i>
+                            {showSimulated ? 'View uploaded document' : 'View template replica'}
+                          </button>
+                          <a
+                            href={activeDoc.previewUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-secondary btn-xs"
+                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.55rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                            title="Open in new window"
+                          >
+                            <i className="fa-solid fa-arrow-up-right-from-square"></i> Full view
+                          </a>
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setPreviewDocKey(null)}
+                        style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px 6px' }}
+                        title="Close Preview"
+                      >
+                        <i className="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* USER UPLOADED DOCUMENT DISPLAY (WHEN USER HAS REPLACED/UPLOADED A FILE) */}
+                  {isShowingUploaded ? (
+                    <div style={{ width: '100%', minHeight: '400px' }}>
+                      {activeDoc.fileType === 'image' ? (
+                        <div style={{ textAlign: 'center', padding: '1rem', background: '#020617', borderRadius: '8px', overflow: 'hidden' }}>
+                          <img
+                            src={activeDoc.previewUrl}
+                            alt={activeDoc.name}
+                            style={{ maxWidth: '100%', maxHeight: '72vh', objectFit: 'contain', borderRadius: '6px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
+                          />
+                          <div style={{ marginTop: '0.75rem', color: '#94a3b8', fontSize: '0.8rem' }}>
+                            <i className="fa-solid fa-file-image text-accent"></i> {activeDoc.name} ({activeDoc.size})
+                          </div>
+                        </div>
+                      ) : activeDoc.fileType === 'pdf' ? (
+                        <div style={{ width: '100%', height: '74vh', borderRadius: '8px', overflow: 'hidden', background: '#020617' }}>
+                          <iframe
+                            src={activeDoc.previewUrl}
+                            title={activeDoc.name}
+                            style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '3.5rem 1rem', background: 'var(--bg-surface)', borderRadius: '8px' }}>
+                          <i className="fa-solid fa-file-lines" style={{ fontSize: '3rem', color: 'var(--brand-orange)', marginBottom: '1rem' }}></i>
+                          <h4>{activeDoc.name}</h4>
+                          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{activeDoc.size}</p>
+                          <a href={activeDoc.previewUrl} download={activeDoc.name} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                            <i className="fa-solid fa-download"></i> Download & Open Document
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <>
             {/* PREVIEW 1: GOVERNMENT ID / AADHAAR CARD (EXACT PDF FORMAT REPLICA) */}
             {previewDocKey === 'idDoc' && (
               <div style={{ background: '#ffffff', borderRadius: '4px', border: '2px solid #000000', overflow: 'hidden', color: '#000000', boxShadow: '0 8px 24px rgba(0,0,0,0.18)', fontFamily: 'Arial, Helvetica, sans-serif' }}>
@@ -1414,6 +1499,11 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                 </div>
               </div>
             )}
+                    </>
+                  )}
+                </>
+              );
+            })()}
 
             {/* Modal Actions */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>

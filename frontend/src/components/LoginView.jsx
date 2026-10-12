@@ -27,7 +27,7 @@ export default function LoginView() {
           </div>
           <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
             <span className="badge badge-verified" style={{ fontSize: '0.78rem', padding: '3px 10px' }}>
-              <i className="fa-solid fa-shield-halved"></i> HR Administrator Portal
+              <i className="fa-solid fa-shield-halved"></i> HR Administrator Portal (Pooja Deshmukh)
             </span>
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function LoginView() {
               <i className="fa-solid fa-arrow-right-to-bracket"></i> Login to HR Dashboard
             </button>
             <p style={{ textAlign: 'center', marginTop: '0.85rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              <i className="fa-solid fa-circle-info"></i> Demo environment: credentials are pre-filled.
+              <i className="fa-solid fa-circle-info"></i> Pre-configured login for <strong>Pooja Deshmukh</strong> (HR Operations Director).
             </p>
           </form>
         </div>

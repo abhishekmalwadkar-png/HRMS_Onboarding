@@ -500,12 +500,16 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                         if ae_ad_info.get('status') == 'success' or approve_result.get('aeT4RequestId'):
                             emp['aeT4RequestId'] = approve_result.get('aeT4RequestId')
                             emp['aeT4Workflow'] = approve_result.get('aeT4Workflow') or 'AD-Create User and Assin Role'
-                        # Offer Letter Email Details
+                        # Offer Letter Email & PDF Download Details
                         offer_info = approve_result.get('offerLetter', {})
+                        pdf_fn = offer_info.get('pdfFilename') or approve_result.get('offerPdfFilename')
+                        if pdf_fn:
+                            emp['offerLetterPdf'] = pdf_fn
+                            emp['offerPdfUrl'] = f"/generated_offers/{pdf_fn}"
+                            emp['offerDownloadUrl'] = f"/generated_offers/{pdf_fn}"
                         if offer_info.get('status') == 'success' or offer_info.get('sent'):
                             emp['offerLetterEmailed'] = True
                             emp['offerLetterRecipient'] = offer_info.get('recipient') or os.environ.get('HR_NOTIFICATION_RECIPIENT', '')
-                            emp['offerLetterPdf'] = offer_info.get('pdfFilename')
 
                         break
                 self.write_db(db)

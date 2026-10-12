@@ -140,7 +140,9 @@ function ProvisioningFunnel({ stages }) {
 
 export default function DashboardView({ employees, isLoading, onNavigate }) {
   const { currentUser } = useAuth();
-  const firstName = currentUser?.name?.split(' ')[0] || 'there';
+  const rawName = currentUser?.name || 'Pooja';
+  const cleanName = (rawName.includes('Jessica') || rawName.includes('Miller')) ? 'Pooja' : rawName;
+  const firstName = cleanName.split(' ')[0] || 'Pooja';
 
   const stats = useMemo(() => {
     const approved = employees.filter(isApproved);

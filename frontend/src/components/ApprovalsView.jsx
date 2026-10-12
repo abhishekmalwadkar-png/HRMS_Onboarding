@@ -130,6 +130,57 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
     }
   };
 
+  const handleDownloadOfferLetter = async (cand) => {
+    if (!cand) return;
+    try {
+      showToast(`📄 Generating & downloading official offer letter for ${cand.fullName}...`, 'info');
+      if (cand.offerPdfUrl || cand.offerDownloadUrl) {
+        const link = document.createElement('a');
+        link.href = cand.offerPdfUrl || cand.offerDownloadUrl;
+        link.download = cand.offerLetterPdf || `Offer_Letter_${cand.fullName.replace(/\s+/g, '_')}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast(`✅ Offer letter downloaded for ${cand.fullName}!`, 'success');
+        return;
+      }
+
+      const res = await fetch('/api/offer-letter/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateName: cand.fullName,
+          appliedRole: cand.jobTitle || 'Staff AI Systems Engineer',
+          email: cand.email,
+          department: cand.department || 'Engineering',
+          annualCtc: cand.salary || '₹32,00,000 INR / annum (₹32.0 LPA)',
+          salary: cand.salary || '₹32,00,000 INR / annum (₹32.0 LPA)',
+          joiningDate: cand.startDate || '2026-10-25',
+          hardware: cand.hardware || 'Apple MacBook Pro M3 Max',
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const dlUrl = data.downloadUrl || (data.filename ? `/generated_offers/${data.filename}` : null);
+        if (dlUrl) {
+          const link = document.createElement('a');
+          link.href = dlUrl;
+          link.download = data.filename || `Offer_Letter_${cand.fullName.replace(/\s+/g, '_')}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          showToast(`✅ Offer letter downloaded for ${cand.fullName}!`, 'success');
+          return;
+        }
+      }
+      window.open(`/generated_offers/Offer_Letter_${cand.fullName.replace(/\s+/g, '_')}.pdf`, '_blank');
+    } catch (err) {
+      console.warn('Download offer letter error:', err);
+      showToast('Could not download offer letter.', 'error');
+    }
+  };
+
   const handleApprove = async (cand) => {
     setApprovingId(cand.id);
     setActiveFlowCandidate(cand);
@@ -458,13 +509,25 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                     <i className="fa-solid fa-circle-info text-accent" aria-hidden="true"></i>
                     Approving runs: ServiceNow → Active Directory → Microsoft 365 → OrangeHRM → laptop ticket, then emails the offer letter.
                   </p>
-                  <button className="btn btn-primary" disabled={isApproving} aria-busy={isApproving} onClick={() => handleApprove(cand)}>
-                    {isApproving ? (
-                      <><i className="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Provisioning…</>
-                    ) : (
-                      <><i className="fa-solid fa-circle-check" aria-hidden="true"></i> Approve & provision</>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    {(cand.status === 'Approved' || cand.offerPdfUrl || cand.offerDownloadUrl) && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => handleDownloadOfferLetter(cand)}
+                        title="Download official PDF offer letter"
+                      >
+                        <i className="fa-solid fa-file-arrow-down text-accent" aria-hidden="true"></i> Download offer letter
+                      </button>
                     )}
-                  </button>
+                    <button className="btn btn-primary" disabled={isApproving} aria-busy={isApproving} onClick={() => handleApprove(cand)}>
+                      {isApproving ? (
+                        <><i className="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Provisioning…</>
+                      ) : (
+                        <><i className="fa-solid fa-circle-check" aria-hidden="true"></i> Approve & provision</>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </Card>
             );
@@ -561,8 +624,16 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                         <strong className="cell-accent">{item.laptopTicket || '—'}</strong>
                         <div className="cell-sub">{item.hardware || '—'}</div>
                       </td>
-                      <td className="cell-actions">
-                        <button className="btn btn-secondary btn-sm" onClick={() => inspectApprovalFlow(item)}>
+                      <td className="cell-actions" style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleDownloadOfferLetter(item)}
+                          title={`Download official PDF offer letter for ${item.fullName}`}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap' }}
+                        >
+                          <i className="fa-solid fa-file-arrow-down text-accent" aria-hidden="true"></i> Download offer
+                        </button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => inspectApprovalFlow(item)} style={{ whiteSpace: 'nowrap' }}>
                           <i className="fa-solid fa-timeline text-accent" aria-hidden="true"></i> View flow
                           <span className="sr-only"> for {item.fullName}</span>
                         </button>
@@ -624,6 +695,15 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
         footer={
           <>
             <button className="btn btn-secondary" onClick={() => setActiveFlowCandidate(null)}>Close</button>
+            <button
+              type="button"
+              onClick={() => handleDownloadOfferLetter(activeFlowCandidate)}
+              className="btn btn-secondary"
+              title="Download official PDF offer letter"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
+            >
+              <i className="fa-solid fa-file-arrow-down text-accent" aria-hidden="true"></i> Download offer letter
+            </button>
             <button
               onClick={() => {
                 const targetUrl = flowData?.orangeHrm?.profileUrl || 'http://10.41.5.39/orangehrm/web/index.php/auth/login';
@@ -757,15 +837,27 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
 
               {/* Outcome */}
               {flowFinished && (
-                flowHasErrors ? (
-                  <StatusBanner tone="warning" title={`Finished with ${Object.keys(flowStepErrors).length} step(s) needing attention`}>
-                    Fix the affected system and approve again, or complete those steps manually.
-                  </StatusBanner>
-                ) : (
-                  <StatusBanner tone="success" title="All steps completed">
-                    End-to-end provisioning finished for {cand.fullName}.
-                  </StatusBanner>
-                )
+                <>
+                  {flowHasErrors ? (
+                    <StatusBanner tone="warning" title={`Finished with ${Object.keys(flowStepErrors).length} step(s) needing attention`}>
+                      Fix the affected system and approve again, or complete those steps manually.
+                    </StatusBanner>
+                  ) : (
+                    <StatusBanner tone="success" title="All steps completed">
+                      End-to-end provisioning finished for {cand.fullName}.
+                    </StatusBanner>
+                  )}
+                  <div style={{ marginTop: '0.85rem' }}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => handleDownloadOfferLetter(cand)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'center', padding: '0.75rem', fontWeight: 700 }}
+                    >
+                      <i className="fa-solid fa-file-arrow-down" aria-hidden="true"></i> Download official offer letter (PDF)
+                    </button>
+                  </div>
+                </>
               )}
             </>
           );

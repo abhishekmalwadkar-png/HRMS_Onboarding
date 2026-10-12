@@ -8,7 +8,17 @@ export function AuthProvider({ children }) {
       const saved = localStorage.getItem('mangohrms_user');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.role === 'hr') return parsed;
+        if (parsed) {
+          // Explicitly migrate any legacy Jessica Miller references to Pooja
+          if (parsed.name?.includes('Jessica') || parsed.name?.includes('Miller') || parsed.email?.includes('jessica')) {
+            parsed.name = 'Pooja Deshmukh (HR Operations Director)';
+            parsed.email = 'pooja.deshmukh@automationedge.ai';
+            parsed.avatar = 'P';
+            parsed.badge = 'HR Administrator';
+            localStorage.setItem('mangohrms_user', JSON.stringify(parsed));
+          }
+          if (parsed.role === 'hr') return parsed;
+        }
       }
       // Default to HR Administrator
       const defaultHR = {
@@ -48,9 +58,13 @@ export function AuthProvider({ children }) {
   };
 
   const loginAs = (role = 'hr', email, name) => {
+    let cleanName = name || 'Pooja Deshmukh (HR Operations Director)';
+    if (cleanName.includes('Jessica') || cleanName.includes('Miller')) {
+      cleanName = 'Pooja Deshmukh (HR Operations Director)';
+    }
     const userObj = {
       role: 'hr',
-      name: name || 'Pooja Deshmukh (HR Operations Director)',
+      name: cleanName,
       email: email || 'pooja.deshmukh@automationedge.ai',
       avatar: 'P',
       badge: 'HR Administrator'
