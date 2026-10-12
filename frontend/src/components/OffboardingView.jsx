@@ -127,9 +127,13 @@ export default function OffboardingView() {
       const res = await fetch('/api/exit/demo', { method: 'POST' });
       if (res.ok) {
         const json = await res.json();
-        const items = json.allRequests || (Array.isArray(json.data) ? [...json.data, ...exitRequests] : exitRequests);
+        const items = json.allRequests || (Array.isArray(json.data) ? json.data : exitRequests);
         setExitRequests(items);
-        showToast('✓ Created 3 live resignation requests for OrangeHRM employees in ServiceNow!', 'success');
+        if (json.mode === 'live_servicenow_active') {
+          showToast(`✓ Found ${items.length} active resignation request(s) in ServiceNow.`, 'success');
+        } else {
+          showToast(json.message ? `✓ ${json.message}` : '✓ Created 3 live resignation requests in ServiceNow!', 'success');
+        }
         return;
       }
       throw new Error(`Server returned ${res.status}`);

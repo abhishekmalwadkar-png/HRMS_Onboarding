@@ -980,6 +980,23 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "success", "message": "Exit requests cleared", "data": []}).encode('utf-8'))
 
         elif self.path == '/api/exit/demo':
+            # 1. Check ServiceNow for active resignation requests (not closed and not resolved)
+            active_exits, has_active = sn_client.get_active_resignation_requests(db.get('exitRequests', []))
+            if has_active:
+                # If in ServiceNow there is active resignation request which is not closed or resolved, show that only!
+                db['exitRequests'] = active_exits
+                self.write_db(db)
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "status": "success",
+                    "mode": "live_servicenow_active",
+                    "message": f"Found {len(active_exits)} active resignation request(s) in ServiceNow. Displaying active requests.",
+                    "data": active_exits,
+                    "allRequests": active_exits
+                }).encode('utf-8'))
+                return
+
+            # 2. If no active resignation requests exist in ServiceNow, trigger new demo requests!
             now_ts = int(time.time())
             date_today = time.strftime('%Y-%m-%d')
 
