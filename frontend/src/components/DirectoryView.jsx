@@ -286,17 +286,6 @@ export default function DirectoryView({ employees }) {
               {sel.aeT4Agent && <div>Agent: <code>{sel.aeT4Agent}</code></div>}
             </SystemCard>
 
-            <SystemCard
-              tone="ms"
-              icon="fa-brands fa-microsoft"
-              title="Microsoft 365"
-              status={sel.o365Status || (sel.o365UserId ? 'Active (Entra ID)' : 'Created on approval')}
-              href={sel.o365AdminUrl || 'https://admin.microsoft.com/#/users'}
-              linkLabel="Open M365 admin center"
-            >
-              <div>Work email: <strong>{sel.o365Email || 'Not created yet'}</strong></div>
-              <div>Personal email: {sel.email || '—'}</div>
-            </SystemCard>
 
             <SystemCard
               tone="success"
