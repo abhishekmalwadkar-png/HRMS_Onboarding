@@ -1021,6 +1021,11 @@ h1, h2, h3 {
   color: #059669; 
   border: 1px solid #a7f3d0; 
 }
+.badge-danger { 
+  background: #fff1f2; 
+  color: #e11d48; 
+  border: 1px solid #fecdd3; 
+}
 
 [data-theme="dark"] .badge-draft { 
   background: rgba(148, 163, 184, 0.15); 
@@ -1041,6 +1046,11 @@ h1, h2, h3 {
   background: rgba(16, 185, 129, 0.18); 
   color: #34d399; 
   border: 1px solid rgba(16, 185, 129, 0.4); 
+}
+[data-theme="dark"] .badge-danger { 
+  background: rgba(225, 29, 72, 0.18); 
+  color: #fda4af; 
+  border: 1px solid rgba(225, 29, 72, 0.4); 
 }
 
 /* Typography Helpers */

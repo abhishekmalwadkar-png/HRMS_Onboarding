@@ -83,6 +83,7 @@ function StepError({ message }) {
 export default function ApprovalsView({ employees, onRefreshEmployees }) {
   const { showToast } = useToast();
   const [approvingId, setApprovingId] = useState(null);
+  const [rejectingId, setRejectingId] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -107,7 +108,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
   );
 
   const approvedHistory = employees.filter(
-    (e) => e.status === 'Approved' || e.status === 'Completed' || e.status === 'Verified'
+    (e) => e.status === 'Approved' || e.status === 'Completed' || e.status === 'Verified' || e.status === 'Rejected'
   );
 
   const totalPages = Math.max(1, Math.ceil(approvedHistory.length / ITEMS_PER_PAGE));
@@ -300,6 +301,35 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
       showToast(`Approval failed for ${cand.fullName}.`, 'error');
     } finally {
       setApprovingId(null);
+      if (onRefreshEmployees) onRefreshEmployees();
+    }
+  };
+
+  const handleReject = async (cand) => {
+    if (!window.confirm(`Are you sure you want to reject onboarding for ${cand.fullName}?`)) return;
+    setRejectingId(cand.id);
+    try {
+      const res = await fetch('/api/servicenow/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: cand.id,
+          fullName: cand.fullName,
+          email: cand.email,
+          reqNumber: cand.serviceNowReq,
+          serviceNowReqId: cand.serviceNowReqId,
+        }),
+      });
+      if (res.ok) {
+        showToast(`❌ Onboarding for ${cand.fullName} has been rejected.`, 'info');
+      } else {
+        showToast(`Could not reject ${cand.fullName}.`, 'error');
+      }
+    } catch (err) {
+      console.warn('Reject error:', err);
+      showToast(`Error rejecting candidate: ${err.message}`, 'error');
+    } finally {
+      setRejectingId(null);
       if (onRefreshEmployees) onRefreshEmployees();
     }
   };
@@ -532,6 +562,20 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                     Approving runs: ServiceNow → Active Directory → Microsoft 365 → OrangeHRM → laptop ticket, then emails the offer letter.
                   </p>
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)', fontWeight: 600 }}
+                      disabled={isApproving || rejectingId === cand.id}
+                      onClick={() => handleReject(cand)}
+                      title="Reject candidate onboarding request"
+                    >
+                      {rejectingId === cand.id ? (
+                        <><i className="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Rejecting…</>
+                      ) : (
+                        <><i className="fa-solid fa-circle-xmark" aria-hidden="true"></i> Reject</>
+                      )}
+                    </button>
                     {(cand.status === 'Approved' || cand.offerPdfUrl || cand.offerDownloadUrl) && (
                       <button
                         type="button"
@@ -542,7 +586,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                         <i className="fa-solid fa-file-arrow-down text-accent" aria-hidden="true"></i> Download offer letter
                       </button>
                     )}
-                    <button className="btn btn-primary" disabled={isApproving} aria-busy={isApproving} onClick={() => handleApprove(cand)}>
+                    <button className="btn btn-primary" disabled={isApproving || rejectingId === cand.id} aria-busy={isApproving} onClick={() => handleApprove(cand)}>
                       {isApproving ? (
                         <><i className="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Provisioning…</>
                       ) : (
@@ -560,7 +604,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
       {/* Approved History Table */}
       <Card
         animated={false}
-        title={`Approved history (${approvedHistory.length})`}
+        title={`Approval history (${approvedHistory.length})`}
         icon="fa-solid fa-clock-rotate-left"
         actions={
           approvedHistory.length > 0 && (
@@ -582,7 +626,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
       >
         {approvedHistory.length === 0 ? (
           <EmptyState icon="fa-solid fa-clock-rotate-left" title="No approvals yet">
-            Approved candidates and their provisioning results will be listed here.
+            Processed candidates and their provisioning results will be listed here.
           </EmptyState>
         ) : (
           <>
@@ -610,7 +654,11 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                         <div className="cell-sub">{item.department || '—'}</div>
                       </td>
                       <td>
-                        {item.serviceNowReq ? (
+                        {item.status === 'Rejected' ? (
+                          <span className="badge badge-danger">
+                            <i className="fa-solid fa-circle-xmark" aria-hidden="true"></i> {item.serviceNowReq || 'Rejected'}
+                          </span>
+                        ) : item.serviceNowReq ? (
                           <button
                             type="button"
                             onClick={() => {
@@ -647,18 +695,26 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
                         <div className="cell-sub">{item.hardware || '—'}</div>
                       </td>
                       <td className="cell-actions" style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => handleDownloadOfferLetter(item)}
-                          title={`Download official PDF offer letter for ${item.fullName}`}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap' }}
-                        >
-                          <i className="fa-solid fa-file-arrow-down text-accent" aria-hidden="true"></i> Download offer
-                        </button>
-                        <button className="btn btn-secondary btn-sm" onClick={() => inspectApprovalFlow(item)} style={{ whiteSpace: 'nowrap' }}>
-                          <i className="fa-solid fa-timeline text-accent" aria-hidden="true"></i> View flow
-                          <span className="sr-only"> for {item.fullName}</span>
-                        </button>
+                        {item.status === 'Rejected' ? (
+                          <span className="badge badge-danger" style={{ alignSelf: 'center' }}>
+                            <i className="fa-solid fa-ban" aria-hidden="true"></i> Rejected
+                          </span>
+                        ) : (
+                          <>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleDownloadOfferLetter(item)}
+                              title={`Download official PDF offer letter for ${item.fullName}`}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap' }}
+                            >
+                              <i className="fa-solid fa-file-arrow-down text-accent" aria-hidden="true"></i> Download offer
+                            </button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => inspectApprovalFlow(item)} style={{ whiteSpace: 'nowrap' }}>
+                              <i className="fa-solid fa-timeline text-accent" aria-hidden="true"></i> View flow
+                              <span className="sr-only"> for {item.fullName}</span>
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}

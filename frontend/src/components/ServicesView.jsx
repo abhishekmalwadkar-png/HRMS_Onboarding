@@ -47,6 +47,7 @@ function daysBetween(from, to) {
 function leaveStatusClass(status) {
   if (status === 'Approved' || status?.includes('Assigned')) return 'badge-approved';
   if (status?.startsWith('Pending')) return 'badge-pending';
+  if (status === 'Rejected') return 'badge-danger';
   return 'badge-draft';
 }
 
@@ -102,6 +103,7 @@ export default function ServicesView() {
   const [isAutofilling, setIsAutofilling] = useState(false);
   const [orangeHrmEmployees, setOrangeHrmEmployees] = useState([]);
   const [approvingLeaveId, setApprovingLeaveId] = useState(null);
+  const [rejectingLeaveId, setRejectingLeaveId] = useState(null);
 
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -307,6 +309,45 @@ export default function ServicesView() {
       .catch((err) => {
         console.warn('Background OrangeHRM assign note:', err);
       });
+  };
+
+  // 1-Click Instant Reject Leave
+  const handleRejectLeave = async (req) => {
+    // 1. Immediately update UI state with zero delay
+    setRejectingLeaveId(req.id);
+    setLeaveRequests((prev) =>
+      prev.map((r) =>
+        r.id === req.id
+          ? { ...r, status: 'Rejected', rejectedAt: new Date().toISOString() }
+          : r
+      )
+    );
+
+    showToast(`Leave request for ${req.employeeName || 'employee'} rejected.`, 'info');
+
+    // 2. Dispatch backend synchronization
+    try {
+      const res = await fetch('/api/leave/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: req.id,
+          employeeName: req.employeeName,
+          empNumber: req.empNumber,
+          fromDate: req.from,
+          toDate: req.to,
+          leaveType: req.type
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.requests) setLeaveRequests(data.requests);
+      }
+    } catch (err) {
+      console.warn('Reject leave error:', err);
+    } finally {
+      setRejectingLeaveId(null);
+    }
   };
 
   const [isClearingLogs, setIsClearingLogs] = useState(false);
@@ -608,13 +649,37 @@ export default function ServicesView() {
                     </div>
                   </div>
 
-                  {/* HR Approval Action if Pending */}
+                  {/* HR Approval & Rejection Actions if Pending */}
                   {isPending && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', borderTop: '1px dashed var(--border-subtle, #e2e8f0)', paddingTop: '8px', marginTop: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', borderTop: '1px dashed var(--border-subtle, #e2e8f0)', paddingTop: '8px', marginTop: '4px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        disabled={isApproving || rejectingLeaveId === r.id}
+                        onClick={() => handleRejectLeave(r)}
+                        style={{
+                          padding: '4px 10px',
+                          fontSize: '11.5px',
+                          fontWeight: '600',
+                          borderRadius: '6px',
+                          color: '#ef4444',
+                          borderColor: 'rgba(239, 68, 68, 0.4)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        {rejectingLeaveId === r.id ? (
+                          <><i className="fa-solid fa-spinner fa-spin"></i> Rejecting...</>
+                        ) : (
+                          <><i className="fa-solid fa-circle-xmark"></i> Reject</>
+                        )}
+                      </button>
                       <button
                         type="button"
                         className="btn btn-primary btn-sm"
-                        disabled={isApproving}
+                        disabled={isApproving || rejectingLeaveId === r.id}
                         onClick={() => handleApproveLeaveInOrangeHRM(r)}
                         style={{
                           padding: '4px 10px',

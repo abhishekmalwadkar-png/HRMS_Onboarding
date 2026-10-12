@@ -559,6 +559,28 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(approve_result).encode('utf-8'))
 
+        # ServiceNow: HR Rejection
+        elif self.path == '/api/servicenow/reject':
+            target_id = payload.get('id')
+            sn_result = sn_client.reject_request(payload, payload.get('reqNumber'))
+            matched_emp = None
+            if target_id:
+                for emp in db.get('employees', []):
+                    if emp.get('id') == target_id:
+                        emp['status'] = 'Rejected'
+                        emp['serviceNowStatus'] = 'Rejected'
+                        emp['rejectedAt'] = time.strftime('%Y-%m-%d %H:%M:%S')
+                        matched_emp = emp
+                        break
+                self.write_db(db)
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "message": "Candidate onboarding rejected successfully",
+                "serviceNow": sn_result,
+                "data": matched_emp
+            }).encode('utf-8'))
+
         # AutomationEdge RPA: Disabled per user configuration
         elif self.path == '/api/rpa/screen-resume' or self.path == '/api/rpa/schedule-interview' or self.path == '/api/rpa/candidate-communication' or self.path == '/api/rpa/create-ad-account' or self.path == '/api/rpa/asset-allocation' or self.path == '/api/rpa/access-provisioning' or self.path == '/api/rpa/schedule-induction' or self.path == '/api/rpa/onboarding-notification' or self.path == '/api/rpa/trigger-all-onboarding' or self.path == '/api/rpa/submit-resignation':
             self.end_headers()
@@ -1425,6 +1447,29 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 args=(emp_ident, emp_num, leave_type, from_date, to_date, comment, req_id),
                 daemon=True
             ).start()
+
+        # OrangeHRM / HR Leave Rejection Endpoint
+        elif self.path in ['/api/leave/reject', '/api/leave/application/reject']:
+            req_id = payload.get('id') or payload.get('requestId')
+            leaves = db.get('leaveRequests', [])
+            updated_req = None
+            for l in leaves:
+                if (req_id and l.get('id') == req_id) or (l.get('from') == payload.get('fromDate') and l.get('status') == 'Pending HR Approval'):
+                    l['status'] = 'Rejected'
+                    l['rejectedAt'] = time.strftime('%Y-%m-%d %H:%M:%S')
+                    updated_req = l
+                    break
+
+            db['leaveRequests'] = leaves
+            self.write_db(db)
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "message": "Leave request rejected successfully.",
+                "data": updated_req,
+                "requests": leaves
+            }).encode('utf-8'))
+
         # Clear All Leave Requests / Logs
         elif self.path in ['/api/leave/clear', '/api/leave/requests/clear', '/api/leaves/clear']:
             db['leaveRequests'] = []

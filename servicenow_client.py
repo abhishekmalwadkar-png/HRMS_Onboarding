@@ -966,6 +966,56 @@ class ServiceNowClient:
             "message": f"HR Approval confirmed for {active_req}. Step 1: ServiceNow Approved -> Step 2: T4 Mgmt Approval -> Step 3: T4 AD Workflow (Req #{ae_ad_result.get('automationRequestId')}) -> Step 4: Office 365 Account ({o365_result.get('userPrincipalName')}) -> Step 5: OrangeHRM Profile (#{orangehrm_result.get('empNumber')}) -> Step 6: Laptop Incident ({laptop_ticket}) -> Step 7: Offer Letter PDF Emailed to abhishek.malwadkar@valuedx.com."
         }
 
+    def reject_request(self, employee_data, req_number=None):
+        """
+        Executes HR Rejection in ServiceNow:
+        1. Updates sc_request state to 'rejected', request_state to 'closed_rejected'
+        2. Rejects sysapproval_approver task (state='rejected')
+        """
+        self.reload_config()
+        emp_name = employee_data.get('fullName') or employee_data.get('name') or 'Candidate'
+        active_req = req_number or employee_data.get('serviceNowReq') or f"REQ{int(time.time()) % 1000000:07d}"
+        req_sys_id = employee_data.get('serviceNowReqId')
+
+        if self.is_configured() and req_sys_id:
+            try:
+                put_url = f"{self.instance_url}/api/now/table/sc_request/{req_sys_id}"
+                put_body = {
+                    "approval": "rejected",
+                    "request_state": "closed_rejected",
+                    "stage": "closed_incomplete",
+                    "state": "4"
+                }
+                put_bytes = json.dumps(put_body).encode('utf-8')
+                put_req = urllib.request.Request(put_url, data=put_bytes, headers=self._get_headers(), method="PUT")
+                with urllib.request.urlopen(put_req, timeout=8, context=self.ctx):
+                    print(f"[ServiceNow REQ Rejected] Marked {active_req} as Rejected")
+            except Exception as pe:
+                print(f"[ServiceNow REQ Rejection Error] {pe}")
+
+            try:
+                appr_query_url = f"{self.instance_url}/api/now/table/sysapproval_approver?sysparm_query=sysapproval={req_sys_id}&sysparm_fields=sys_id"
+                appr_q_req = urllib.request.Request(appr_query_url, headers=self._get_headers())
+                with urllib.request.urlopen(appr_q_req, timeout=8, context=self.ctx) as resp_q:
+                    tasks = json.loads(resp_q.read().decode('utf-8')).get('result', [])
+                    for t in tasks:
+                        t_sys_id = t.get('sys_id')
+                        if t_sys_id:
+                            t_put_url = f"{self.instance_url}/api/now/table/sysapproval_approver/{t_sys_id}"
+                            t_put_body = {"state": "rejected", "comments": f"Onboarding request for {emp_name} rejected by HR."}
+                            t_req = urllib.request.Request(t_put_url, data=json.dumps(t_put_body).encode('utf-8'), headers=self._get_headers(), method="PUT")
+                            with urllib.request.urlopen(t_req, timeout=8, context=self.ctx):
+                                print(f"[ServiceNow Approval Rejected] sysapproval_approver {t_sys_id} set to rejected")
+            except Exception as e:
+                print(f"[ServiceNow Approval Task Rejection Error] {e}")
+
+        return {
+            "status": "success",
+            "message": f"Candidate {emp_name} ({active_req}) rejected in ServiceNow",
+            "reqNumber": active_req,
+            "rejectedAt": time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+
     def check_and_sync_servicenow_approvals(self, employees):
         """
         Checks ServiceNow for any pending candidate requests that have been approved in ServiceNow.
