@@ -122,7 +122,7 @@ export default function OffboardingView() {
 
   const handleAddDemoResignations = async () => {
     setIsAddingDemo(true);
-    showToast('Creating live ServiceNow requests for OrangeHRM employees...', 'info');
+    showToast('Looking for requests of resignation...', 'info');
     try {
       const res = await fetch('/api/exit/demo', { method: 'POST' });
       if (res.ok) {
@@ -724,7 +724,7 @@ export default function OffboardingView() {
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
           >
             <i className={`fa-solid ${isAddingDemo ? 'fa-spinner fa-spin' : 'fa-user-minus'}`} aria-hidden="true"></i>
-            {isAddingDemo ? 'Creating in ServiceNow…' : 'Add demo resignations'}
+            {isAddingDemo ? 'Looking for requests of resignation…' : 'Add demo resignations'}
           </button>
         }
       />
@@ -765,7 +765,7 @@ export default function OffboardingView() {
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
             >
               <i className={`fa-solid ${isAddingDemo ? 'fa-spinner fa-spin' : 'fa-user-minus'}`} aria-hidden="true"></i>
-              {isAddingDemo ? 'Creating in ServiceNow…' : 'Add demo resignations'}
+              {isAddingDemo ? 'Looking for requests of resignation…' : 'Add demo resignations'}
             </button>
           </div>
         ) : (
