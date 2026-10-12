@@ -861,10 +861,12 @@ class ServiceNowClient:
 
         offboarding_req = f"REQ001{int(time.time()) % 9000 + 1000}"
         offboarding_ritm = f"RITM001{int(time.time()) % 9000 + 1000}"
+        offboarding_req_url = f"{self.instance_url}/nav_to.do?uri=sc_request_list.do?sysparm_query=number={offboarding_req}"
         laptop_ticket = f"INC00{int(time.time()) % 90000 + 10000}"
         laptop_ticket_url = f"{self.instance_url}/nav_to.do?uri=incident_list.do"
         assigned_name = "IT Asset Specialist"
         inc_sys_id = ""
+        req_sys_id = ""
 
         if self.is_configured():
             try:
@@ -897,6 +899,8 @@ class ServiceNowClient:
                         r_data = json.loads(resp_r.read().decode('utf-8')).get('result', {})
                         if r_data.get('number'):
                             offboarding_req = r_data.get('number')
+                            req_sys_id = r_data.get('sys_id', '')
+                            offboarding_req_url = f"{self.instance_url}/nav_to.do?uri=sc_request.do?sys_id={req_sys_id}" if req_sys_id else f"{self.instance_url}/nav_to.do?uri=sc_request_list.do?sysparm_query=number={offboarding_req}"
                 except Exception as re_err:
                     print(f"[ServiceNow Offboarding REQ Note]: {re_err}")
 
@@ -930,6 +934,8 @@ class ServiceNowClient:
         return {
             "status": "success",
             "serviceNowReq": offboarding_req,
+            "serviceNowReqUrl": offboarding_req_url,
+            "serviceNowReqSysId": req_sys_id,
             "serviceNowRitm": offboarding_ritm,
             "laptopTicket": laptop_ticket,
             "laptopTicketSysId": inc_sys_id,

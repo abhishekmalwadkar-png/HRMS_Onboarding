@@ -788,7 +788,12 @@ export default function OffboardingView() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                       {item.serviceNowReq && (
-                        <span
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const target = item.serviceNowReqUrl || `https://ven04528.service-now.com/nav_to.do?uri=sc_request_list.do?sysparm_query=number=${item.serviceNowReq}`;
+                            openServiceNowDirect(target, () => showToast(`⚡ Opening ${item.serviceNowReq} in ServiceNow...`, 'success'));
+                          }}
                           className="badge"
                           style={{
                             fontSize: '0.78rem',
@@ -797,11 +802,15 @@ export default function OffboardingView() {
                             background: 'rgba(59, 130, 246, 0.12)',
                             color: '#2563eb',
                             border: '1px solid rgba(59, 130, 246, 0.25)',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
                           }}
-                          title="ServiceNow Parent Offboarding Request"
+                          title="Click to auto-login & view ServiceNow Parent Request"
                         >
-                          <i className="fa-solid fa-file-invoice"></i> SN Req: <strong>{item.serviceNowReq}</strong>
-                        </span>
+                          <i className="fa-solid fa-arrow-up-right-from-square"></i> SN Req: <strong>{item.serviceNowReq}</strong>
+                        </button>
                       )}
                       {item.laptopTicket && (
                         <button

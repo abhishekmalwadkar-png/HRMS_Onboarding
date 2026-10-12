@@ -1054,6 +1054,8 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 try:
                     sn_res = sn_client.create_offboarding_request(item_payload)
                     item_payload['serviceNowReq'] = sn_res.get('serviceNowReq')
+                    item_payload['serviceNowReqUrl'] = sn_res.get('serviceNowReqUrl')
+                    item_payload['serviceNowReqSysId'] = sn_res.get('serviceNowReqSysId')
                     item_payload['serviceNowRitm'] = sn_res.get('serviceNowRitm')
                     item_payload['laptopTicket'] = sn_res.get('laptopTicket')
                     item_payload['laptopTicketSysId'] = sn_res.get('laptopTicketSysId')
