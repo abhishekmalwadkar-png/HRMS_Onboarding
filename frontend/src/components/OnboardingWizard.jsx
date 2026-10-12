@@ -478,7 +478,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
         fullName: candName,
         firstName: fn,
         lastName: ln,
-        email: `${fn.toLowerCase()}.${ln.toLowerCase()}@valuedx.com`,
+        email: `${fn.toLowerCase()}.${ln.toLowerCase()}@example.com`,
         phone: `+91 ${Math.floor(95000 + Math.random() * 49999)} ${Math.floor(10000 + Math.random() * 89999)}`,
         dob: '1995-07-20',
         pan: `ABCDE${randPanNum}${panChar}`,
@@ -514,7 +514,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     setFormData((prev) => ({
       ...prev,
       fullName: safeFullName,
-      email: profile.email || `${safeFullName.toLowerCase().replace(/\s+/g, '.')}@valuedx.com`,
+      email: profile.email || `${safeFullName.toLowerCase().replace(/\s+/g, '.')}@example.com`,
       phone: profile.phone || '+91 98230 45671',
       dob: profile.dob || '1995-07-20',
       pan: profile.pan || (profile.id ? 'ABCDE' + profile.id.replace(/\D/g, '') + 'F' : 'ABCDE1234F'),

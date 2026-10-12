@@ -227,7 +227,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
         account_num = f"{random.randint(100000000000, 999999999999)}"
 
         clean_slug = f"{first_name.lower()}.{last_name.lower()}"
-        email = f"{clean_slug}@valuedx.com"
+        email = f"{clean_slug}@example.com"
 
         dob_year = random.randint(1991, 1999)
         dob_month = random.randint(1, 12)
