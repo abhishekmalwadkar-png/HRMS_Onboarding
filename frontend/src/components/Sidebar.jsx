@@ -73,14 +73,12 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, isMo
         <div
           className="brand"
           onClick={() => {
-            if (isCollapsed) {
-              toggleCollapse();
-            } else {
+            if (!isCollapsed) {
               setCurrentView('home');
             }
           }}
-          title={isCollapsed ? 'Click to expand menu' : 'AutomationEdge HR Suite'}
-          style={{ cursor: 'pointer' }}
+          title="AutomationEdge HR Suite"
+          style={{ cursor: isCollapsed ? 'default' : 'pointer' }}
         >
           <div className="brand-icon">
             <i className="fa-solid fa-cube"></i>
