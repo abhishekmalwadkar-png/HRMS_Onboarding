@@ -391,23 +391,6 @@ class ServiceNowClient:
             ])
         docs_to_attach.append((sal_doc_name, sal_bytes))
 
-        # 4. Official Offer Letter / Appointment Letter
-        offer_doc_name = f"Offer_Letter_{safe_name}_Appointment.pdf"
-        try:
-            from generate_offer_letter import generate_offer_letter_pdf
-            cand_payload = dict(employee_data)
-            cand_payload['candidateName'] = emp_name
-            cand_payload['appliedRole'] = role
-            cand_payload['department'] = dept
-            offer_res = generate_offer_letter_pdf(cand_payload)
-            offer_pdf_path = offer_res[0] if isinstance(offer_res, (tuple, list)) else offer_res
-            if offer_pdf_path and os.path.exists(offer_pdf_path):
-                with open(offer_pdf_path, 'rb') as f:
-                    offer_bytes = f.read()
-                docs_to_attach.append((offer_doc_name, offer_bytes))
-        except Exception as oe:
-            print(f"[ServiceNow Offer Letter Attachment Note]: {oe}")
-
         # Upload each document to sc_request and sc_req_item
         attached_results = []
         for doc_name, doc_bytes in docs_to_attach:
@@ -525,9 +508,8 @@ class ServiceNowClient:
                     f"HRMS Onboarding Submission for Candidate: {emp_name} ({emp_id})\n\n"
                     f"• Uploaded Verification Documents:\n"
                     f"  1. Government ID / Aadhaar Card [Uploaded]\n"
-                    f"  2. Educational Degree Certificate [Uploaded]\n"
-                    f"  3. Tax Form W-4 / Form 16 [Uploaded]\n"
-                    f"  4. Signed Offer Letter [Uploaded]\n\n"
+                    f"  2. EPFO UAN Card [Uploaded]\n"
+                    f"  3. Previous Employment Salary Slip & Tax Proof [Uploaded]\n\n"
                     f"• Candidate Details:\n"
                     f"  - Full Legal Name: {emp_name}\n"
                     f"  - Employee ID: {emp_id}\n"
@@ -601,9 +583,8 @@ class ServiceNowClient:
                                 f"Candidate {emp_name} ({emp_id}) has submitted the onboarding form and uploaded all required verification documents.\n\n"
                                 f"Verification Documents Uploaded on Portal:\n"
                                 f"  [Uploaded] Government ID / Aadhaar Card\n"
-                                f"  [Uploaded] Educational Qualification Certificate / Degree\n"
-                                f"  [Uploaded] Tax W-4 Form / Form 16\n"
-                                f"  [Uploaded] Signed Offer Letter\n\n"
+                                f"  [Uploaded] EPFO UAN Card\n"
+                                f"  [Uploaded] Previous Employment Salary Slip & Tax Proof\n\n"
                                 f"Candidate Submission Summary:\n"
                                 f"  - Full Legal Name: {emp_name}\n"
                                 f"  - Employee ID: {emp_id}\n"
@@ -927,6 +908,16 @@ class ServiceNowClient:
             offer_letter_result['pdfFilename'] = pdf_filename
             offer_letter_result['downloadUrl'] = f"/generated_offers/{pdf_filename}"
             print(f"[APPROVAL FLOW - STEP 7/7 COMPLETE] Offer letter PDF dispatched to {hr_recip} ({offer_letter_result.get('status')})")
+
+            # Post-approval: attach the official offer letter to ServiceNow parent request now that HR has approved
+            if pdf_file_path and os.path.exists(pdf_file_path) and req_sys_id:
+                try:
+                    with open(pdf_file_path, 'rb') as f_off:
+                        off_bytes = f_off.read()
+                    self.attach_file('sc_request', req_sys_id, pdf_filename, off_bytes)
+                    print(f"[ServiceNow Post-Approval Attachment] Attached Offer Letter {pdf_filename} to {active_req}")
+                except Exception as sn_att_err:
+                    print(f"[ServiceNow Post-Approval Offer Letter Attachment Note]: {sn_att_err}")
         except Exception as off_err:
             print(f"[APPROVAL FLOW - STEP 7/7 ERROR] Offer Letter Email: {off_err}")
             offer_letter_result = {"status": "error", "message": str(off_err)}
