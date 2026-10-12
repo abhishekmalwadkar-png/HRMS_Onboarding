@@ -61,9 +61,9 @@ function loginAs(role, email, name) {
   if (role === 'hr') {
     userObj = {
       role: 'hr',
-      name: name || 'Pooja Deshmukh (HR Operations Director)',
-      email: email || 'pooja.deshmukh@mangohrms.com',
-      avatar: 'P',
+      name: name || 'Jessica Miller (HR Operations Director)',
+      email: email || 'jessica.miller@automationedge.ai',
+      avatar: 'J',
       badge: 'HR Administrator'
     };
   } else {

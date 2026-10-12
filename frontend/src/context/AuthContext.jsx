@@ -9,11 +9,11 @@ export function AuthProvider({ children }) {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed) {
-          // Explicitly migrate any legacy Jessica Miller references to Pooja
-          if (parsed.name?.includes('Jessica') || parsed.name?.includes('Miller') || parsed.email?.includes('jessica')) {
-            parsed.name = 'Pooja Deshmukh (HR Operations Director)';
-            parsed.email = 'pooja.deshmukh@automationedge.ai';
-            parsed.avatar = 'P';
+          // Explicitly ensure user is Jessica Miller
+          if (parsed.name?.includes('Pooja') || parsed.name?.includes('Deshmukh') || parsed.email?.includes('pooja')) {
+            parsed.name = 'Jessica Miller (HR Operations Director)';
+            parsed.email = 'jessica.miller@automationedge.ai';
+            parsed.avatar = 'J';
             parsed.badge = 'HR Administrator';
             localStorage.setItem('mangohrms_user', JSON.stringify(parsed));
           }
@@ -23,9 +23,9 @@ export function AuthProvider({ children }) {
       // Default to HR Administrator
       const defaultHR = {
         role: 'hr',
-        name: 'Pooja Deshmukh (HR Operations Director)',
-        email: 'pooja.deshmukh@automationedge.ai',
-        avatar: 'P',
+        name: 'Jessica Miller (HR Operations Director)',
+        email: 'jessica.miller@automationedge.ai',
+        avatar: 'J',
         badge: 'HR Administrator'
       };
       localStorage.setItem('mangohrms_user', JSON.stringify(defaultHR));
@@ -33,9 +33,9 @@ export function AuthProvider({ children }) {
     } catch {
       return {
         role: 'hr',
-        name: 'Pooja Deshmukh (HR Operations Director)',
-        email: 'pooja.deshmukh@automationedge.ai',
-        avatar: 'P',
+        name: 'Jessica Miller (HR Operations Director)',
+        email: 'jessica.miller@automationedge.ai',
+        avatar: 'J',
         badge: 'HR Administrator'
       };
     }
@@ -58,15 +58,15 @@ export function AuthProvider({ children }) {
   };
 
   const loginAs = (role = 'hr', email, name) => {
-    let cleanName = name || 'Pooja Deshmukh (HR Operations Director)';
-    if (cleanName.includes('Jessica') || cleanName.includes('Miller')) {
-      cleanName = 'Pooja Deshmukh (HR Operations Director)';
+    let cleanName = name || 'Jessica Miller (HR Operations Director)';
+    if (cleanName.includes('Pooja') || cleanName.includes('Deshmukh')) {
+      cleanName = 'Jessica Miller (HR Operations Director)';
     }
     const userObj = {
       role: 'hr',
       name: cleanName,
-      email: email || 'pooja.deshmukh@automationedge.ai',
-      avatar: 'P',
+      email: email || 'jessica.miller@automationedge.ai',
+      avatar: 'J',
       badge: 'HR Administrator'
     };
 

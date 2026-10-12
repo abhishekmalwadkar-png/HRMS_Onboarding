@@ -6,13 +6,13 @@ export default function LoginView() {
   const { loginAs } = useAuth();
   const { showToast } = useToast();
 
-  const [hrEmail, setHrEmail] = useState('pooja.deshmukh@automationedge.ai');
+  const [hrEmail, setHrEmail] = useState('jessica.miller@automationedge.ai');
   const [hrPassword, setHrPassword] = useState('••••••••');
 
   const handleHRSubmit = (e) => {
     e.preventDefault();
-    loginAs('hr', hrEmail, 'Pooja Deshmukh (HR Operations Director)');
-    showToast('👋 Welcome back, Pooja Deshmukh! (HR Administrator)', 'success');
+    loginAs('hr', hrEmail, 'Jessica Miller (HR Operations Director)');
+    showToast('👋 Welcome back, Jessica Miller! (HR Administrator)', 'success');
   };
 
   return (
@@ -27,7 +27,7 @@ export default function LoginView() {
           </div>
           <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
             <span className="badge badge-verified" style={{ fontSize: '0.78rem', padding: '3px 10px' }}>
-              <i className="fa-solid fa-shield-halved"></i> HR Administrator Portal (Pooja Deshmukh)
+              <i className="fa-solid fa-shield-halved"></i> HR Administrator Portal (Jessica Miller)
             </span>
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function LoginView() {
               <i className="fa-solid fa-arrow-right-to-bracket"></i> Login to HR Dashboard
             </button>
             <p style={{ textAlign: 'center', marginTop: '0.85rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              <i className="fa-solid fa-circle-info"></i> Pre-configured login for <strong>Pooja Deshmukh</strong> (HR Operations Director).
+              <i className="fa-solid fa-circle-info"></i> Pre-configured login for <strong>Jessica Miller</strong> (HR Operations Director).
             </p>
           </form>
         </div>
