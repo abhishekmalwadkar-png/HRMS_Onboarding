@@ -935,6 +935,92 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"status": "success", "message": "Exit requests cleared", "data": []}).encode('utf-8'))
 
+        elif self.path == '/api/exit/demo':
+            now_ts = int(time.time())
+            date_today = time.strftime('%Y-%m-%d')
+            demo_items = [
+                {
+                    "id": f"EXIT-{now_ts % 900 + 101}",
+                    "empId": "EMP-1042",
+                    "empName": "Rohit Sharma",
+                    "department": "Engineering",
+                    "role": "Staff DevOps Engineer",
+                    "resignationDate": date_today,
+                    "lastWorkingDay": "2026-11-15",
+                    "reason": "Pursuing higher studies & executive cloud fellowship",
+                    "laptopTicket": f"INC004{random.randint(1000, 9999)}",
+                    "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident_list.do",
+                    "itClearance": False,
+                    "itClearanceStatus": "Clearance waiting from IT department",
+                    "laptopIncidentState": "In Progress",
+                    "assignedTo": "IT Asset Specialist",
+                    "accessRevoked": False,
+                    "o365Deleted": False,
+                    "orangeHrmDeleted": False,
+                    "emailSent": False,
+                    "relievingLetterIssued": False,
+                    "fnfStatus": "Pending Initiation"
+                },
+                {
+                    "id": f"EXIT-{now_ts % 900 + 102}",
+                    "empId": "EMP-2158",
+                    "empName": "Neha Kulkarni",
+                    "department": "Product",
+                    "role": "Senior Product Designer",
+                    "resignationDate": date_today,
+                    "lastWorkingDay": "2026-11-20",
+                    "reason": "Relocating to international office / family relocation",
+                    "laptopTicket": f"INC004{random.randint(1000, 9999)}",
+                    "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident_list.do",
+                    "itClearance": False,
+                    "itClearanceStatus": "Clearance waiting from IT department",
+                    "laptopIncidentState": "In Progress",
+                    "assignedTo": "IT Asset Specialist",
+                    "accessRevoked": False,
+                    "o365Deleted": False,
+                    "orangeHrmDeleted": False,
+                    "emailSent": False,
+                    "relievingLetterIssued": False,
+                    "fnfStatus": "Pending Initiation"
+                },
+                {
+                    "id": f"EXIT-{now_ts % 900 + 103}",
+                    "empId": "EMP-3891",
+                    "empName": "Vikram Singhania",
+                    "department": "IT Systems",
+                    "role": "Enterprise Systems Architect",
+                    "resignationDate": date_today,
+                    "lastWorkingDay": "2026-11-30",
+                    "reason": "Accepted opportunity as Director of Infrastructure",
+                    "laptopTicket": f"INC004{random.randint(1000, 9999)}",
+                    "laptopTicketUrl": "https://ven04528.service-now.com/nav_to.do?uri=incident_list.do",
+                    "itClearance": False,
+                    "itClearanceStatus": "Clearance waiting from IT department",
+                    "laptopIncidentState": "In Progress",
+                    "assignedTo": "IT Asset Specialist",
+                    "accessRevoked": False,
+                    "o365Deleted": False,
+                    "orangeHrmDeleted": False,
+                    "emailSent": False,
+                    "relievingLetterIssued": False,
+                    "fnfStatus": "Pending Initiation"
+                }
+            ]
+
+            exits = db.get('exitRequests', [])
+            for item in reversed(demo_items):
+                exits.insert(0, item)
+            db['exitRequests'] = exits
+            self.write_db(db)
+
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "message": "Added 3 demo resignation requests",
+                "data": demo_items,
+                "allRequests": exits
+            }).encode('utf-8'))
+
         elif self.path == '/api/exit/update':
             exits = db.get('exitRequests', [])
             target_id = payload.get('id')

@@ -118,6 +118,98 @@ export default function OffboardingView() {
     }
   };
 
+  const [isAddingDemo, setIsAddingDemo] = useState(false);
+
+  const handleAddDemoResignations = async () => {
+    setIsAddingDemo(true);
+    try {
+      const res = await fetch('/api/exit/demo', { method: 'POST' });
+      if (res.ok) {
+        const json = await res.json();
+        const items = json.allRequests || (Array.isArray(json.data) ? [...json.data, ...exitRequests] : exitRequests);
+        setExitRequests(items);
+        showToast('✓ Added 3 demo resignation requests ready for HR approval & deprovisioning.', 'success');
+        return;
+      }
+      throw new Error(`Server returned ${res.status}`);
+    } catch (err) {
+      console.warn('Demo resignations fallback:', err);
+      const dateToday = new Date().toISOString().split('T')[0];
+      const fallbackDemos = [
+        {
+          id: 'EXIT-' + Math.floor(100 + Math.random() * 900),
+          empId: 'EMP-1042',
+          empName: 'Rohit Sharma',
+          department: 'Engineering',
+          role: 'Staff DevOps Engineer',
+          resignationDate: dateToday,
+          lastWorkingDay: '2026-11-15',
+          reason: 'Pursuing higher studies & executive cloud fellowship',
+          laptopTicket: 'INC004' + Math.floor(1000 + Math.random() * 9000),
+          laptopTicketUrl: 'https://ven04528.service-now.com/nav_to.do?uri=incident_list.do',
+          itClearance: false,
+          itClearanceStatus: 'Clearance waiting from IT department',
+          laptopIncidentState: 'In Progress',
+          assignedTo: 'IT Asset Specialist',
+          accessRevoked: false,
+          o365Deleted: false,
+          orangeHrmDeleted: false,
+          emailSent: false,
+          relievingLetterIssued: false,
+          fnfStatus: 'Pending Initiation',
+        },
+        {
+          id: 'EXIT-' + Math.floor(100 + Math.random() * 900),
+          empId: 'EMP-2158',
+          empName: 'Neha Kulkarni',
+          department: 'Product',
+          role: 'Senior Product Designer',
+          resignationDate: dateToday,
+          lastWorkingDay: '2026-11-20',
+          reason: 'Relocating to international office / family relocation',
+          laptopTicket: 'INC004' + Math.floor(1000 + Math.random() * 9000),
+          laptopTicketUrl: 'https://ven04528.service-now.com/nav_to.do?uri=incident_list.do',
+          itClearance: false,
+          itClearanceStatus: 'Clearance waiting from IT department',
+          laptopIncidentState: 'In Progress',
+          assignedTo: 'IT Asset Specialist',
+          accessRevoked: false,
+          o365Deleted: false,
+          orangeHrmDeleted: false,
+          emailSent: false,
+          relievingLetterIssued: false,
+          fnfStatus: 'Pending Initiation',
+        },
+        {
+          id: 'EXIT-' + Math.floor(100 + Math.random() * 900),
+          empId: 'EMP-3891',
+          empName: 'Vikram Singhania',
+          department: 'IT Systems',
+          role: 'Enterprise Systems Architect',
+          resignationDate: dateToday,
+          lastWorkingDay: '2026-11-30',
+          reason: 'Accepted opportunity as Director of Infrastructure',
+          laptopTicket: 'INC004' + Math.floor(1000 + Math.random() * 9000),
+          laptopTicketUrl: 'https://ven04528.service-now.com/nav_to.do?uri=incident_list.do',
+          itClearance: false,
+          itClearanceStatus: 'Clearance waiting from IT department',
+          laptopIncidentState: 'In Progress',
+          assignedTo: 'IT Asset Specialist',
+          accessRevoked: false,
+          o365Deleted: false,
+          orangeHrmDeleted: false,
+          emailSent: false,
+          relievingLetterIssued: false,
+          fnfStatus: 'Pending Initiation',
+        },
+      ];
+      setExitRequests((prev) => [...fallbackDemos, ...prev]);
+      showToast('✓ Added 3 demo resignation requests ready for HR approval.', 'success');
+    } finally {
+      setIsAddingDemo(false);
+    }
+  };
+
   const handleSubmitResignation = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -622,159 +714,24 @@ export default function OffboardingView() {
         title="Offboarding & exit"
         description="Resignations, hardware recovery and multi-system deprovisioning."
         actions={
-          <>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={handleAutofillOrangeHRM}
-              disabled={isAutofilling}
-              aria-busy={isAutofilling}
-              title="Auto-fill a random employee from the OrangeHRM directory"
-            >
-              <i className={`fa-solid ${isAutofilling ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'} text-accent`} aria-hidden="true"></i>
-              {isAutofilling ? 'Fetching…' : 'Auto-fill from OrangeHRM'}
-            </button>
-            <button className="btn btn-primary btn-sm" onClick={() => setShowHRInitiateForm(!showHRInitiateForm)} aria-expanded={showHRInitiateForm}>
-              <i className={`fa-solid ${showHRInitiateForm ? 'fa-xmark' : 'fa-plus'}`} aria-hidden="true"></i>
-              {showHRInitiateForm ? 'Close form' : 'Initiate resignation'}
-            </button>
-          </>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={handleAddDemoResignations}
+            disabled={isAddingDemo}
+            aria-busy={isAddingDemo}
+            title="Add 3 demo employee resignation requests for HR approval"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
+          >
+            <i className={`fa-solid ${isAddingDemo ? 'fa-spinner fa-spin' : 'fa-user-minus'}`} aria-hidden="true"></i>
+            {isAddingDemo ? 'Adding demo…' : 'Add demo resignations'}
+          </button>
         }
       />
-      {/* HR Initiate Resignation Card */}
-      {showHRInitiateForm && (
-        <div className="glass-card" style={{ marginBottom: '1.5rem', background: 'var(--bg-card)', padding: '1.5rem', borderLeft: '4px solid #f87917' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <div>
-              <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <i className="fa-solid fa-file-signature" style={{ color: '#c2410c' }}></i> Submit Resignation on Behalf of Employee
-              </h3>
-              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                Populate employee details to trigger ServiceNow hardware incident and multi-system offboarding.
-              </p>
-            </div>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleAutofillOrangeHRM}
-              disabled={isAutofilling}
-              style={{
-                borderColor: '#f87917',
-                color: '#c2410c',
-                background: '#fff7ed',
-                fontWeight: 700,
-                padding: '0.4rem 0.85rem',
-                fontSize: '0.82rem',
-              }}
-              title="Pull random employee from OrangeHRM database"
-            >
-              <i className={`fa-solid ${isAutofilling ? 'fa-spinner fa-spin' : 'fa-dice'}`}></i>{' '}
-              {isAutofilling ? 'Loading...' : '⚡ Random OrangeHRM Employee'}
-            </button>
-          </div>
-
-          {activeOrangeEmp && (
-            <div style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              padding: '0.65rem 1rem',
-              marginBottom: '1.2rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '0.5rem'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <span className="badge" style={{ background: '#ffedd5', color: '#c2500a', fontWeight: 700, padding: '0.25rem 0.6rem' }}>
-                  <i className="fa-solid fa-building-user"></i> OrangeHRM Live Record
-                </span>
-                <span style={{ fontSize: '0.85rem', color: '#334155', fontWeight: 600 }}>
-                  {activeOrangeEmp.fullName} ({autofillEmpId})
-                </span>
-                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                  • {activeOrangeEmp.jobTitle || activeOrangeEmp.department}
-                </span>
-              </div>
-              <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 600 }}>
-                <i className="fa-solid fa-circle-check"></i> Direct Synced
-              </span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmitResignation}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
-                  Employee Name:
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
-                  Department:
-                </label>
-                <select
-                  className="form-control"
-                  value={formDept}
-                  onChange={(e) => setFormDept(e.target.value)}
-                >
-                  <option value="Engineering">Engineering</option>
-                  <option value="Product">Product</option>
-                  <option value="IT Systems">IT Systems</option>
-                  <option value="Human Resources">Human Resources</option>
-                  <option value="Finance">Finance</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
-                  Last Working Day:
-                </label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={formLwd}
-                  onChange={(e) => setFormLwd(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
-                Resignation Reason:
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                value={formReason}
-                onChange={(e) => setFormReason(e.target.value)}
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isSubmitting}
-              style={{ background: 'var(--button-gradient)', borderColor: 'transparent', fontWeight: 700 }}
-            >
-              <i className={`fa-solid ${isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`}></i> Submit Resignation
-            </button>
-          </form>
-        </div>
-      )}
 
       {/* Active Clearances Pipeline List */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a' }}>
+          <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-main)' }}>
             Active exit clearances ({exitRequests.length})
           </h3>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -798,7 +755,17 @@ export default function OffboardingView() {
           <div className="glass-card" style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
             <i className="fa-solid fa-circle-check" style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '1rem', display: 'block' }}></i>
             <h3 style={{ color: 'var(--text-main)', marginBottom: '0.5rem' }}>No active exit clearances</h3>
-            <p>No employee resignations or exit clearances currently pending.</p>
+            <p style={{ marginBottom: '1.25rem' }}>No employee resignations or exit clearances currently pending.</p>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={handleAddDemoResignations}
+              disabled={isAddingDemo}
+              aria-busy={isAddingDemo}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
+            >
+              <i className={`fa-solid ${isAddingDemo ? 'fa-spinner fa-spin' : 'fa-user-minus'}`} aria-hidden="true"></i>
+              {isAddingDemo ? 'Adding demo…' : 'Add demo resignations'}
+            </button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
