@@ -26,6 +26,7 @@ export default function OffboardingView() {
   const [checkingClearanceId, setCheckingClearanceId] = useState(null);
   const [revokingId, setRevokingId] = useState(null);
   const [issuingLetterId, setIssuingLetterId] = useState(null);
+  const [hasChecked, setHasChecked] = useState(false);
 
   // Offboarding Flow Steps Modal State
   const [showFlowModal, setShowFlowModal] = useState(false);
@@ -39,8 +40,9 @@ export default function OffboardingView() {
   });
   const [flowData, setFlowData] = useState(null);
 
+  // Initial load: do not auto-fetch exit requests so view starts empty until "Check resignation requests" is clicked
   useEffect(() => {
-    fetchExitRequests();
+    // Intentionally left empty at first start
   }, []);
 
   useEffect(() => {
@@ -94,6 +96,7 @@ export default function OffboardingView() {
   };
 
   const fetchExitRequests = async () => {
+    setHasChecked(true);
     try {
       const res = await fetch('/api/exit');
       if (res.ok) {
@@ -128,10 +131,12 @@ export default function OffboardingView() {
       const res = await fetch('/api/exit/clear', { method: 'POST' });
       if (res.ok) {
         setExitRequests([]);
+        setHasChecked(false);
         showToast('Active exit requests and clearance logs cleared.', 'success');
       }
     } catch (e) {
       setExitRequests([]);
+      setHasChecked(false);
       showToast('Exit requests cleared.', 'info');
     }
   };
@@ -140,6 +145,7 @@ export default function OffboardingView() {
 
   const handleAddDemoResignations = async () => {
     setIsAddingDemo(true);
+    setHasChecked(true);
     showToast('Looking for requests of resignation...', 'info');
     try {
       const res = await fetch('/api/exit/demo', { method: 'POST' });
@@ -271,6 +277,7 @@ export default function OffboardingView() {
       showToast(`✓ Resignation submitted for ${formName}. Clearance workflow initiated.`, 'success');
       setExitRequests((prev) => [newExit, ...prev]);
       setSubmittedCandidateData(newExit);
+      setHasChecked(true);
     } finally {
       setIsSubmitting(false);
       setShowHRInitiateForm(false);
@@ -755,10 +762,10 @@ export default function OffboardingView() {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-main)' }}>
-            Active exit clearances ({exitRequests.length})
+            Active exit clearances ({hasChecked ? exitRequests.length : 0})
           </h3>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {exitRequests.length > 0 && (
+            {hasChecked && exitRequests.length > 0 && (
               <button
                 className="btn btn-secondary"
                 onClick={handleClearExitLogs}
@@ -774,7 +781,25 @@ export default function OffboardingView() {
           </div>
         </div>
 
-        {exitRequests.length === 0 ? (
+        {!hasChecked ? (
+          <div className="glass-card" style={{ textAlign: 'center', padding: '3.5rem 2rem', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
+            <i className="fa-solid fa-magnifying-glass" style={{ fontSize: '2.5rem', color: '#f59e0b', marginBottom: '1rem', display: 'block' }}></i>
+            <h3 style={{ color: 'var(--text-main)', marginBottom: '0.5rem', fontWeight: 600 }}>No exit clearances loaded</h3>
+            <p style={{ marginBottom: '1.25rem', maxWidth: '440px', margin: '0 auto 1.5rem auto', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+              Click <strong>"Check resignation requests"</strong> to scan and view active employee exit clearances.
+            </p>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={handleAddDemoResignations}
+              disabled={isAddingDemo}
+              aria-busy={isAddingDemo}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600, padding: '0.45rem 1.25rem' }}
+            >
+              <i className={`fa-solid ${isAddingDemo ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} aria-hidden="true"></i>
+              {isAddingDemo ? 'Looking for requests of resignation…' : 'Check resignation requests'}
+            </button>
+          </div>
+        ) : exitRequests.length === 0 ? (
           <div className="glass-card" style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
             <i className="fa-solid fa-circle-check" style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '1rem', display: 'block' }}></i>
             <h3 style={{ color: 'var(--text-main)', marginBottom: '0.5rem' }}>No active exit clearances</h3>
