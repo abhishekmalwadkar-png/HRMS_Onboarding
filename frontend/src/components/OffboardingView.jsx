@@ -869,28 +869,6 @@ export default function OffboardingView() {
                         </button>
                       )}
                       <a
-                        href={`/api/exit/resignation-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
-                        download
-                        className="badge"
-                        style={{
-                          fontSize: '0.78rem',
-                          textDecoration: 'none',
-                          padding: '0.35rem 0.65rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          background: 'rgba(2, 132, 199, 0.12)',
-                          color: '#0284c7',
-                          border: '1px solid rgba(2, 132, 199, 0.25)',
-                        }}
-                        title={`Download official Resignation Letter for ${item.empName}`}
-                        onClick={() => showToast(`📄 Downloading Resignation Letter for ${item.empName}...`, 'info')}
-                      >
-                        <i className="fa-solid fa-file-lines"></i> Resignation Letter
-                      </a>
-                      <a
                         href={`/api/exit/offboarding-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
                         download
                         className="badge"
@@ -910,7 +888,7 @@ export default function OffboardingView() {
                         title={`Download official Offboarding Letter for ${item.empName}`}
                         onClick={() => showToast(`📄 Downloading Offboarding Letter for ${item.empName}...`, 'info')}
                       >
-                        <i className="fa-solid fa-file-contract"></i> Offboarding letter
+                        <i className="fa-solid fa-download"></i> Offboarding letter
                       </a>
                       <span
                         onClick={() => inspectOffboardingFlow(item)}
@@ -999,29 +977,9 @@ export default function OffboardingView() {
                       disabled={issuingLetterId === item.id}
                       title="Generate PDF Relieving Letter & Experience Certificate and email to abhishek.malwadkar@valuedx.com"
                     >
-                      <i className={`fa-solid ${issuingLetterId === item.id ? 'fa-spinner fa-spin' : (item.relievingLetterIssued ? 'fa-circle-check' : 'fa-file-export')}`}></i>{' '}
+                      <i className={`fa-solid ${issuingLetterId === item.id ? 'fa-spinner fa-spin' : (item.relievingLetterIssued ? 'fa-circle-check' : 'fa-envelope')}`}></i>{' '}
                       {issuingLetterId === item.id ? 'Generating…' : (item.relievingLetterIssued ? 'Relieving letter sent' : 'Issue relieving letter')}
                     </button>
-
-                    <a
-                      href={`/api/exit/resignation-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
-                      download
-                      className="btn btn-secondary btn-sm"
-                      style={{
-                        padding: '0.35rem 0.75rem',
-                        fontSize: '0.78rem',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        textDecoration: 'none',
-                        color: 'var(--text-main)',
-                        fontWeight: 600,
-                      }}
-                      title={`Download official Resignation Letter for ${item.empName}`}
-                      onClick={() => showToast(`📄 Downloading Resignation Letter for ${item.empName}...`, 'info')}
-                    >
-                      <i className="fa-solid fa-file-lines" style={{ color: '#0284c7' }}></i> Resignation Letter
-                    </a>
 
                     <a
                       href={`/api/exit/offboarding-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
@@ -1040,7 +998,7 @@ export default function OffboardingView() {
                       title={`Download official Offboarding Letter for ${item.empName}`}
                       onClick={() => showToast(`📄 Downloading Offboarding Letter for ${item.empName}...`, 'info')}
                     >
-                      <i className="fa-solid fa-file-contract text-accent"></i> Offboarding letter
+                      <i className="fa-solid fa-download text-accent"></i> Offboarding letter
                     </a>
                   </div>
                 </div>

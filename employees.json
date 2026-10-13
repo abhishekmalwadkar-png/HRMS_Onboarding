@@ -527,8 +527,10 @@
       "to": "2026-10-28",
       "days": 1,
       "reason": "Attending medical checkup and doctor consultation",
-      "status": "Pending HR Approval",
-      "createdAt": "2026-10-13 12:39:45"
+      "status": "Approved",
+      "createdAt": "2026-10-13 12:39:45",
+      "orangeHrmAssigned": true,
+      "approvedAt": "2026-10-13 13:05:39"
     },
     {
       "id": "LR-726",
@@ -609,9 +611,9 @@
       "resignationDate": "2026-10-12",
       "lastWorkingDay": "2026-11-06",
       "reason": "Resignation and professional transition.",
-      "itClearance": false,
-      "itClearanceStatus": "Clearance waiting from IT department",
-      "laptopIncidentState": "In Progress",
+      "itClearance": true,
+      "itClearanceStatus": "IT Approved (Laptop Submitted)",
+      "laptopIncidentState": "Resolved",
       "accessRevoked": false,
       "o365Deleted": false,
       "orangeHrmDeleted": false,
