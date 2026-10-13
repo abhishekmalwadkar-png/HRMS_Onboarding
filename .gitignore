@@ -63,3 +63,13 @@ installer.py
 nginx/
 cloudflared.exe
 *.zip
+
+# Temporary & scratch files
+*.tsv
+*.tmp
+a.pdf
+backend_flow.html
+backend_architecture.json
+backend_workflow.json
+.wrangler/
+
