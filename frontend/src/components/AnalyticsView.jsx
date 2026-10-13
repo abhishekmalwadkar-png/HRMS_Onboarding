@@ -279,6 +279,8 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [selectedYear, setSelectedYear] = useState('all');
+  const [onboardSearchQuery, setOnboardSearchQuery] = useState('');
+  const [leaveSearchQuery, setLeaveSearchQuery] = useState('');
   const [exitSearchQuery, setExitSearchQuery] = useState('');
 
   // Fetch full live auxiliary data (Leaves, Offboarding/Exit, Recruitment)
@@ -394,15 +396,53 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
     return list;
   }, [exitRequests, employees]);
 
-  // Unique years for filtering
+  // Unique years for filtering (across Onboarding, Leaves, and Offboarding)
   const availableYears = useMemo(() => {
     const yearsSet = new Set(['2026', '2025']);
     allOffboardedList.forEach((e) => {
       const dt = parseDateMonthYear(e.resignationDate || e.lastWorkingDay || e.offboardedAt || e.submittedAt);
       if (dt?.year) yearsSet.add(String(dt.year));
     });
+    employees.forEach((e) => {
+      const dt = parseDateMonthYear(e.startDate || e.submittedAt || e.approvedAt);
+      if (dt?.year) yearsSet.add(String(dt.year));
+    });
+    leaves.forEach((l) => {
+      const dt = parseDateMonthYear(l.from || l.to || l.appliedAt);
+      if (dt?.year) yearsSet.add(String(dt.year));
+    });
     return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
-  }, [allOffboardedList]);
+  }, [allOffboardedList, employees, leaves]);
+
+  // Count onboarded per month for selected year
+  const monthlyOnboardCounts = useMemo(() => {
+    const summary = {};
+    for (let i = 1; i <= 12; i++) summary[i] = 0;
+    employees.forEach((e) => {
+      const dt = parseDateMonthYear(e.startDate || e.submittedAt || e.approvedAt);
+      if (dt) {
+        if (selectedYear === 'all' || dt.year === parseInt(selectedYear, 10)) {
+          summary[dt.month] = (summary[dt.month] || 0) + 1;
+        }
+      }
+    });
+    return summary;
+  }, [employees, selectedYear]);
+
+  // Count approved leaves per month for selected year
+  const monthlyLeaveCounts = useMemo(() => {
+    const summary = {};
+    for (let i = 1; i <= 12; i++) summary[i] = 0;
+    leaveStats.approvedList.forEach((l) => {
+      const dt = parseDateMonthYear(l.from || l.to || l.appliedAt);
+      if (dt) {
+        if (selectedYear === 'all' || dt.year === parseInt(selectedYear, 10)) {
+          summary[dt.month] = (summary[dt.month] || 0) + 1;
+        }
+      }
+    });
+    return summary;
+  }, [leaveStats.approvedList, selectedYear]);
 
   // Count offboarded per month for selected year
   const monthlyExitCounts = useMemo(() => {
@@ -420,6 +460,63 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
     });
     return summary;
   }, [allOffboardedList, selectedYear]);
+
+  // Filtered Onboarded candidates by Year, Month, and Search Query
+  const filteredOnboarded = useMemo(() => {
+    return employees.filter((e) => {
+      const dt = parseDateMonthYear(e.startDate || e.submittedAt || e.approvedAt);
+
+      if (selectedYear !== 'all') {
+        const yr = parseInt(selectedYear, 10);
+        if (dt && dt.year !== yr) return false;
+      }
+
+      if (selectedMonth !== 'all') {
+        const mo = parseInt(selectedMonth, 10);
+        if (dt && dt.month !== mo) return false;
+      }
+
+      const q = (onboardSearchQuery || searchQuery).trim().toLowerCase();
+      if (q) {
+        const match =
+          (e.fullName || '').toLowerCase().includes(q) ||
+          (e.department || '').toLowerCase().includes(q) ||
+          (e.jobTitle || '').toLowerCase().includes(q) ||
+          (e.id || '').toLowerCase().includes(q) ||
+          (e.serviceNowReq || '').toLowerCase().includes(q) ||
+          (e.laptopTicket || '').toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [employees, selectedYear, selectedMonth, onboardSearchQuery, searchQuery]);
+
+  // Filtered Approved Leaves by Year, Month, and Search Query
+  const filteredApprovedLeaves = useMemo(() => {
+    return leaveStats.approvedList.filter((l) => {
+      const dt = parseDateMonthYear(l.from || l.to || l.appliedAt);
+
+      if (selectedYear !== 'all') {
+        const yr = parseInt(selectedYear, 10);
+        if (dt && dt.year !== yr) return false;
+      }
+
+      if (selectedMonth !== 'all') {
+        const mo = parseInt(selectedMonth, 10);
+        if (dt && dt.month !== mo) return false;
+      }
+
+      const q = (leaveSearchQuery || searchQuery).trim().toLowerCase();
+      if (q) {
+        const match =
+          (l.employeeName || '').toLowerCase().includes(q) ||
+          (l.type || '').toLowerCase().includes(q) ||
+          (l.reason || '').toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [leaveStats.approvedList, selectedYear, selectedMonth, leaveSearchQuery, searchQuery]);
 
   // Filtered exits by Year, Month, and Search Query
   const filteredExits = useMemo(() => {
@@ -452,6 +549,37 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
     });
   }, [allOffboardedList, selectedYear, selectedMonth, exitSearchQuery, searchQuery]);
 
+  // Filtered Onboarding Stats
+  const filteredOnboardingStats = useMemo(() => {
+    const totalAll = employees.length;
+    const totalFiltered = filteredOnboarded.length;
+    const approved = filteredOnboarded.filter(isApproved);
+    const pending = filteredOnboarded.filter(isPending);
+    const rejected = filteredOnboarded.filter((e) => e.status === 'Rejected');
+    const provisioned = approved.filter(isFullyProvisioned).length;
+
+    return {
+      totalAll,
+      totalFiltered,
+      approved: approved.length,
+      pending: pending.length,
+      rejected: rejected.length,
+      provisioned,
+    };
+  }, [employees, filteredOnboarded]);
+
+  // Filtered Leave Stats
+  const filteredLeaveStats = useMemo(() => {
+    const totalAll = leaveStats.approvedCount;
+    const filteredCount = filteredApprovedLeaves.length;
+    const totalApprovedDays = filteredApprovedLeaves.reduce((acc, l) => acc + (Number(l.days) || 1), 0);
+    return {
+      totalAll,
+      filteredCount,
+      totalApprovedDays,
+    };
+  }, [leaveStats.approvedCount, filteredApprovedLeaves]);
+
   // Compute Offboarding Analytics
   const exitStats = useMemo(() => {
     const totalAll = allOffboardedList.length;
@@ -469,32 +597,6 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
     };
   }, [allOffboardedList, filteredExits]);
 
-  // Filtered lists based on search
-  const filteredApprovedLeaves = useMemo(() => {
-    if (!searchQuery.trim()) return leaveStats.approvedList;
-    const q = searchQuery.toLowerCase();
-    return leaveStats.approvedList.filter(
-      (l) =>
-        (l.employeeName || '').toLowerCase().includes(q) ||
-        (l.type || '').toLowerCase().includes(q) ||
-        (l.reason || '').toLowerCase().includes(q)
-    );
-  }, [leaveStats.approvedList, searchQuery]);
-
-  const filteredOnboarded = useMemo(() => {
-    if (!searchQuery.trim()) return employees;
-    const q = searchQuery.toLowerCase();
-    return employees.filter(
-      (e) =>
-        (e.fullName || '').toLowerCase().includes(q) ||
-        (e.department || '').toLowerCase().includes(q) ||
-        (e.jobTitle || '').toLowerCase().includes(q) ||
-        (e.id || '').toLowerCase().includes(q) ||
-        (e.serviceNowReq || '').toLowerCase().includes(q) ||
-        (e.laptopTicket || '').toLowerCase().includes(q)
-    );
-  }, [employees, searchQuery]);
-
   const PAGE_SIZE = 5;
   const [onboardedPage, setOnboardedPage] = useState(1);
   const [leavesPage, setLeavesPage] = useState(1);
@@ -504,7 +606,7 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
     setOnboardedPage(1);
     setLeavesPage(1);
     setExitPage(1);
-  }, [searchQuery, activeTab, selectedMonth, selectedYear, exitSearchQuery]);
+  }, [searchQuery, activeTab, selectedMonth, selectedYear, onboardSearchQuery, leaveSearchQuery, exitSearchQuery]);
 
   const totalOnboardedPages = Math.ceil(filteredOnboarded.length / PAGE_SIZE) || 1;
   const safeOnboardedPage = Math.min(onboardedPage, totalOnboardedPages);
@@ -569,7 +671,7 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
           onClick={() => setActiveTab('onboarding')}
         >
           <i className="fa-solid fa-user-plus text-emerald"></i> Onboarded
-          <span className="tab-count">{onboardingStats.approved}</span>
+          <span className="tab-count">{filteredOnboardingStats.approved}</span>
         </button>
         <button
           className={`analytics-tab-btn ${activeTab === 'offboarding' ? 'active' : ''}`}
@@ -583,7 +685,7 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
           onClick={() => setActiveTab('leaves')}
         >
           <i className="fa-solid fa-calendar-check text-purple"></i> Leave Approvals
-          <span className="tab-count">{leaveStats.approvedCount}</span>
+          <span className="tab-count">{filteredLeaveStats.filteredCount}</span>
         </button>
         <button
           className={`analytics-tab-btn ${activeTab === 'departments' ? 'active' : ''}`}
@@ -597,16 +699,28 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
       {/* TOP EXECUTIVE METRICS ROW (5 KPI Tiles) */}
       <motion.div className="kpi-grid" variants={gridVariants} initial="hidden" animate="show">
         {/* Onboarded KPI */}
-        <motion.div variants={tileVariants} className="glass-card kpi-tile">
+        <motion.div
+          variants={tileVariants}
+          className="glass-card kpi-tile"
+          onClick={() => setActiveTab('onboarding')}
+          style={{ cursor: 'pointer' }}
+          title="Click to view Onboarded candidates"
+        >
           <span className="kpi-label">
             <span className="kpi-icon" style={{ color: 'var(--accent-emerald)' }}>
               <i className="fa-solid fa-user-check"></i>
             </span>
             Total Onboarded
+            {selectedMonth !== 'all' && (
+              <span className="badge" style={{ fontSize: '0.62rem', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)', marginLeft: 'auto' }}>
+                {MONTHS_LIST.find((m) => m.value === selectedMonth)?.label}
+              </span>
+            )}
           </span>
-          <div className="kpi-value tone-success">{count(onboardingStats.approved)}</div>
+          <div className="kpi-value tone-success">{count(filteredOnboardingStats.approved)}</div>
           <span className="kpi-note">
-            {onboardingStats.pending > 0 ? `${onboardingStats.pending} pending HR review` : 'Induction completed & active'}
+            {filteredOnboardingStats.pending > 0 ? `${filteredOnboardingStats.pending} pending review` : 'Induction completed & active'}
+            {selectedMonth !== 'all' || selectedYear !== 'all' ? ` (${onboardingStats.approved} all-time)` : ''}
           </span>
         </motion.div>
 
@@ -637,16 +751,28 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
         </motion.div>
 
         {/* Approved Leaves KPI */}
-        <motion.div variants={tileVariants} className="glass-card kpi-tile">
+        <motion.div
+          variants={tileVariants}
+          className="glass-card kpi-tile"
+          onClick={() => setActiveTab('leaves')}
+          style={{ cursor: 'pointer' }}
+          title="Click to view Leave Approvals"
+        >
           <span className="kpi-label">
             <span className="kpi-icon" style={{ color: 'var(--accent-purple)' }}>
               <i className="fa-solid fa-calendar-check"></i>
             </span>
             Leaves Approved
+            {selectedMonth !== 'all' && (
+              <span className="badge" style={{ fontSize: '0.62rem', background: 'rgba(168, 85, 247, 0.15)', color: 'var(--accent-purple)', marginLeft: 'auto' }}>
+                {MONTHS_LIST.find((m) => m.value === selectedMonth)?.label}
+              </span>
+            )}
           </span>
-          <div className="kpi-value tone-accent">{count(leaveStats.approvedCount)}</div>
+          <div className="kpi-value tone-accent">{count(filteredLeaveStats.filteredCount)}</div>
           <span className="kpi-note">
-            <strong>{leaveStats.totalApprovedDays}</strong> total sanctioned days
+            <strong>{filteredLeaveStats.totalApprovedDays}</strong> total sanctioned days
+            {selectedMonth !== 'all' || selectedYear !== 'all' ? ` (${leaveStats.approvedCount} all-time)` : ''}
           </span>
         </motion.div>
 
@@ -788,7 +914,7 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
                 </span>
               </div>
               <div className="flow-step-val" style={{ color: 'var(--accent-rose)' }}>
-                {exitStats.total}
+                {exitStats.filteredTotal}
               </div>
               <div className="flow-step-label">Exit & Clearance</div>
               <div className="flow-step-desc">Resignations with IT hardware approvals & relieving letters.</div>
@@ -804,7 +930,7 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
       {/* ONBOARDED CANDIDATES & EMPLOYEES DATA TABLE */}
       {(activeTab === 'all' || activeTab === 'onboarding') && (
         <motion.div variants={tileVariants} className="glass-card" style={{ marginBottom: '1.5rem' }}>
-          <div className="analytics-section-title">
+          <div className="analytics-section-title" style={{ flexWrap: 'wrap', gap: '0.85rem' }}>
             <div>
               <h3 className="panel-title" style={{ margin: 0 }}>
                 <i className="fa-solid fa-user-plus text-emerald"></i> Onboarded Candidate & Employee Data
@@ -813,12 +939,97 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
                 Live roster of candidates inducted through the onboarding pipeline with provisioned credentials & hardware status.
               </p>
             </div>
-            <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <div className="analytics-sub-badge" style={{ background: 'rgba(16, 185, 129, 0.12)', color: 'var(--accent-emerald)' }}>
+                <i className="fa-solid fa-users"></i> {filteredOnboarded.length} {filteredOnboarded.length === 1 ? 'Candidate' : 'Candidates'}
+                {selectedMonth !== 'all' || selectedYear !== 'all' ? ` (${onboardingStats.total} total)` : ''}
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Month & Year Filter Toolbar */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              padding: '0.75rem 1rem',
+              marginBottom: '1rem',
+              borderRadius: '8px',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              {/* Year Filter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <label htmlFor="filter-onboard-year" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  <i className="fa-regular fa-calendar text-accent" style={{ marginRight: '0.25rem' }}></i> Year:
+                </label>
+                <select
+                  id="filter-onboard-year"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="form-control"
+                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem', width: 'auto', minWidth: '105px', borderRadius: '6px' }}
+                >
+                  <option value="all">All Years</option>
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>{yr}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Month Filter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <label htmlFor="filter-onboard-month" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  <i className="fa-regular fa-calendar-days text-accent" style={{ marginRight: '0.25rem' }}></i> Month:
+                </label>
+                <select
+                  id="filter-onboard-month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="form-control"
+                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem', width: 'auto', minWidth: '160px', borderRadius: '6px' }}
+                >
+                  {MONTHS_LIST.map((m) => {
+                    const countInMonth = m.value !== 'all' ? (monthlyOnboardCounts[parseInt(m.value, 10)] || 0) : employees.length;
+                    return (
+                      <option key={m.value} value={m.value}>
+                        {m.label} {countInMonth > 0 ? `(${countInMonth})` : ''}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Reset Filters */}
+              {(selectedMonth !== 'all' || selectedYear !== 'all' || onboardSearchQuery) && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => {
+                    setSelectedMonth('all');
+                    setSelectedYear('all');
+                    setOnboardSearchQuery('');
+                  }}
+                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.76rem', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                  title="Clear month and year filters"
+                >
+                  <i className="fa-solid fa-filter-circle-xmark"></i> Clear filters
+                </button>
+              )}
+            </div>
+
+            {/* Search Input within Onboarding */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <input
                 type="text"
                 placeholder="Search candidate name, dept or ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={onboardSearchQuery}
+                onChange={(e) => setOnboardSearchQuery(e.target.value)}
                 style={{
                   padding: '0.35rem 0.75rem',
                   fontSize: '0.8rem',
@@ -829,9 +1040,77 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
                   width: '240px',
                 }}
               />
-              <span className="analytics-sub-badge" style={{ background: 'rgba(16, 185, 129, 0.12)', color: 'var(--accent-emerald)' }}>
-                <i className="fa-solid fa-users"></i> {onboardingStats.total} Total Records
+            </div>
+          </div>
+
+          {/* Quick Monthly Breakdown Pills (Interactive Month Selector) */}
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.45rem' }}>
+              Monthly Onboarding Breakdown {selectedYear !== 'all' ? `(${selectedYear})` : ''}:
+            </div>
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              {MONTHS_LIST.filter((m) => m.value !== 'all').map((m) => {
+                const countInMonth = monthlyOnboardCounts[parseInt(m.value, 10)] || 0;
+                const isSelected = selectedMonth === m.value;
+                return (
+                  <button
+                    key={m.value}
+                    type="button"
+                    onClick={() => setSelectedMonth(isSelected ? 'all' : m.value)}
+                    style={{
+                      padding: '0.3rem 0.6rem',
+                      fontSize: '0.74rem',
+                      borderRadius: '6px',
+                      border: isSelected ? '1px solid var(--accent-emerald)' : '1px solid var(--border-color)',
+                      background: isSelected ? 'rgba(16, 185, 129, 0.15)' : countInMonth > 0 ? 'var(--bg-secondary)' : 'transparent',
+                      color: isSelected ? 'var(--accent-emerald)' : countInMonth > 0 ? 'var(--text-main)' : 'var(--text-muted)',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      fontWeight: isSelected || countInMonth > 0 ? 700 : 500,
+                      transition: 'all 0.15s ease',
+                    }}
+                    title={`Filter by ${m.label}`}
+                  >
+                    <span>{m.label.slice(0, 3)}</span>
+                    <span
+                      style={{
+                        padding: '1px 5px',
+                        borderRadius: '10px',
+                        fontSize: '0.68rem',
+                        background: isSelected ? 'var(--accent-emerald)' : countInMonth > 0 ? 'rgba(16, 185, 129, 0.18)' : 'var(--border-color)',
+                        color: isSelected ? '#ffffff' : countInMonth > 0 ? 'var(--accent-emerald)' : 'var(--text-dim)',
+                        fontWeight: 800,
+                      }}
+                    >
+                      {countInMonth}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* KPI Stat Strip for Selected Filter */}
+          <div className="leave-stat-strip" style={{ marginBottom: '1.15rem' }}>
+            <div className="leave-stat-pill">
+              <span className="leave-stat-pill-label" style={{ color: 'var(--accent-emerald)' }}>
+                {selectedMonth !== 'all' ? `${MONTHS_LIST.find((m) => m.value === selectedMonth)?.label} Inductions` : 'Total Inductions'}
               </span>
+              <span className="leave-stat-pill-val" style={{ color: 'var(--accent-emerald)' }}>{filteredOnboardingStats.totalFiltered}</span>
+            </div>
+            <div className="leave-stat-pill">
+              <span className="leave-stat-pill-label" style={{ color: 'var(--accent-emerald)' }}>Approved & Active</span>
+              <span className="leave-stat-pill-val" style={{ color: 'var(--accent-emerald)' }}>{filteredOnboardingStats.approved}</span>
+            </div>
+            <div className="leave-stat-pill">
+              <span className="leave-stat-pill-label" style={{ color: 'var(--accent-amber)' }}>Pending HR Review</span>
+              <span className="leave-stat-pill-val" style={{ color: 'var(--accent-amber)' }}>{filteredOnboardingStats.pending}</span>
+            </div>
+            <div className="leave-stat-pill">
+              <span className="leave-stat-pill-label" style={{ color: 'var(--brand-orange)' }}>Hardware Provisioned</span>
+              <span className="leave-stat-pill-val" style={{ color: 'var(--brand-orange)' }}>{filteredOnboardingStats.provisioned}</span>
             </div>
           </div>
 
@@ -1041,7 +1320,7 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
       {/* WHOSE LEAVES APPROVED REPORT SECTION */}
       {(activeTab === 'all' || activeTab === 'leaves') && (
         <motion.div variants={tileVariants} className="glass-card" style={{ marginBottom: '1.5rem' }}>
-          <div className="analytics-section-title">
+          <div className="analytics-section-title" style={{ flexWrap: 'wrap', gap: '0.85rem' }}>
             <div>
               <h3 className="panel-title" style={{ margin: 0 }}>
                 <i className="fa-solid fa-calendar-check text-purple"></i> Leave Approvals & Sanction Report
@@ -1050,12 +1329,97 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
                 Detailed audit of employee leave requests approved by HR and synced directly to OrangeHRM PIM.
               </p>
             </div>
-            <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <div className="analytics-sub-badge" style={{ background: 'rgba(168, 85, 247, 0.12)', color: 'var(--accent-purple)' }}>
+                <i className="fa-solid fa-calendar-check"></i> {filteredApprovedLeaves.length} {filteredApprovedLeaves.length === 1 ? 'Sanctioned Leave' : 'Sanctioned Leaves'}
+                {selectedMonth !== 'all' || selectedYear !== 'all' ? ` (${leaveStats.approvedCount} total)` : ''}
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Month & Year Filter Toolbar */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              padding: '0.75rem 1rem',
+              marginBottom: '1rem',
+              borderRadius: '8px',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              {/* Year Filter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <label htmlFor="filter-leave-year" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  <i className="fa-regular fa-calendar text-accent" style={{ marginRight: '0.25rem' }}></i> Year:
+                </label>
+                <select
+                  id="filter-leave-year"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="form-control"
+                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem', width: 'auto', minWidth: '105px', borderRadius: '6px' }}
+                >
+                  <option value="all">All Years</option>
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>{yr}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Month Filter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <label htmlFor="filter-leave-month" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  <i className="fa-regular fa-calendar-days text-accent" style={{ marginRight: '0.25rem' }}></i> Month:
+                </label>
+                <select
+                  id="filter-leave-month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="form-control"
+                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem', width: 'auto', minWidth: '160px', borderRadius: '6px' }}
+                >
+                  {MONTHS_LIST.map((m) => {
+                    const countInMonth = m.value !== 'all' ? (monthlyLeaveCounts[parseInt(m.value, 10)] || 0) : leaveStats.approvedCount;
+                    return (
+                      <option key={m.value} value={m.value}>
+                        {m.label} {countInMonth > 0 ? `(${countInMonth})` : ''}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Reset Filters */}
+              {(selectedMonth !== 'all' || selectedYear !== 'all' || leaveSearchQuery) && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => {
+                    setSelectedMonth('all');
+                    setSelectedYear('all');
+                    setLeaveSearchQuery('');
+                  }}
+                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.76rem', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                  title="Clear month and year filters"
+                >
+                  <i className="fa-solid fa-filter-circle-xmark"></i> Clear filters
+                </button>
+              )}
+            </div>
+
+            {/* Search Input within Leaves */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <input
                 type="text"
-                placeholder="Search employee or leave..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search employee or leave type..."
+                value={leaveSearchQuery}
+                onChange={(e) => setLeaveSearchQuery(e.target.value)}
                 style={{
                   padding: '0.35rem 0.75rem',
                   fontSize: '0.8rem',
@@ -1063,25 +1427,76 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
                   border: '1px solid var(--border-color)',
                   background: 'var(--bg-primary)',
                   color: 'var(--text-main)',
-                  width: '210px',
+                  width: '240px',
                 }}
               />
             </div>
           </div>
 
+          {/* Quick Monthly Breakdown Pills (Interactive Month Selector) */}
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.45rem' }}>
+              Monthly Leave Approvals Breakdown {selectedYear !== 'all' ? `(${selectedYear})` : ''}:
+            </div>
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              {MONTHS_LIST.filter((m) => m.value !== 'all').map((m) => {
+                const countInMonth = monthlyLeaveCounts[parseInt(m.value, 10)] || 0;
+                const isSelected = selectedMonth === m.value;
+                return (
+                  <button
+                    key={m.value}
+                    type="button"
+                    onClick={() => setSelectedMonth(isSelected ? 'all' : m.value)}
+                    style={{
+                      padding: '0.3rem 0.6rem',
+                      fontSize: '0.74rem',
+                      borderRadius: '6px',
+                      border: isSelected ? '1px solid var(--accent-purple)' : '1px solid var(--border-color)',
+                      background: isSelected ? 'rgba(168, 85, 247, 0.15)' : countInMonth > 0 ? 'var(--bg-secondary)' : 'transparent',
+                      color: isSelected ? 'var(--accent-purple)' : countInMonth > 0 ? 'var(--text-main)' : 'var(--text-muted)',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      fontWeight: isSelected || countInMonth > 0 ? 700 : 500,
+                      transition: 'all 0.15s ease',
+                    }}
+                    title={`Filter by ${m.label}`}
+                  >
+                    <span>{m.label.slice(0, 3)}</span>
+                    <span
+                      style={{
+                        padding: '1px 5px',
+                        borderRadius: '10px',
+                        fontSize: '0.68rem',
+                        background: isSelected ? 'var(--accent-purple)' : countInMonth > 0 ? 'rgba(168, 85, 247, 0.18)' : 'var(--border-color)',
+                        color: isSelected ? '#ffffff' : countInMonth > 0 ? 'var(--accent-purple)' : 'var(--text-dim)',
+                        fontWeight: 800,
+                      }}
+                    >
+                      {countInMonth}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Leave Quick Metrics Strip */}
-          <div className="leave-stat-strip">
+          <div className="leave-stat-strip" style={{ marginBottom: '1.15rem' }}>
             <div className="leave-stat-pill">
-              <span className="leave-stat-pill-label">Total Applications</span>
+              <span className="leave-stat-pill-label" style={{ color: 'var(--accent-purple)' }}>
+                {selectedMonth !== 'all' ? `${MONTHS_LIST.find((m) => m.value === selectedMonth)?.label} Approvals` : 'Total Sanctions'}
+              </span>
+              <span className="leave-stat-pill-val" style={{ color: 'var(--accent-purple)' }}>{filteredLeaveStats.filteredCount}</span>
+            </div>
+            <div className="leave-stat-pill">
+              <span className="leave-stat-pill-label" style={{ color: 'var(--accent-emerald)' }}>Sanctioned Days</span>
+              <span className="leave-stat-pill-val" style={{ color: 'var(--accent-emerald)' }}>{filteredLeaveStats.totalApprovedDays} days</span>
+            </div>
+            <div className="leave-stat-pill">
+              <span className="leave-stat-pill-label">All Applications</span>
               <span className="leave-stat-pill-val">{leaveStats.totalRequests}</span>
-            </div>
-            <div className="leave-stat-pill">
-              <span className="leave-stat-pill-label" style={{ color: 'var(--accent-emerald)' }}>Approved Sanctions</span>
-              <span className="leave-stat-pill-val" style={{ color: 'var(--accent-emerald)' }}>{leaveStats.approvedCount}</span>
-            </div>
-            <div className="leave-stat-pill">
-              <span className="leave-stat-pill-label" style={{ color: 'var(--accent-purple)' }}>Total Days Approved</span>
-              <span className="leave-stat-pill-val" style={{ color: 'var(--accent-purple)' }}>{leaveStats.totalApprovedDays} days</span>
             </div>
             <div className="leave-stat-pill">
               <span className="leave-stat-pill-label" style={{ color: 'var(--accent-amber)' }}>Pending HR Sign-off</span>
