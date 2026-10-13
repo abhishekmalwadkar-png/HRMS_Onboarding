@@ -296,6 +296,77 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
         with open(DATA_FILE, 'w', encoding='utf-8') as f:
             json.dump(db, f, indent=2)
 
+    def create_tickets_for_orangehrm_employees(self, valid_orange_emps, db):
+        now_ts = int(time.time())
+        date_today = time.strftime('%Y-%m-%d')
+        sample_reasons = [
+            "Pursuing higher executive fellowship and cloud architecture research.",
+            "Accepted senior leadership position at enterprise partner organization.",
+            "Relocating internationally / family relocation abroad.",
+            "Transitioning to specialized independent AI consultancy.",
+            "Pursuing entrepreneurial venture in enterprise automation."
+        ]
+        created_demo_exits = []
+        for i, emp in enumerate(valid_orange_emps[:3]):
+            emp_name = emp.get('fullName')
+            emp_id = emp.get('empId') or (f"EMP-{emp.get('employeeId')}" if emp.get('employeeId') else f"EMP-{1000 + i}")
+            dept = emp.get('department') or "Engineering"
+            role = emp.get('jobTitle') or "Software Engineer"
+            reason = sample_reasons[i % len(sample_reasons)]
+            lwd_date = time.strftime('%Y-%m-%d', time.localtime(now_ts + (20 + i * 5) * 86400))
+            exit_id = f"EXIT-{now_ts % 900 + 100 + i}"
+
+            item_payload = {
+                "id": exit_id,
+                "empId": emp_id,
+                "empNumber": emp.get('empNumber') or emp.get('employeeId'),
+                "empName": emp_name,
+                "department": dept,
+                "role": role,
+                "jobTitle": role,
+                "resignationDate": date_today,
+                "lastWorkingDay": lwd_date,
+                "reason": reason,
+                "itClearance": False,
+                "itClearanceStatus": "Clearance waiting from IT department",
+                "laptopIncidentState": "In Progress",
+                "accessRevoked": False,
+                "o365Deleted": False,
+                "orangeHrmDeleted": False,
+                "emailSent": False,
+                "relievingLetterIssued": False,
+                "fnfStatus": "Pending Initiation"
+            }
+
+            # 1. Trigger AutomationEdge T4 Workflow: "HR Demo Offboarding SN Req" (asynchronous)
+            try:
+                ae_sn_req_res = ae_client.trigger_workflow("HR Demo Offboarding SN Req", {"EmpID": str(emp_id)})
+                item_payload['aeSnReqWorkflow'] = ae_sn_req_res
+            except Exception as ae_err:
+                print(f"[Demo Offboarding T4 Note]: {ae_err}")
+
+            # 2. Create ACTUAL ServiceNow Parent Request & Laptop Recovery Incident!
+            try:
+                sn_res = sn_client.create_offboarding_request(item_payload)
+                item_payload['serviceNowReq'] = sn_res.get('serviceNowReq')
+                item_payload['serviceNowReqUrl'] = sn_res.get('serviceNowReqUrl')
+                item_payload['serviceNowReqSysId'] = sn_res.get('serviceNowReqSysId')
+                item_payload['serviceNowRitm'] = sn_res.get('serviceNowRitm')
+                item_payload['laptopTicket'] = sn_res.get('laptopTicket')
+                item_payload['laptopTicketSysId'] = sn_res.get('laptopTicketSysId')
+                item_payload['laptopTicketUrl'] = sn_res.get('laptopTicketUrl')
+                item_payload['assignedTo'] = sn_res.get('assignedTo')
+                item_payload['resignationLetter'] = sn_res.get('resignationLetter')
+                item_payload['resignationLetterPath'] = sn_res.get('resignationLetterPath')
+            except Exception as sn_err:
+                print(f"[Demo Offboarding ServiceNow Note]: {sn_err}")
+
+            created_demo_exits.append(item_payload)
+
+        db['exitRequests'] = created_demo_exits
+        self.write_db(db)
+        return created_demo_exits
+
     def do_GET(self):
         # Direct ServiceNow Single-Click Auto-Login Bridge (Serves auto-submitting session page)
         if self.path.split('?')[0] in ('/api/servicenow/direct-login', '/servicenow/direct-login', '/servicenow-login'):
@@ -1102,14 +1173,37 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             }).encode('utf-8'))
 
         elif self.path == '/api/exit/sync-live-clearance':
+            orange_emps = []
+            try:
+                orange_emps = orangehrm_client.get_active_employees()
+            except Exception as oe:
+                print(f"[OrangeHRM Fetch for Sync Note]: {oe}")
+
+            def is_excluded_resignation_employee(name_str):
+                n = str(name_str or '').lower()
+                return 'suhas' in n or 'kajawe' in n or 'kajwe' in n
+
+            valid_orange_emps = [e for e in orange_emps if not is_excluded_resignation_employee(e.get('fullName'))]
+            valid_orange_names = {e.get('fullName').lower() for e in valid_orange_emps if e.get('fullName')}
+
             exits = db.get('exitRequests', [])
             updated = False
             active_exits = []
             for item in exits:
+                emp_name = item.get('empName') or item.get('fullName')
+                if is_excluded_resignation_employee(emp_name):
+                    updated = True
+                    continue
+
+                if valid_orange_names and str(emp_name or '').strip().lower() not in valid_orange_names:
+                    updated = True
+                    print(f"[ServiceNow Live Sync] Purging non-OrangeHRM ticket: {emp_name}")
+                    continue
+
                 # 1. First check if ticket was deleted in ServiceNow
                 if not sn_client.is_exit_ticket_alive(item):
                     updated = True
-                    print(f"[ServiceNow Live Sync] Ticket was deleted in ServiceNow. Purging: {item.get('empName')} (REQ: {item.get('serviceNowReq')}, Laptop: {item.get('laptopTicket')})")
+                    print(f"[ServiceNow Live Sync] Ticket was deleted in ServiceNow. Purging: {emp_name} (REQ: {item.get('serviceNowReq')}, Laptop: {item.get('laptopTicket')})")
                     continue
 
                 # 2. Sync live clearance status from ServiceNow
@@ -1134,7 +1228,12 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 active_exits.append(item)
 
-            if updated or len(active_exits) != len(exits):
+            # If NO tickets exist in ServiceNow for offboarding requests, auto-create new tickets for OrangeHRM employees!
+            if len(active_exits) == 0 and valid_orange_emps:
+                print(f"[ServiceNow Live Sync] No active offboarding tickets in ServiceNow. Creating new tickets for OrangeHRM employees: {[e.get('fullName') for e in valid_orange_emps]}")
+                active_exits = self.create_tickets_for_orangehrm_employees(valid_orange_emps, db)
+                updated = True
+            elif updated or len(active_exits) != len(exits):
                 db['exitRequests'] = active_exits
                 self.write_db(db)
 
@@ -1153,167 +1252,42 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "success", "message": "Exit requests cleared", "data": []}).encode('utf-8'))
 
         elif self.path == '/api/exit/demo':
-            # 1. Check ServiceNow for active resignation requests (not closed and not resolved)
-            active_exits, has_active = sn_client.get_active_resignation_requests(db.get('exitRequests', []))
-            if has_active:
-                # If in ServiceNow there is active resignation request which is not closed or resolved, show that only!
-                db['exitRequests'] = active_exits
-                self.write_db(db)
-                self.end_headers()
-                self.wfile.write(json.dumps({
-                    "status": "success",
-                    "mode": "live_servicenow_active",
-                    "message": f"Found {len(active_exits)} active resignation request(s) in ServiceNow. Displaying active requests.",
-                    "data": active_exits,
-                    "allRequests": active_exits
-                }).encode('utf-8'))
-                return
-
-            # 2. If no active resignation requests exist in ServiceNow, trigger new demo requests!
-            now_ts = int(time.time())
-            date_today = time.strftime('%Y-%m-%d')
-
-            # 1. Fetch live employees present in OrangeHRM
             orange_emps = []
             try:
                 orange_emps = orangehrm_client.get_active_employees()
             except Exception as oe:
                 print(f"[OrangeHRM Fetch for Demo Exit Note]: {oe}")
 
-            # Also consider approved employees in database that were synced to OrangeHRM
-            db_emps = [e for e in db.get('employees', []) if e.get('orangeHrmEmpNumber') or e.get('status') == 'Approved']
-
-            # Avoid re-adding employees that already have an active exit clearance
-            active_exit_names = {str(x.get('empName', '')).strip().lower() for x in db.get('exitRequests', [])}
-
-            candidate_pool = []
-            seen_names = set()
-
-            # Exclude specific employees like Suhas Kajawe per requirement
             def is_excluded_resignation_employee(name_str):
                 n = str(name_str or '').lower()
                 return 'suhas' in n or 'kajawe' in n or 'kajwe' in n
 
-            for emp in orange_emps:
-                name = str(emp.get('fullName') or '').strip()
-                if name and not is_excluded_resignation_employee(name) and name.lower() not in seen_names and name.lower() not in active_exit_names:
-                    seen_names.add(name.lower())
-                    candidate_pool.append({
-                        "fullName": name,
-                        "empId": emp.get('empId') or f"EMP-{emp.get('empNumber', '1000')}",
-                        "empNumber": emp.get('empNumber'),
-                        "department": emp.get('department') or "Engineering",
-                        "jobTitle": emp.get('jobTitle') or "Software Specialist"
-                    })
+            valid_orange_emps = [e for e in orange_emps if not is_excluded_resignation_employee(e.get('fullName'))]
+            valid_orange_names = {e.get('fullName').lower() for e in valid_orange_emps if e.get('fullName')}
 
-            for emp in db_emps:
-                name = str(emp.get('fullName') or emp.get('name') or '').strip()
-                if name and not is_excluded_resignation_employee(name) and name.lower() not in seen_names and name.lower() not in active_exit_names:
-                    seen_names.add(name.lower())
-                    candidate_pool.append({
-                        "fullName": name,
-                        "empId": emp.get('id') or f"EMP-{emp.get('orangeHrmEmpNumber', '2000')}",
-                        "empNumber": emp.get('orangeHrmEmpNumber'),
-                        "department": emp.get('department') or "Engineering",
-                        "jobTitle": emp.get('jobTitle') or "Staff Engineer"
-                    })
+            # 1. Check ServiceNow for active resignation requests belonging to OrangeHRM employees
+            active_exits, has_active = sn_client.get_active_resignation_requests(db.get('exitRequests', []), valid_orange_names=valid_orange_names)
+            if has_active:
+                db['exitRequests'] = active_exits
+                self.write_db(db)
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "status": "success",
+                    "mode": "live_servicenow_active",
+                    "message": f"Found {len(active_exits)} active resignation request(s) in ServiceNow for OrangeHRM employees. Displaying active requests.",
+                    "data": active_exits,
+                    "allRequests": active_exits
+                }).encode('utf-8'))
+                return
 
-            # If still fewer than 3, pick from all OrangeHRM employees (strictly excluding Suhas Kajawe)
-            if len(candidate_pool) < 3:
-                for emp in orange_emps:
-                    name = str(emp.get('fullName') or '').strip()
-                    if name and not is_excluded_resignation_employee(name) and name.lower() not in seen_names:
-                        seen_names.add(name.lower())
-                        candidate_pool.append({
-                            "fullName": name,
-                            "empId": emp.get('empId') or f"EMP-{emp.get('empNumber', '1000')}",
-                            "empNumber": emp.get('empNumber'),
-                            "department": emp.get('department') or "Engineering",
-                            "jobTitle": emp.get('jobTitle') or "Software Specialist"
-                        })
-                    if len(candidate_pool) >= 5:
-                        break
-
-            # Select up to 3 employees
-            selected_emps = candidate_pool[:3]
-            sample_reasons = [
-                "Pursuing higher executive fellowship and cloud architecture research.",
-                "Accepted senior leadership position at enterprise partner organization.",
-                "Relocating internationally / family relocation abroad.",
-                "Transitioning to specialized independent AI consultancy.",
-                "Pursuing entrepreneurial venture in enterprise automation."
-            ]
-
-            created_demo_exits = []
-
-            for i, emp in enumerate(selected_emps):
-                emp_name = emp.get('fullName')
-                emp_id = emp.get('empId') or f"EMP-{1000 + i}"
-                dept = emp.get('department') or "Engineering"
-                role = emp.get('jobTitle') or "Senior Specialist"
-                reason = sample_reasons[i % len(sample_reasons)]
-                lwd_date = time.strftime('%Y-%m-%d', time.localtime(now_ts + (20 + i * 5) * 86400))
-                exit_id = f"EXIT-{now_ts % 900 + 100 + i}"
-
-                item_payload = {
-                    "id": exit_id,
-                    "empId": emp_id,
-                    "empNumber": emp.get('empNumber'),
-                    "empName": emp_name,
-                    "department": dept,
-                    "role": role,
-                    "jobTitle": role,
-                    "resignationDate": date_today,
-                    "lastWorkingDay": lwd_date,
-                    "reason": reason,
-                    "itClearance": False,
-                    "itClearanceStatus": "Clearance waiting from IT department",
-                    "laptopIncidentState": "In Progress",
-                    "accessRevoked": False,
-                    "o365Deleted": False,
-                    "orangeHrmDeleted": False,
-                    "emailSent": False,
-                    "relievingLetterIssued": False,
-                    "fnfStatus": "Pending Initiation"
-                }
-
-                # 1. Trigger AutomationEdge T4 Workflow: "HR Demo Offboarding SN Req" (asynchronous)
-                try:
-                    ae_sn_req_res = ae_client.trigger_workflow("HR Demo Offboarding SN Req", {"EmpID": str(emp_id)})
-                    item_payload['aeSnReqWorkflow'] = ae_sn_req_res
-                except Exception as ae_err:
-                    print(f"[Demo Offboarding T4 Note]: {ae_err}")
-
-                # 2. Create ACTUAL ServiceNow Parent Request & Laptop Recovery Incident!
-                try:
-                    sn_res = sn_client.create_offboarding_request(item_payload)
-                    item_payload['serviceNowReq'] = sn_res.get('serviceNowReq')
-                    item_payload['serviceNowReqUrl'] = sn_res.get('serviceNowReqUrl')
-                    item_payload['serviceNowReqSysId'] = sn_res.get('serviceNowReqSysId')
-                    item_payload['serviceNowRitm'] = sn_res.get('serviceNowRitm')
-                    item_payload['laptopTicket'] = sn_res.get('laptopTicket')
-                    item_payload['laptopTicketSysId'] = sn_res.get('laptopTicketSysId')
-                    item_payload['laptopTicketUrl'] = sn_res.get('laptopTicketUrl')
-                    item_payload['assignedTo'] = sn_res.get('assignedTo')
-                    item_payload['resignationLetter'] = sn_res.get('resignationLetter')
-                    item_payload['resignationLetterPath'] = sn_res.get('resignationLetterPath')
-                except Exception as sn_err:
-                    print(f"[Demo Offboarding ServiceNow Note]: {sn_err}")
-
-                created_demo_exits.append(item_payload)
-
-            exits = [item for item in db.get('exitRequests', []) if not is_excluded_resignation_employee(item.get('empName'))]
-            for item in reversed(created_demo_exits):
-                exits.insert(0, item)
-            db['exitRequests'] = exits
-            self.write_db(db)
-
+            # 2. If NO tickets exist in ServiceNow for offboarding requests, create new tickets for OrangeHRM employees!
+            created_demo_exits = self.create_tickets_for_orangehrm_employees(valid_orange_emps, db)
             self.end_headers()
             self.wfile.write(json.dumps({
                 "status": "success",
                 "message": f"Created {len(created_demo_exits)} live resignation requests for OrangeHRM employees in ServiceNow",
                 "data": created_demo_exits,
-                "allRequests": exits
+                "allRequests": created_demo_exits
             }).encode('utf-8'))
 
         elif self.path == '/api/exit/update':

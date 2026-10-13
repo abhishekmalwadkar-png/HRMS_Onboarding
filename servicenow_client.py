@@ -1470,7 +1470,7 @@ class ServiceNowClient:
 
         return self.check_incident_clearance(inc_ident)
 
-    def get_active_resignation_requests(self, existing_exit_requests=None):
+    def get_active_resignation_requests(self, existing_exit_requests=None, valid_orange_names=None):
         """
         Queries ServiceNow for active (not closed and not resolved) employee resignation requests.
         Returns:
@@ -1493,6 +1493,8 @@ class ServiceNowClient:
             for item in existing_exit_requests:
                 emp_name = item.get('empName') or item.get('fullName')
                 if is_excluded(emp_name):
+                    continue
+                if valid_orange_names and str(emp_name or '').strip().lower() not in valid_orange_names:
                     continue
                 
                 # Check if ticket was deleted in ServiceNow
@@ -1556,6 +1558,8 @@ class ServiceNowClient:
                         if not emp_name or is_excluded(emp_name):
                             continue
                         name_key = emp_name.lower()
+                        if valid_orange_names and name_key not in valid_orange_names:
+                            continue
                         if name_key in seen_names:
                             continue
 
