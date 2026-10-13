@@ -10,15 +10,15 @@ const STEPS = [
 ];
 
 const PERSONAL_FIELDS = [
-  { id: 'fullName', label: 'Full legal name', type: 'text', autoComplete: 'name' },
-  { id: 'email', label: 'Personal email', type: 'email', autoComplete: 'email' },
-  { id: 'phone', label: 'Phone number', type: 'tel', autoComplete: 'tel' },
-  { id: 'dob', label: 'Date of birth', type: 'date', autoComplete: 'bday' },
+  { id: 'fullName', label: 'Full legal name', type: 'text', autoComplete: 'name', placeholder: 'e.g. Aarav Sharma' },
+  { id: 'email', label: 'Personal email', type: 'email', autoComplete: 'email', placeholder: 'e.g. aarav.sharma@example.com' },
+  { id: 'phone', label: 'Phone number', type: 'tel', autoComplete: 'tel', placeholder: 'e.g. +91 98765 43210' },
+  { id: 'dob', label: 'Date of birth', type: 'date', autoComplete: 'bday', placeholder: 'dd-mm-yyyy' },
   { id: 'aadhaar', label: 'Aadhaar number', type: 'text', maxLength: 12, placeholder: '12-digit Aadhaar number' },
   { id: 'uan', label: 'EPFO UAN number', type: 'text', maxLength: 12, placeholder: '12-digit UAN number' },
-  { id: 'emergencyName', label: 'Emergency contact name', type: 'text' },
-  { id: 'emergencyPhone', label: 'Emergency contact phone', type: 'tel' },
-  { id: 'address', label: 'Current residential address', type: 'text', autoComplete: 'street-address', full: true },
+  { id: 'emergencyName', label: 'Emergency contact name', type: 'text', placeholder: 'e.g. Sunita Sharma (Mother / Spouse)' },
+  { id: 'emergencyPhone', label: 'Emergency contact phone', type: 'tel', placeholder: 'e.g. +91 98765 00000' },
+  { id: 'address', label: 'Current residential address', type: 'text', autoComplete: 'street-address', full: true, placeholder: 'e.g. Flat 402, Marvel Palms, Baner, Pune, Maharashtra 411045' },
 ];
 
 const DOCUMENTS = [
