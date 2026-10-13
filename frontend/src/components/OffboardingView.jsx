@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { PageHeader } from './ui';
+import { PageHeader, Avatar } from './ui';
 import { openServiceNowDirect } from '../utils/serviceNowAuth';
 
 export default function OffboardingView() {
@@ -10,6 +10,7 @@ export default function OffboardingView() {
   const isHR = currentUser?.role === 'hr';
 
   const [exitRequests, setExitRequests] = useState([]);
+  const [viewMode, setViewMode] = useState('list');
 
   const [formName, setFormName] = useState(currentUser?.name?.split(' (')[0] || 'Sneha Rao');
   const [formDept, setFormDept] = useState('Engineering');
@@ -754,9 +755,51 @@ export default function OffboardingView() {
       {/* Active Clearances Pipeline List */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-main)' }}>
-            Active exit clearances ({exitRequests.length})
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-main)' }}>
+              Active exit clearances ({exitRequests.length})
+            </h3>
+            <div style={{ display: 'inline-flex', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                style={{
+                  padding: '0.28rem 0.65rem',
+                  fontSize: '0.76rem',
+                  border: 'none',
+                  background: viewMode === 'list' ? 'var(--accent-color)' : 'transparent',
+                  color: viewMode === 'list' ? '#fff' : 'var(--text-main)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                }}
+                title="View as structured data table list"
+              >
+                <i className="fa-solid fa-list"></i> List
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('cards')}
+                style={{
+                  padding: '0.28rem 0.65rem',
+                  fontSize: '0.76rem',
+                  border: 'none',
+                  background: viewMode === 'cards' ? 'var(--accent-color)' : 'transparent',
+                  color: viewMode === 'cards' ? '#fff' : 'var(--text-main)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                }}
+                title="View as detailed cards"
+              >
+                <i className="fa-solid fa-grip"></i> Cards
+              </button>
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             {exitRequests.length > 0 && (
               <button
@@ -789,6 +832,272 @@ export default function OffboardingView() {
               <i className={`fa-solid ${isAddingDemo ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} aria-hidden="true"></i>
               {isAddingDemo ? 'Looking for requests of resignation…' : 'Check resignation requests'}
             </button>
+          </div>
+        ) : viewMode === 'list' ? (
+          /* High-Density Structured List / Table View */
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden', background: 'var(--bg-card)', borderRadius: '12px' }}>
+            <div className="table-scroll">
+              <table className="data-table" style={{ margin: 0 }}>
+                <thead>
+                  <tr>
+                    <th scope="col" style={{ minWidth: '220px', paddingLeft: '1.25rem' }}>Employee</th>
+                    <th scope="col" style={{ minWidth: '180px' }}>ServiceNow</th>
+                    <th scope="col" style={{ minWidth: '175px' }}>IT Hardware Status</th>
+                    <th scope="col" style={{ minWidth: '185px' }}>Official Documents</th>
+                    <th scope="col" style={{ minWidth: '135px' }}>System Access</th>
+                    <th scope="col" style={{ minWidth: '290px', textAlign: 'right', paddingRight: '1.25rem' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {exitRequests.map((item) => {
+                    const isCleared = !!(
+                      item.itClearance || 
+                      item.itClearanceStatus === 'User Submitted Laptop' || 
+                      item.itClearanceStatus === 'IT Approved' || 
+                      item.itClearanceStatus?.includes('Approved') ||
+                      item.laptopIncidentState === 'Resolved' ||
+                      item.laptopIncidentState === 'Closed' ||
+                      item.laptopIncidentState === 'Approved'
+                    );
+                    const isChecking = checkingClearanceId === item.id;
+                    const isRevoking = revokingId === item.id;
+
+                    return (
+                      <tr key={item.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        {/* 1. Employee */}
+                        <td style={{ paddingLeft: '1.25rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <Avatar name={item.empName} size={36} />
+                            <div>
+                              <strong style={{ fontSize: '0.92rem', color: 'var(--text-main)', display: 'block' }}>
+                                {item.empName}
+                              </strong>
+                              <div className="cell-sub" style={{ fontSize: '0.78rem' }}>
+                                {item.department} • <code>{item.empId || item.id}</code>
+                              </div>
+                              <div className="cell-sub" style={{ fontSize: '0.75rem', marginTop: '2px' }}>
+                                LWD: <strong style={{ color: 'var(--text-main)' }}>{item.lastWorkingDay}</strong>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* 2. ServiceNow Tickets */}
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'flex-start' }}>
+                            {item.serviceNowReq && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const target = item.serviceNowReqUrl || `https://ven04528.service-now.com/nav_to.do?uri=sc_request_list.do?sysparm_query=number=${item.serviceNowReq}`;
+                                  openServiceNowDirect(target, () => showToast(`⚡ Opening ${item.serviceNowReq} in ServiceNow...`, 'success'));
+                                }}
+                                className="badge"
+                                style={{
+                                  fontSize: '0.75rem',
+                                  padding: '0.25rem 0.55rem',
+                                  fontWeight: 700,
+                                  background: 'rgba(59, 130, 246, 0.12)',
+                                  color: '#2563eb',
+                                  border: '1px solid rgba(59, 130, 246, 0.25)',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                }}
+                                title="Click to auto-login & view ServiceNow Parent Request"
+                              >
+                                <i className="fa-solid fa-arrow-up-right-from-square"></i> SN Req: <strong>{item.serviceNowReq}</strong>
+                              </button>
+                            )}
+                            {item.laptopTicket && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const target = item.laptopTicketUrl || `https://ven04528.service-now.com/nav_to.do?uri=incident_list.do`;
+                                  openServiceNowDirect(target, () => showToast(`⚡ Opening ${item.laptopTicket} in ServiceNow...`, 'success'));
+                                }}
+                                className="badge"
+                                style={{
+                                  fontSize: '0.75rem',
+                                  padding: '0.25rem 0.55rem',
+                                  fontWeight: 700,
+                                  border: isCleared ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(59, 130, 246, 0.25)',
+                                  cursor: 'pointer',
+                                  background: isCleared ? 'rgba(16, 185, 129, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                                  color: isCleared ? '#059669' : '#2563eb',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                }}
+                                title="Auto-login & view ServiceNow Incident"
+                              >
+                                <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-laptop'}`}></i> ServiceNow: <strong>{item.laptopTicket}</strong> {isCleared ? '(IT Approved)' : ''}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 3. IT Hardware Status */}
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: 'flex-start' }}>
+                            <span
+                              className="badge"
+                              style={{
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                padding: '0.28rem 0.6rem',
+                                borderRadius: '20px',
+                                background: isCleared ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                color: isCleared ? '#059669' : '#d97706',
+                                border: `1px solid ${isCleared ? 'rgba(16, 185, 129, 0.35)' : 'rgba(245, 158, 11, 0.35)'}`,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                              }}
+                            >
+                              <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-clock'}`}></i>{' '}
+                              {isCleared ? 'IT Approved' : 'Waiting IT Approval'}
+                            </span>
+                            <div className="cell-sub" style={{ fontSize: '0.73rem' }}>
+                              {item.assignedTo ? `Assignee: ${item.assignedTo}` : 'IT Asset Desk'}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* 4. Official Documents */}
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'flex-start' }}>
+                            <a
+                              href={`/api/exit/resignation-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
+                              download
+                              className="badge"
+                              style={{
+                                fontSize: '0.75rem',
+                                textDecoration: 'none',
+                                padding: '0.22rem 0.55rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                background: 'rgba(2, 132, 199, 0.1)',
+                                color: '#0284c7',
+                                border: '1px solid rgba(2, 132, 199, 0.25)',
+                              }}
+                              title={`Download official Resignation Letter for ${item.empName}`}
+                              onClick={() => showToast(`📄 Downloading Resignation Letter for ${item.empName}...`, 'info')}
+                            >
+                              <i className="fa-solid fa-file-lines"></i> Resignation Letter
+                            </a>
+                            <a
+                              href={`/api/exit/payslip?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
+                              download
+                              className="badge"
+                              style={{
+                                fontSize: '0.75rem',
+                                textDecoration: 'none',
+                                padding: '0.22rem 0.55rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                color: '#059669',
+                                border: '1px solid rgba(16, 185, 129, 0.25)',
+                              }}
+                              title={`Download official monthly payslip for ${item.empName}`}
+                              onClick={() => showToast(`📄 Downloading payslip for ${item.empName}...`, 'info')}
+                            >
+                              <i className="fa-solid fa-file-invoice-dollar"></i> Payslip
+                            </a>
+                          </div>
+                        </td>
+
+                        {/* 5. System Access */}
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: 'flex-start' }}>
+                            <span
+                              onClick={() => inspectOffboardingFlow(item)}
+                              className={`badge ${item.accessRevoked ? 'badge-verified' : 'badge-pending'}`}
+                              style={{ cursor: 'pointer', fontSize: '0.75rem' }}
+                              title="Click to view full offboarding execution pipeline"
+                            >
+                              {item.accessRevoked ? 'Deprovisioned' : 'Clearance active'}
+                            </span>
+                            <div className="cell-sub" style={{ fontSize: '0.73rem' }}>
+                              {item.relievingLetterIssued ? '✓ Relieving sent' : 'Relieving pending'}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* 6. Actions */}
+                        <td style={{ textAlign: 'right', paddingRight: '1.25rem' }}>
+                          <div style={{ display: 'inline-flex', gap: '0.35rem', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              style={{
+                                padding: '0.32rem 0.65rem',
+                                fontSize: '0.75rem',
+                                background: isCleared ? '#ecfdf5' : undefined,
+                                color: isCleared ? '#059669' : undefined,
+                                borderColor: isCleared ? '#a7f3d0' : undefined,
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap',
+                              }}
+                              onClick={() => toggleITClearance(item)}
+                              disabled={isChecking}
+                              title={isCleared ? "Ticket approved in ServiceNow (Click to modify state)" : "Approve IT Clearance in ServiceNow"}
+                            >
+                              <i className={`fa-solid ${isChecking ? 'fa-spinner fa-spin' : (isCleared ? 'fa-circle-check' : 'fa-laptop')}`}></i>{' '}
+                              {isChecking ? 'Updating…' : (isCleared ? 'IT Approved' : 'IT Approval')}
+                            </button>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '0.32rem 0.52rem', fontSize: '0.75rem' }}
+                              onClick={() => checkLiveClearance(item)}
+                              disabled={isChecking}
+                              title="Check live status from ServiceNow ITSM"
+                            >
+                              <i className={`fa-solid ${isChecking ? 'fa-spinner fa-spin' : 'fa-arrows-rotate'}`}></i>
+                            </button>
+                            <button
+                              className={`btn btn-secondary btn-sm ${item.accessRevoked ? '' : 'btn-danger-outline'}`}
+                              style={{ padding: '0.32rem 0.65rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+                              onClick={() => triggerAccessRevocation(item)}
+                              disabled={isRevoking}
+                              title="Run T4 Offboarding RPA Workflows (AD, O365, OrangeHRM)"
+                            >
+                              <i className={`fa-solid ${isRevoking ? 'fa-spinner fa-spin' : 'fa-user-xmark'}`}></i>{' '}
+                              {isRevoking ? 'Revoking…' : 'Revoke'}
+                            </button>
+                            <button
+                              className="btn btn-primary btn-sm"
+                              style={{
+                                padding: '0.32rem 0.65rem',
+                                fontSize: '0.75rem',
+                                background: item.relievingLetterIssued ? '#047857' : 'var(--button-gradient)',
+                                color: item.relievingLetterIssued ? '#ffffff' : undefined,
+                                borderColor: 'transparent',
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap',
+                              }}
+                              onClick={() => issueRelievingLetter(item)}
+                              disabled={issuingLetterId === item.id}
+                              title="Generate PDF Relieving Letter & email to employee"
+                            >
+                              <i className={`fa-solid ${issuingLetterId === item.id ? 'fa-spinner fa-spin' : (item.relievingLetterIssued ? 'fa-circle-check' : 'fa-file-export')}`}></i>{' '}
+                              {issuingLetterId === item.id ? 'Generating…' : (item.relievingLetterIssued ? 'Relieving sent' : 'Relieving')}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
