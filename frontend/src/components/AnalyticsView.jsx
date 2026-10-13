@@ -404,7 +404,8 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
       if (dt?.year) yearsSet.add(String(dt.year));
     });
     employees.forEach((e) => {
-      const dt = parseDateMonthYear(e.startDate || e.submittedAt || e.approvedAt);
+      if (!isApproved(e)) return;
+      const dt = parseDateMonthYear(e.approvedAt || e.startDate || e.submittedAt);
       if (dt?.year) yearsSet.add(String(dt.year));
     });
     leaves.forEach((l) => {
@@ -414,12 +415,13 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
     return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
   }, [allOffboardedList, employees, leaves]);
 
-  // Count onboarded per month for selected year
+  // Count onboarded (approved) per month for selected year
   const monthlyOnboardCounts = useMemo(() => {
     const summary = {};
     for (let i = 1; i <= 12; i++) summary[i] = 0;
     employees.forEach((e) => {
-      const dt = parseDateMonthYear(e.startDate || e.submittedAt || e.approvedAt);
+      if (!isApproved(e)) return; // Only count approved & active onboarded employees
+      const dt = parseDateMonthYear(e.approvedAt || e.startDate || e.submittedAt);
       if (dt) {
         if (selectedYear === 'all' || dt.year === parseInt(selectedYear, 10)) {
           summary[dt.month] = (summary[dt.month] || 0) + 1;
@@ -461,10 +463,12 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
     return summary;
   }, [allOffboardedList, selectedYear]);
 
-  // Filtered Onboarded candidates by Year, Month, and Search Query
+  // Filtered Onboarded candidates by Year, Month, and Search Query (strictly approved/inducted employees)
   const filteredOnboarded = useMemo(() => {
     return employees.filter((e) => {
-      const dt = parseDateMonthYear(e.startDate || e.submittedAt || e.approvedAt);
+      if (!isApproved(e)) return false; // Exclude rejected & unapproved candidates from Onboarded roster
+
+      const dt = parseDateMonthYear(e.approvedAt || e.startDate || e.submittedAt);
 
       if (selectedYear !== 'all') {
         const yr = parseInt(selectedYear, 10);
@@ -551,22 +555,20 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
 
   // Filtered Onboarding Stats
   const filteredOnboardingStats = useMemo(() => {
-    const totalAll = employees.length;
+    const totalAll = onboardingStats.approved;
     const totalFiltered = filteredOnboarded.length;
-    const approved = filteredOnboarded.filter(isApproved);
-    const pending = filteredOnboarded.filter(isPending);
-    const rejected = filteredOnboarded.filter((e) => e.status === 'Rejected');
-    const provisioned = approved.filter(isFullyProvisioned).length;
+    const approved = filteredOnboarded.length;
+    const provisioned = filteredOnboarded.filter(isFullyProvisioned).length;
+    const o365Synced = filteredOnboarded.filter((e) => Boolean(e.o365Email && e.orangeHrmEmpNumber)).length;
 
     return {
       totalAll,
       totalFiltered,
-      approved: approved.length,
-      pending: pending.length,
-      rejected: rejected.length,
+      approved,
       provisioned,
+      o365Synced,
     };
-  }, [employees, filteredOnboarded]);
+  }, [onboardingStats.approved, filteredOnboarded]);
 
   // Filtered Leave Stats
   const filteredLeaveStats = useMemo(() => {
@@ -941,8 +943,8 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <div className="analytics-sub-badge" style={{ background: 'rgba(16, 185, 129, 0.12)', color: 'var(--accent-emerald)' }}>
-                <i className="fa-solid fa-users"></i> {filteredOnboarded.length} {filteredOnboarded.length === 1 ? 'Candidate' : 'Candidates'}
-                {selectedMonth !== 'all' || selectedYear !== 'all' ? ` (${onboardingStats.total} total)` : ''}
+                <i className="fa-solid fa-users"></i> {filteredOnboarded.length} {filteredOnboarded.length === 1 ? 'Onboarded Employee' : 'Onboarded Employees'}
+                {selectedMonth !== 'all' || selectedYear !== 'all' ? ` (${onboardingStats.approved} total)` : ''}
               </div>
             </div>
           </div>
@@ -995,7 +997,7 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
                   style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem', width: 'auto', minWidth: '160px', borderRadius: '6px' }}
                 >
                   {MONTHS_LIST.map((m) => {
-                    const countInMonth = m.value !== 'all' ? (monthlyOnboardCounts[parseInt(m.value, 10)] || 0) : employees.length;
+                    const countInMonth = m.value !== 'all' ? (monthlyOnboardCounts[parseInt(m.value, 10)] || 0) : onboardingStats.approved;
                     return (
                       <option key={m.value} value={m.value}>
                         {m.label} {countInMonth > 0 ? `(${countInMonth})` : ''}
@@ -1096,21 +1098,21 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
           <div className="leave-stat-strip" style={{ marginBottom: '1.15rem' }}>
             <div className="leave-stat-pill">
               <span className="leave-stat-pill-label" style={{ color: 'var(--accent-emerald)' }}>
-                {selectedMonth !== 'all' ? `${MONTHS_LIST.find((m) => m.value === selectedMonth)?.label} Inductions` : 'Total Inductions'}
+                {selectedMonth !== 'all' ? `${MONTHS_LIST.find((m) => m.value === selectedMonth)?.label} Onboarded` : 'Total Onboarded'}
               </span>
-              <span className="leave-stat-pill-val" style={{ color: 'var(--accent-emerald)' }}>{filteredOnboardingStats.totalFiltered}</span>
+              <span className="leave-stat-pill-val" style={{ color: 'var(--accent-emerald)' }}>{filteredOnboarded.length}</span>
             </div>
             <div className="leave-stat-pill">
               <span className="leave-stat-pill-label" style={{ color: 'var(--accent-emerald)' }}>Approved & Active</span>
               <span className="leave-stat-pill-val" style={{ color: 'var(--accent-emerald)' }}>{filteredOnboardingStats.approved}</span>
             </div>
             <div className="leave-stat-pill">
-              <span className="leave-stat-pill-label" style={{ color: 'var(--accent-amber)' }}>Pending HR Review</span>
-              <span className="leave-stat-pill-val" style={{ color: 'var(--accent-amber)' }}>{filteredOnboardingStats.pending}</span>
-            </div>
-            <div className="leave-stat-pill">
               <span className="leave-stat-pill-label" style={{ color: 'var(--brand-orange)' }}>Hardware Provisioned</span>
               <span className="leave-stat-pill-val" style={{ color: 'var(--brand-orange)' }}>{filteredOnboardingStats.provisioned}</span>
+            </div>
+            <div className="leave-stat-pill">
+              <span className="leave-stat-pill-label" style={{ color: 'var(--accent-purple)' }}>O365 & PIM Synced</span>
+              <span className="leave-stat-pill-val" style={{ color: 'var(--accent-purple)' }}>{filteredOnboardingStats.o365Synced}</span>
             </div>
           </div>
 
