@@ -62,4 +62,5 @@ setup_and_run.py
 run_app.py
 installer.py
 nginx/
+cloudflared.exe
 *.zip
