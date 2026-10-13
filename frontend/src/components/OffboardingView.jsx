@@ -804,15 +804,17 @@ export default function OffboardingView() {
                 <i className="fa-solid fa-trash-can"></i> Clear logs
               </button>
             )}
-            <button
-              className="btn btn-secondary"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}
-              title="Sync tickets with ServiceNow"
-            >
-              <i className={`fa-solid fa-arrows-rotate ${isRefreshing ? 'fa-spin' : ''}`}></i> {isRefreshing ? 'Syncing...' : 'Refresh'}
-            </button>
+            {hasChecked && (
+              <button
+                className="btn btn-secondary"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}
+                title="Sync tickets with ServiceNow"
+              >
+                <i className={`fa-solid fa-arrows-rotate ${isRefreshing ? 'fa-spin' : ''}`}></i> {isRefreshing ? 'Syncing...' : 'Refresh'}
+              </button>
+            )}
           </div>
         </div>
 
