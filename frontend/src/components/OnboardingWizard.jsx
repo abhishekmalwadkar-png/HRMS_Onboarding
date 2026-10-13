@@ -14,8 +14,8 @@ const PERSONAL_FIELDS = [
   { id: 'email', label: 'Personal email', type: 'email', autoComplete: 'email' },
   { id: 'phone', label: 'Phone number', type: 'tel', autoComplete: 'tel' },
   { id: 'dob', label: 'Date of birth', type: 'date', autoComplete: 'bday' },
-  { id: 'aadhaar', label: 'Aadhaar number', type: 'text' },
-  { id: 'uan', label: 'EPFO UAN number', type: 'text' },
+  { id: 'aadhaar', label: 'Aadhaar number', type: 'text', maxLength: 12, placeholder: '12-digit Aadhaar number' },
+  { id: 'uan', label: 'EPFO UAN number', type: 'text', maxLength: 12, placeholder: '12-digit UAN number' },
   { id: 'emergencyName', label: 'Emergency contact name', type: 'text' },
   { id: 'emergencyPhone', label: 'Emergency contact phone', type: 'tel' },
   { id: 'address', label: 'Current residential address', type: 'text', autoComplete: 'street-address', full: true },
@@ -40,6 +40,14 @@ function validateField(id, value) {
   if (!v) return 'This field is required.';
   if (id === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'Enter a valid email address, e.g. name@example.com.';
   if ((id === 'phone' || id === 'emergencyPhone') && v.replace(/\D/g, '').length < 10) return 'Enter at least 10 digits.';
+  if (id === 'aadhaar') {
+    const clean = v.replace(/\D/g, '');
+    if (clean.length !== 12) return 'Aadhaar number must be exactly 12 digits.';
+  }
+  if (id === 'uan') {
+    const clean = v.replace(/\D/g, '');
+    if (clean.length !== 12) return 'EPFO UAN number must be exactly 12 digits.';
+  }
   return '';
 }
 
@@ -471,7 +479,10 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
   };
 
   const handleInputChange = (e) => {
-    const { id, value, type, checked } = e.target;
+    let { id, value, type, checked } = e.target;
+    if (id === 'aadhaar' || id === 'uan') {
+      value = value.replace(/\D/g, '').slice(0, 12);
+    }
     setFormData((prev) => ({
       ...prev,
       [id]: type === 'checkbox' ? checked : value,
@@ -539,8 +550,8 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
       phone: `+91 ${Math.floor(95000 + Math.random() * 49999)} ${Math.floor(10000 + Math.random() * 89999)}`,
       dob: '1995-07-20',
       pan: `ABCDE${randPanNum}${panChar}`,
-      aadhaar: `${Math.floor(2000 + Math.random() * 7000)} ${Math.floor(1000 + Math.random() * 8999)} ${Math.floor(1000 + Math.random() * 8999)}`,
-      uan: `1012 ${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(1000 + Math.random() * 9000)}`,
+      aadhaar: `${Math.floor(2000 + Math.random() * 7000)}${Math.floor(1000 + Math.random() * 8999)}${Math.floor(1000 + Math.random() * 8999)}`,
+      uan: `1012${Math.floor(1000 + Math.random() * 9000)}${Math.floor(1000 + Math.random() * 9000)}`,
       emergencyName: `${FALLBACK_FIRST_NAMES[Math.floor(Math.random() * FALLBACK_FIRST_NAMES.length)]} ${ln} (Family)`,
       emergencyPhone: `+91 98${Math.floor(10000000 + Math.random() * 89999999)}`,
       address: addr,
@@ -612,7 +623,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
       dob: formData.dob,
       pan: formData.pan,
       aadhaar: formData.aadhaar,
-      uan: formData.uan || '1012 9845 2310',
+      uan: formData.uan || '101298452310',
       emergencyName: formData.emergencyName,
       emergencyPhone: formData.emergencyPhone,
       address: formData.address,
@@ -756,6 +767,8 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                         onChange={handleInputChange}
                         onBlur={handleBlur}
                         autoComplete={f.autoComplete}
+                        maxLength={f.maxLength}
+                        placeholder={f.placeholder}
                         required
                       />
                     </Field>
@@ -1195,7 +1208,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                           आपका <span style={{ color: '#c02626', fontWeight: 700 }}>आधार</span> क्रमांक / Your <span style={{ color: '#c02626', fontWeight: 700 }}>Aadhaar</span> No. :
                         </div>
                         <div style={{ fontSize: '1.28rem', fontWeight: 800, letterSpacing: '3px', color: '#000000', margin: '2px 0' }}>
-                          {formData.aadhaar || '3938 3894 7474'}
+                          {formData.aadhaar ? (formData.aadhaar.length === 12 ? formData.aadhaar.replace(/(\d{4})(\d{4})(\d{4})/, '$1 $2 $3') : formData.aadhaar) : '3938 3894 7474'}
                         </div>
                         <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#c02626', borderBottom: '1.5px solid #c02626', display: 'inline-block', paddingBottom: '1px' }}>
                           मेरा <span style={{ color: '#c02626' }}>आधार</span>, मेरी पहचान
@@ -1246,7 +1259,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                       {/* Aadhaar Number Highlight Box */}
                       <div style={{ marginTop: '0.3rem', paddingTop: '0.25rem', borderTop: '1px solid #000000', textAlign: 'center' }}>
                         <div style={{ fontSize: '1.18rem', fontWeight: 800, letterSpacing: '2.5px', color: '#000000' }}>
-                          {formData.aadhaar || '3938 3894 7474'}
+                          {formData.aadhaar ? (formData.aadhaar.length === 12 ? formData.aadhaar.replace(/(\d{4})(\d{4})(\d{4})/, '$1 $2 $3') : formData.aadhaar) : '3938 3894 7474'}
                         </div>
                         <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#c02626', borderBottom: '1.5px solid #c02626', display: 'inline-block', paddingBottom: '1px' }}>
                           मेरा <span style={{ color: '#c02626' }}>आधार</span>, मेरी पहचान
