@@ -88,15 +88,80 @@ export default function ServicesView() {
       status: 'Approved',
       orangeHrmAssigned: true,
       leaveId: '2'
+    },
+    {
+      id: 'LR-303',
+      employeeName: 'Amit Deshmukh',
+      empNumber: 42,
+      type: 'Sick Leave',
+      from: '2026-10-18',
+      to: '2026-10-19',
+      days: 2,
+      reason: 'Doctor consultation & medical rest',
+      status: 'Pending HR Approval',
+      orangeHrmAssigned: false,
+      leaveId: '3'
+    },
+    {
+      id: 'LR-304',
+      employeeName: 'Priya Iyer',
+      empNumber: 43,
+      type: 'Privilege Leave',
+      from: '2026-11-02',
+      to: '2026-11-05',
+      days: 4,
+      reason: 'Diwali holiday vacation',
+      status: 'Approved',
+      orangeHrmAssigned: true,
+      leaveId: '4'
+    },
+    {
+      id: 'LR-305',
+      employeeName: 'Rohan Mehta',
+      empNumber: 44,
+      type: 'Casual Leave',
+      from: '2026-10-28',
+      to: '2026-10-28',
+      days: 1,
+      reason: 'Banking & administrative paperwork',
+      status: 'Pending HR Approval',
+      orangeHrmAssigned: false,
+      leaveId: '5'
+    },
+    {
+      id: 'LR-306',
+      employeeName: 'Sneha Patil',
+      empNumber: 45,
+      type: 'Sick Leave',
+      from: '2026-10-15',
+      to: '2026-10-16',
+      days: 2,
+      reason: 'Viral fever recovery',
+      status: 'Approved',
+      orangeHrmAssigned: true,
+      leaveId: '6'
+    },
+    {
+      id: 'LR-307',
+      employeeName: 'Vikram Malhotra',
+      empNumber: 46,
+      type: 'Privilege Leave',
+      from: '2026-11-10',
+      to: '2026-11-12',
+      days: 3,
+      reason: 'Outstation family wedding',
+      status: 'Pending HR Approval',
+      orangeHrmAssigned: false,
+      leaveId: '7'
     }
   ]);
 
-  const [empNumber, setEmpNumber] = useState(41);
-  const [employeeName, setEmployeeName] = useState(currentUser?.name?.split(' (')[0] || 'Karthik Swaminathan');
+  const [empNumber, setEmpNumber] = useState('');
+  const [employeeName, setEmployeeName] = useState('');
   const [leaveType, setLeaveType] = useState('Casual Leave');
-  const [fromDate, setFromDate] = useState('2026-11-04');
-  const [toDate, setToDate] = useState('2026-11-05');
-  const [reason, setReason] = useState('Personal family event');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [reason, setReason] = useState('');
   const [leaveError, setLeaveError] = useState('');
   const [leaveResult, setLeaveResult] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,6 +176,15 @@ export default function ServicesView() {
     { id: 1, text: 'Hello! I am your HR policy assistant. Ask me about leave rules, laptops, email accounts or employee benefits.', sender: 'bot' },
   ]);
   const chatLogRef = useRef(null);
+
+  const [leavePage, setLeavePage] = useState(1);
+  const LEAVES_PER_PAGE = 4;
+  const totalLeavePages = Math.ceil(leaveRequests.length / LEAVES_PER_PAGE) || 1;
+  const safeLeavePage = Math.min(leavePage, totalLeavePages);
+  const paginatedLeaves = leaveRequests.slice(
+    (safeLeavePage - 1) * LEAVES_PER_PAGE,
+    safeLeavePage * LEAVES_PER_PAGE
+  );
 
   const requestedDays = daysBetween(fromDate, toDate);
 
@@ -205,6 +279,16 @@ export default function ServicesView() {
 
   const handleApplyLeave = async (e) => {
     e.preventDefault();
+    if (!employeeName.trim()) {
+      setLeaveError('Please enter the employee name.');
+      document.getElementById('leave-employee')?.focus();
+      return;
+    }
+    if (!fromDate || !toDate) {
+      setLeaveError('Please select both a start date and an end date.');
+      document.getElementById('leave-from')?.focus();
+      return;
+    }
     if (!requestedDays) {
       setLeaveError('The end date must be on or after the start date.');
       document.getElementById('leave-to')?.focus();
@@ -455,6 +539,254 @@ export default function ServicesView() {
         ))}
       </motion.div>
 
+      {/* Recent Leave Requests List - Placed in between KPI cards and Request Leave */}
+      <Card
+        title="Recent Leave Requests"
+        icon="fa-solid fa-list-check"
+        actions={
+          <button
+            type="button"
+            onClick={handleLiveSync}
+            disabled={isSyncing}
+            className="btn btn-secondary btn-sm"
+            style={{
+              padding: '4px 10px',
+              fontSize: '12px',
+              borderRadius: '6px',
+              color: '#ea580c',
+              borderColor: '#ea580c',
+              background: 'rgba(234, 88, 12, 0.08)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              cursor: 'pointer',
+              fontWeight: '600',
+            }}
+            title="Synchronize live leave requests & OrangeHRM data"
+          >
+            <i className={`fa-solid fa-sync ${isSyncing ? 'fa-spin' : ''}`}></i>
+            <span>{isSyncing ? 'Syncing...' : 'Live Sync'}</span>
+          </button>
+        }
+        style={{ marginBottom: '1.5rem' }}
+      >
+        {leaveRequests.length === 0 ? (
+          <div className="cell-sub" style={{ fontSize: '0.84rem', padding: '0.65rem 0' }}>No leave requests found.</div>
+        ) : (
+          <>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+              {paginatedLeaves.map((r) => {
+                const isApproved = r.status === 'Approved' || r.orangeHrmAssigned;
+                const isRejected = r.status === 'Rejected';
+                return (
+                  <li
+                    key={r.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.6rem 0.95rem',
+                      borderRadius: 'var(--radius-md)',
+                      background: 'var(--bg-primary)',
+                      border: '1px solid var(--border-color)',
+                      fontSize: '0.84rem',
+                      gap: '0.75rem',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    {/* Employee Name + Status / Action Buttons */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                        <i className="fa-solid fa-user text-muted" style={{ fontSize: '0.8rem' }}></i>
+                        <span>{r.employeeName || 'Karthik Swaminathan'}</span>
+                      </div>
+
+                      {/* Approval Status / Action Buttons directly next to name */}
+                      {isApproved ? (
+                        <span
+                          className="badge badge-approved"
+                          style={{
+                            fontSize: '0.72rem',
+                            padding: '2px 8px',
+                            fontWeight: 600,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            background: 'rgba(16, 185, 129, 0.12)',
+                            color: 'var(--accent-emerald)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                          }}
+                          title="Leave is approved and synced to OrangeHRM"
+                        >
+                          <i className="fa-solid fa-circle-check"></i> Approved
+                        </span>
+                      ) : isRejected ? (
+                        <span
+                          className="badge"
+                          style={{
+                            fontSize: '0.72rem',
+                            padding: '2px 8px',
+                            fontWeight: 600,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            color: 'var(--accent-rose)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                          }}
+                          title="Leave request rejected"
+                        >
+                          <i className="fa-solid fa-xmark"></i> Rejected
+                        </span>
+                      ) : (
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleApproveLeaveInOrangeHRM(r)}
+                            disabled={approvingLeaveId === r.id}
+                            style={{
+                              padding: '2px 9px',
+                              fontSize: '11px',
+                              borderRadius: '5px',
+                              fontWeight: 600,
+                              background: 'rgba(16, 185, 129, 0.14)',
+                              color: '#10b981',
+                              border: '1px solid rgba(16, 185, 129, 0.4)',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'all 0.15s ease',
+                            }}
+                            title="Approve leave and sync to OrangeHRM"
+                          >
+                            <i className="fa-solid fa-check"></i> Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRejectLeave(r)}
+                            disabled={rejectingLeaveId === r.id}
+                            style={{
+                              padding: '2px 9px',
+                              fontSize: '11px',
+                              borderRadius: '5px',
+                              fontWeight: 600,
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              color: '#ef4444',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'all 0.15s ease',
+                            }}
+                            title="Reject leave request"
+                          >
+                            <i className="fa-solid fa-xmark"></i> Reject
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right side: Type of Leave & How many days */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span
+                        className="badge"
+                        style={{
+                          fontSize: '0.74rem',
+                          fontWeight: 600,
+                          background:
+                            (r.type || '').includes('Casual')
+                              ? 'rgba(248, 121, 23, 0.12)'
+                              : (r.type || '').includes('Sick')
+                              ? 'rgba(225, 29, 72, 0.12)'
+                              : 'rgba(99, 102, 241, 0.12)',
+                          color:
+                            (r.type || '').includes('Casual')
+                              ? 'var(--brand-orange)'
+                              : (r.type || '').includes('Sick')
+                              ? 'var(--accent-rose)'
+                              : 'var(--accent-purple)',
+                        }}
+                      >
+                        {r.type}
+                      </span>
+
+                      <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.84rem' }}>
+                        {r.days} {Number(r.days) === 1 ? 'day' : 'days'}
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Pagination Controls (4 items per page) */}
+            {leaveRequests.length > LEAVES_PER_PAGE && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginTop: '0.85rem',
+                  paddingTop: '0.65rem',
+                  borderTop: '1px solid var(--border-color)',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-muted)',
+                  flexWrap: 'wrap',
+                  gap: '0.5rem',
+                }}
+              >
+                <span>
+                  Showing <strong style={{ color: 'var(--text-main)' }}>{((safeLeavePage - 1) * LEAVES_PER_PAGE) + 1}–{Math.min(safeLeavePage * LEAVES_PER_PAGE, leaveRequests.length)}</strong> of <strong style={{ color: 'var(--text-main)' }}>{leaveRequests.length}</strong> requests (4 per page)
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    disabled={safeLeavePage <= 1}
+                    onClick={() => setLeavePage((p) => Math.max(1, p - 1))}
+                    style={{ padding: '3px 8px', fontSize: '11px', borderRadius: '6px' }}
+                  >
+                    <i className="fa-solid fa-chevron-left"></i> Prev
+                  </button>
+                  {Array.from({ length: totalLeavePages }, (_, i) => i + 1).map((pg) => (
+                    <button
+                      key={pg}
+                      type="button"
+                      onClick={() => setLeavePage(pg)}
+                      style={{
+                        padding: '3px 8px',
+                        fontSize: '11px',
+                        borderRadius: '6px',
+                        fontWeight: 600,
+                        border: pg === safeLeavePage ? '1px solid var(--brand-orange)' : '1px solid var(--border-color)',
+                        background: pg === safeLeavePage ? 'var(--brand-orange)' : 'var(--bg-secondary)',
+                        color: pg === safeLeavePage ? '#fff' : 'var(--text-main)',
+                        cursor: 'pointer',
+                        minWidth: '26px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {pg}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    disabled={safeLeavePage >= totalLeavePages}
+                    onClick={() => setLeavePage((p) => Math.min(totalLeavePages, p + 1))}
+                    style={{ padding: '3px 8px', fontSize: '11px', borderRadius: '6px' }}
+                  >
+                    Next <i className="fa-solid fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+
       <motion.div className="panel-grid" variants={staggerContainer} initial="hidden" animate="show">
         {/* Leave request */}
         <Card
@@ -541,172 +873,6 @@ export default function ServicesView() {
               </button>
             </div>
           </form>
-
-          <h3 className="subsection-title" style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-            <span>Recent requests & OrangeHRM Sync</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={handleLiveSync}
-                disabled={isSyncing}
-                className="btn btn-secondary btn-sm"
-                style={{
-                  padding: '3px 9px',
-                  fontSize: '11px',
-                  borderRadius: '6px',
-                  color: '#ea580c',
-                  borderColor: '#ea580c',
-                  background: 'rgba(234, 88, 12, 0.08)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  cursor: 'pointer',
-                  fontWeight: '600'
-                }}
-                title="Synchronize live leave requests & OrangeHRM data"
-              >
-                <i className={`fa-solid fa-sync ${isSyncing ? 'fa-spin' : ''}`}></i>
-                <span>{isSyncing ? 'Syncing...' : 'Live Sync'}</span>
-              </button>
-              {leaveRequests.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleClearLeaveLogs}
-                  disabled={isClearingLogs}
-                  className="btn btn-secondary btn-sm"
-                  style={{
-                    padding: '3px 9px',
-                    fontSize: '11px',
-                    borderRadius: '6px',
-                    color: '#ef4444',
-                    borderColor: '#fca5a5',
-                    background: 'rgba(239, 68, 68, 0.08)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                  title="Clear all leave request logs"
-                >
-                  <i className={`fa-solid ${isClearingLogs ? 'fa-spinner fa-spin' : 'fa-trash-can'}`}></i>
-                  <span>Delete logs</span>
-                </button>
-              )}
-            </div>
-          </h3>
-
-          <ul className="request-list">
-            {leaveRequests.map((r) => {
-              const isPending = r.status?.startsWith('Pending');
-              const isApproving = approvingLeaveId === r.id;
-
-              return (
-                <li key={r.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', borderRadius: '8px', background: 'var(--bg-card, #ffffff)', border: '1px solid var(--border-color, #e2e8f0)' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>{r.type}</strong>
-                        {r.employeeName && (
-                          <span style={{ fontSize: '12px', color: 'var(--text-secondary, #64748b)', fontWeight: '500' }}>
-                            ({r.employeeName})
-                          </span>
-                        )}
-                      </div>
-                      <div className="cell-sub" style={{ marginTop: '2px', fontSize: '12px', color: 'var(--text-muted, #78716c)' }}>
-                        <i className="fa-regular fa-calendar" style={{ marginRight: '4px' }}></i>
-                        {r.from === r.to ? r.from : `${r.from} → ${r.to}`} · {r.days} day(s)
-                        {r.reason && ` · "${r.reason}"`}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span className={`badge ${leaveStatusClass(r.status)}`}>
-                        {r.orangeHrmAssigned ? (
-                          <><i className="fa-solid fa-check-double"></i> Approved (OrangeHRM Assigned)</>
-                        ) : (
-                          r.status
-                        )}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteSingleLog(r.id, e)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#94a3b8',
-                          cursor: 'pointer',
-                          padding: '3px 6px',
-                          fontSize: '12px',
-                          borderRadius: '4px'
-                        }}
-                        title="Delete this request log"
-                        onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
-                      >
-                        <i className="fa-regular fa-trash-can"></i>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* HR Approval & Rejection Actions if Pending */}
-                  {isPending && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', borderTop: '1px dashed var(--border-subtle, #e2e8f0)', paddingTop: '8px', marginTop: '4px' }}>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        disabled={isApproving || rejectingLeaveId === r.id}
-                        onClick={() => handleRejectLeave(r)}
-                        style={{
-                          padding: '4px 10px',
-                          fontSize: '11.5px',
-                          fontWeight: '600',
-                          borderRadius: '6px',
-                          color: '#ef4444',
-                          borderColor: 'rgba(239, 68, 68, 0.4)',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px'
-                        }}
-                      >
-                        {rejectingLeaveId === r.id ? (
-                          <><i className="fa-solid fa-spinner fa-spin"></i> Rejecting...</>
-                        ) : (
-                          <><i className="fa-solid fa-circle-xmark"></i> Reject</>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-sm"
-                        disabled={isApproving || rejectingLeaveId === r.id}
-                        onClick={() => handleApproveLeaveInOrangeHRM(r)}
-                        style={{
-                          padding: '4px 10px',
-                          fontSize: '11.5px',
-                          fontWeight: '600',
-                          borderRadius: '6px',
-                          background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                          color: '#ffffff',
-                          border: 'none',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px'
-                        }}
-                      >
-                        {isApproving ? (
-                          <><i className="fa-solid fa-spinner fa-spin"></i> Assigning...</>
-                        ) : (
-                          <><i className="fa-solid fa-user-check"></i> Approve & Assign (OrangeHRM)</>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
         </Card>
 
         {/* AI HR Policy Assistant */}

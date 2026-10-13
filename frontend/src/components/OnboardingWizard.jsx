@@ -209,6 +209,35 @@ const FALLBACK_LAST_NAMES = [
   'Srivastava', 'Tambe', 'Tendulkar', 'Tiwari', 'Varma', 'Verma'
 ];
 
+const JOB_ROLES_POOL = [
+  { dept: 'Engineering', role: 'Staff AI Systems Engineer', mgr: 'Amit Deshmukh (VP of Engineering)', hardware: 'Apple MacBook Pro M3 Max', salary: '₹34,50,000 INR / annum (₹34.5 LPA)' },
+  { dept: 'Engineering', role: 'Lead Cloud Solutions Architect', mgr: 'Suresh Nair (Director of Cloud Infrastructure)', hardware: 'Apple MacBook Pro M3 Max', salary: '₹36,00,000 INR / annum (₹36.0 LPA)' },
+  { dept: 'Engineering', role: 'Senior Machine Learning Specialist', mgr: 'Amit Deshmukh (VP of Engineering)', hardware: 'Apple MacBook Pro M3 Max', salary: '₹29,00,000 INR / annum (₹29.0 LPA)' },
+  { dept: 'Engineering', role: 'Full Stack DevOps Engineer', mgr: 'David Miller (Director of Engineering)', hardware: 'Dell Precision 5680 Workstation', salary: '₹24,50,000 INR / annum (₹24.5 LPA)' },
+  { dept: 'Data & AI', role: 'Principal Data Platform Architect', mgr: 'Priya Iyer (Head of Data & AI)', hardware: 'Apple MacBook Pro M3 Max', salary: '₹38,00,000 INR / annum (₹38.0 LPA)' },
+  { dept: 'Quality Assurance', role: 'Lead Automation QA Engineer', mgr: 'Rohan Mehta (Director of QA)', hardware: 'Lenovo ThinkPad P1 Gen 6', salary: '₹21,00,000 INR / annum (₹21.0 LPA)' },
+  { dept: 'Cloud Infrastructure', role: 'Senior Site Reliability Engineer', mgr: 'Suresh Nair (Director of Cloud Infrastructure)', hardware: 'Apple MacBook Pro M3 Max', salary: '₹26,00,000 INR / annum (₹26.0 LPA)' },
+  { dept: 'Product Management', role: 'Senior Technical Product Manager', mgr: 'Pooja Deshmukh (VP of Product)', hardware: 'Apple MacBook Pro M3 Max', salary: '₹31,00,000 INR / annum (₹31.0 LPA)' },
+];
+
+const BANKS_POOL = [
+  { bankName: 'HDFC Bank', routingCode: 'HDFC0001234' },
+  { bankName: 'ICICI Bank', routingCode: 'ICIC0000456' },
+  { bankName: 'State Bank of India', routingCode: 'SBIN0008765' },
+  { bankName: 'Axis Bank', routingCode: 'UTIB0001122' },
+  { bankName: 'Kotak Mahindra Bank', routingCode: 'KKBK0000123' },
+];
+
+const ADDRESSES_POOL = [
+  'Flat 402, Marvel Palms, Baner, Pune, Maharashtra 411045',
+  'Tower 8, Apt 1104, Blue Ridge Town, Hinjawadi Phase 2, Pune, Maharashtra 411057',
+  'B-303, Rohan Tarang, Wakad, Pune, Maharashtra 411057',
+  '1200 Silicon Residency, Sector 5, HSR Layout, Bengaluru, Karnataka 560102',
+  'Apt 601, Prestige Oasis, Whitefield, Bengaluru, Karnataka 560066',
+  'Flat 15B, Lodha Bellissimo, Apollo Mills, Lower Parel, Mumbai, Maharashtra 400011',
+  'Plot 45, Jubilee Hills, Road No. 36, Hyderabad, Telangana 500033',
+];
+
 export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
   const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
@@ -221,37 +250,33 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
   const lastIndexRef = useRef(-1);
   const usedNamesRef = useRef(new Set());
 
-  // Form State
+  // Form State - start completely unfilled until user clicks "Auto-fill sample"
   const [formData, setFormData] = useState({
-    fullName: 'Aarav Sharma',
-    email: 'aarav.sharma@example.com',
-    phone: '+91 98230 45671',
-    dob: '1994-06-15',
-    pan: 'ABCDE1234F',
-    aadhaar: '4532 8901 2345',
-    uan: '1012 9845 2310',
-    emergencyName: 'Sunita Sharma (Mother)',
-    emergencyPhone: '+91 98230 45670',
-    address: 'Flat 402, Marvel Palms, Baner, Pune, Maharashtra 411045',
-    bankName: 'HDFC Bank Ltd',
-    accountNumber: '918230491029',
-    routingCode: 'HDFC0001234',
+    fullName: '',
+    email: '',
+    phone: '',
+    dob: '',
+    pan: '',
+    aadhaar: '',
+    uan: '',
+    emergencyName: '',
+    emergencyPhone: '',
+    address: '',
+    bankName: '',
+    accountNumber: '',
+    routingCode: '',
     hardware: 'Apple MacBook Pro M3 Max',
-    department: 'Engineering',
-    jobTitle: 'Staff AI Systems Engineer',
-    manager: 'Amit Deshmukh (VP of Engineering)',
-    startDate: '2026-10-15',
-    salary: '₹32,00,000 INR / annum (₹32.0 LPA)',
-    agreeOffer: true,
-    agreeBgv: true,
-    agreePolicy: true,
+    department: '',
+    jobTitle: '',
+    manager: '',
+    startDate: '',
+    salary: '',
+    agreeOffer: false,
+    agreeBgv: false,
+    agreePolicy: false,
   });
 
-  const [documents, setDocuments] = useState({
-    idDoc: { name: 'Aadhaar_Card_Aarav_Sharma_Verified.pdf', size: '2.4 MB' },
-    uanDoc: { name: 'UAN_Card_Aarav_Sharma_EPFO.pdf', size: '1.6 MB' },
-    salaryDoc: { name: 'Salary_Slip_Recent_Months_Aarav_Sharma.pdf', size: '1.4 MB' },
-  });
+  const [documents, setDocuments] = useState({});
 
   const handleFileChange = (docKey, e) => {
     const file = e.target.files?.[0];
@@ -293,6 +318,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     }
   };
 
+  const [hasSignature, setHasSignature] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const isDrawingRef = useRef(false);
 
@@ -314,9 +340,10 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     ctx.setLineDash([]);
 
     // Cursive signature
+    const sigName = (name || formData.fullName || 'Candidate Signature').trim();
     ctx.font = "italic bold 32px 'Caveat', cursive, 'Brush Script MT', sans-serif";
     ctx.fillStyle = '#c2410c';
-    ctx.fillText(name || 'Aarav Sharma', 40, canvas.height / 2 + 8);
+    ctx.fillText(sigName, 40, canvas.height / 2 + 8);
 
     ctx.beginPath();
     ctx.strokeStyle = '#c2410c';
@@ -326,6 +353,9 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     ctx.moveTo(35, canvas.height / 2 + 25);
     ctx.quadraticCurveTo(canvas.width / 2, canvas.height / 2 + 40, canvas.width - 60, canvas.height / 2 + 20);
     ctx.stroke();
+
+    setHasSignature(true);
+    setHasDrawn(true);
   };
 
   const clearSignature = () => {
@@ -344,15 +374,26 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    setHasDrawn(true);
+    setHasSignature(false);
+    setHasDrawn(false);
   };
 
-  // Setup signature canvas initial render
+  // Setup signature canvas initial render with empty baseline
   useEffect(() => {
-    if (currentStep === 2 && canvasRef.current && !hasDrawn) {
-      drawAutoSignature(formData.fullName);
+    if (currentStep === 2 && canvasRef.current && !hasSignature) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.moveTo(30, canvas.height - 25);
+      ctx.lineTo(canvas.width - 30, canvas.height - 25);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
-  }, [currentStep, formData.fullName, hasDrawn]);
+  }, [currentStep, hasSignature]);
 
   // Pointer drawing events (supports mouse, stylus, and touch)
   const getCanvasCoordinates = (e) => {
@@ -388,6 +429,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     }
 
     isDrawingRef.current = true;
+    setHasSignature(true);
     const pos = getCanvasCoordinates(e);
     ctx.beginPath();
     ctx.strokeStyle = '#0f172a';
@@ -406,12 +448,14 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     const pos = getCanvasCoordinates(e);
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
+    setHasSignature(true);
   };
 
   const handlePointerUp = (e) => {
     if (isDrawingRef.current) {
       e.preventDefault();
       isDrawingRef.current = false;
+      setHasSignature(true);
     }
   };
 
@@ -451,122 +495,66 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     setCurrentStep(step);
   };
 
-  const handleAutoFill = async () => {
-    let profile = null;
-    try {
-      const res = await fetch('/api/autofill?t=' + Date.now());
-      if (res.ok) {
-        const data = await res.json();
-        // Check if server directly sent unique candidate profile with fullName
-        if (data && data.fullName) {
-          profile = data;
-        } else if (data && data.autofillProfiles && data.autofillProfiles.length > 0) {
-          const profiles = data.autofillProfiles;
-          let nextIdx;
-          if (profiles.length === 1) {
-            nextIdx = 0;
-          } else {
-            do {
-              nextIdx = Math.floor(Math.random() * profiles.length);
-            } while (nextIdx === lastIndexRef.current && profiles.length > 1);
-          }
-          lastIndexRef.current = nextIdx;
-          profile = profiles[nextIdx];
-        }
-      }
-    } catch (err) {
-      console.warn('AutoFill fetch failed, switching to dynamic generator:', err);
+  const handleAutoFill = () => {
+    // Instantaneous (0ms) candidate profile generator - zero network delay
+    let fn = FALLBACK_FIRST_NAMES[Math.floor(Math.random() * FALLBACK_FIRST_NAMES.length)];
+    let ln = FALLBACK_LAST_NAMES[Math.floor(Math.random() * FALLBACK_LAST_NAMES.length)];
+    let candName = `${fn} ${ln}`;
+    let attempts = 0;
+    while (usedNamesRef.current.has(candName.toLowerCase()) && attempts < 200) {
+      fn = FALLBACK_FIRST_NAMES[Math.floor(Math.random() * FALLBACK_FIRST_NAMES.length)];
+      ln = FALLBACK_LAST_NAMES[Math.floor(Math.random() * FALLBACK_LAST_NAMES.length)];
+      candName = `${fn} ${ln}`;
+      attempts++;
     }
-
-    // Dynamic uniqueness check: if profile is missing or was already used in this session, generate fresh unique Indian name
-    if (!profile || !profile.fullName || usedNamesRef.current.has(profile.fullName.trim().toLowerCase())) {
-      let attempts = 0;
-      let fn = FALLBACK_FIRST_NAMES[Math.floor(Math.random() * FALLBACK_FIRST_NAMES.length)];
-      let ln = FALLBACK_LAST_NAMES[Math.floor(Math.random() * FALLBACK_LAST_NAMES.length)];
-      let candName = `${fn} ${ln}`;
-      while (usedNamesRef.current.has(candName.toLowerCase()) && attempts < 200) {
-        fn = FALLBACK_FIRST_NAMES[Math.floor(Math.random() * FALLBACK_FIRST_NAMES.length)];
-        ln = FALLBACK_LAST_NAMES[Math.floor(Math.random() * FALLBACK_LAST_NAMES.length)];
-        candName = `${fn} ${ln}`;
-        attempts++;
-      }
-      if (usedNamesRef.current.has(candName.toLowerCase())) {
-        ln = `${ln}${Math.floor(10 + Math.random() * 89)}`;
-        candName = `${fn} ${ln}`;
-      }
-
-      const randPanNum = Math.floor(1000 + Math.random() * 9000);
-      const panChars = 'FGHJKLMNPQRSTUVWXYZ';
-      const panChar = panChars.charAt(Math.floor(Math.random() * panChars.length));
-
-      profile = {
-        fullName: candName,
-        firstName: fn,
-        lastName: ln,
-        email: `${fn.toLowerCase()}.${ln.toLowerCase()}@example.com`,
-        phone: `+91 ${Math.floor(95000 + Math.random() * 49999)} ${Math.floor(10000 + Math.random() * 89999)}`,
-        dob: '1995-07-20',
-        pan: `ABCDE${randPanNum}${panChar}`,
-        aadhaar: `${Math.floor(2000 + Math.random() * 7000)} ${Math.floor(1000 + Math.random() * 8999)} ${Math.floor(1000 + Math.random() * 8999)}`,
-        uan: `1012 ${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(1000 + Math.random() * 9000)}`,
-        emergencyName: `${FALLBACK_FIRST_NAMES[Math.floor(Math.random() * FALLBACK_FIRST_NAMES.length)]} ${ln} (Family)`,
-        emergencyPhone: `+91 98${Math.floor(10000000 + Math.random() * 89999999)}`,
-        address: 'Flat 402, Marvel Palms, Baner, Pune, Maharashtra 411045',
-        bankName: 'HDFC Bank',
-        bankAccount: `${Math.floor(100000000000 + Math.random() * 899999999999)}`,
-        routingCode: 'HDFC0001234',
-        hardware: 'Apple MacBook Pro M3 Max',
-        department: 'Engineering',
-        jobTitle: 'Staff AI Systems Engineer',
-        manager: 'Amit Deshmukh (VP of Engineering)',
-        startDate: '2026-10-25',
-        salary: '₹34,50,000 INR / annum (₹34.5 LPA)',
-      };
+    if (usedNamesRef.current.has(candName.toLowerCase())) {
+      ln = `${ln}${Math.floor(10 + Math.random() * 89)}`;
+      candName = `${fn} ${ln}`;
     }
+    usedNamesRef.current.add(candName.toLowerCase());
 
-    const safeFullName = profile.fullName;
-    usedNamesRef.current.add(safeFullName.trim().toLowerCase());
-    const cleanName = safeFullName.replace(/\s+/g, '_');
+    const roleInfo = JOB_ROLES_POOL[Math.floor(Math.random() * JOB_ROLES_POOL.length)];
+    const bankInfo = BANKS_POOL[Math.floor(Math.random() * BANKS_POOL.length)];
+    const addr = ADDRESSES_POOL[Math.floor(Math.random() * ADDRESSES_POOL.length)];
 
-    const bank = profile.bankName || (
-      profile.routingCode?.startsWith('HDFC') ? 'HDFC Bank' :
-      profile.routingCode?.startsWith('ICIC') ? 'ICICI Bank' :
-      profile.routingCode?.startsWith('SBIN') ? 'State Bank of India' :
-      profile.routingCode?.startsWith('AXIS') || profile.routingCode?.startsWith('UTIB') ? 'Axis Bank' :
-      profile.routingCode?.startsWith('KKBK') ? 'Kotak Mahindra Bank' : 'HDFC Bank'
-    );
+    const randPanNum = Math.floor(1000 + Math.random() * 9000);
+    const panChars = 'FGHJKLMNPQRSTUVWXYZ';
+    const panChar = panChars.charAt(Math.floor(Math.random() * panChars.length));
+    const cleanName = candName.replace(/\s+/g, '_');
 
-    setFormData((prev) => ({
-      ...prev,
-      fullName: safeFullName,
-      email: profile.email || `${safeFullName.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-      phone: profile.phone || '+91 98230 45671',
-      dob: profile.dob || '1995-07-20',
-      pan: profile.pan || (profile.id ? 'ABCDE' + profile.id.replace(/\D/g, '') + 'F' : 'ABCDE1234F'),
-      aadhaar: profile.aadhaar || '4532 8901 2345',
-      uan: profile.uan || '1012 ' + Math.floor(1000 + Math.random() * 9000) + ' ' + Math.floor(1000 + Math.random() * 9000),
-      emergencyName: profile.emergencyName || `Sunita ${safeFullName.split(' ').slice(1).join(' ') || 'Sharma'} (Mother)`,
-      emergencyPhone: profile.emergencyPhone || '+91 98230 45670',
-      address: profile.address || 'Flat 402, Marvel Palms, Baner, Pune, Maharashtra 411045',
-      bankName: bank,
-      accountNumber: profile.bankAccount || profile.accountNumber || '918230491029',
-      routingCode: profile.routingCode || 'HDFC0001234',
-      hardware: profile.hardware || 'Apple MacBook Pro M3 Max',
-      department: profile.department || 'Engineering',
-      jobTitle: profile.jobTitle || 'Staff AI Systems Engineer',
-      manager: profile.manager || 'Amit Deshmukh (VP of Engineering)',
-      startDate: profile.startDate || '2026-10-25',
-      salary: profile.salary || '₹32,00,000 INR / annum (₹32.0 LPA)',
-    }));
+    setFormData({
+      fullName: candName,
+      email: `${fn.toLowerCase()}.${ln.toLowerCase()}@example.com`,
+      phone: `+91 ${Math.floor(95000 + Math.random() * 49999)} ${Math.floor(10000 + Math.random() * 89999)}`,
+      dob: '1995-07-20',
+      pan: `ABCDE${randPanNum}${panChar}`,
+      aadhaar: `${Math.floor(2000 + Math.random() * 7000)} ${Math.floor(1000 + Math.random() * 8999)} ${Math.floor(1000 + Math.random() * 8999)}`,
+      uan: `1012 ${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(1000 + Math.random() * 9000)}`,
+      emergencyName: `${FALLBACK_FIRST_NAMES[Math.floor(Math.random() * FALLBACK_FIRST_NAMES.length)]} ${ln} (Family)`,
+      emergencyPhone: `+91 98${Math.floor(10000000 + Math.random() * 89999999)}`,
+      address: addr,
+      bankName: bankInfo.bankName,
+      accountNumber: `${Math.floor(100000000000 + Math.random() * 899999999999)}`,
+      routingCode: bankInfo.routingCode,
+      hardware: roleInfo.hardware,
+      department: roleInfo.dept,
+      jobTitle: roleInfo.role,
+      manager: roleInfo.mgr,
+      startDate: '2026-10-25',
+      salary: roleInfo.salary,
+      agreeOffer: true,
+      agreeBgv: true,
+      agreePolicy: true,
+    });
 
     setDocuments({
-      idDoc: { name: profile.idDocumentName || `Aadhaar_Passport_${cleanName}.pdf`, size: '2.4 MB' },
-      uanDoc: { name: profile.uanDocumentName || `UAN_Card_${cleanName}_EPFO.pdf`, size: '1.6 MB' },
-      salaryDoc: { name: profile.salarySlipDocName || `Salary_Slip_${cleanName}_Recent.pdf`, size: '1.4 MB' },
+      idDoc: { name: `Aadhaar_Passport_${cleanName}.pdf`, size: '2.4 MB' },
+      uanDoc: { name: `UAN_Card_${cleanName}_EPFO.pdf`, size: '1.6 MB' },
+      salaryDoc: { name: `Salary_Slip_${cleanName}_Recent.pdf`, size: '1.4 MB' },
     });
     setErrors({});
     setSubmitResult(null);
-    showToast(`Auto-filled unique candidate: ${safeFullName}`, 'success');
+    showToast(`Auto-filled unique candidate: ${candName}`, 'success');
   };
 
   useEffect(() => {
@@ -581,6 +569,11 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     e.preventDefault();
     if (!validateStep1()) {
       setCurrentStep(1);
+      return;
+    }
+    if (!hasSignature) {
+      showToast('Candidate digital sign-off is compulsory. Please draw your signature or click Auto-sign.', 'error');
+      document.getElementById('signature-label')?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
     setIsSubmitting(true);
@@ -826,16 +819,36 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
 
                 <div className="field">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <span className="field-label" id="signature-label" style={{ marginBottom: 0 }}>
-                      Candidate digital sign-off <span className="required" aria-hidden="true">*</span>
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                      <span className="field-label" id="signature-label" style={{ marginBottom: 0 }}>
+                        Candidate digital sign-off <span className="required" aria-hidden="true">*</span>
+                      </span>
+                      {hasSignature ? (
+                        <span className="badge badge-approved" style={{ fontSize: '0.72rem', padding: '2px 8px', fontWeight: 600 }}>
+                          <i className="fa-solid fa-circle-check"></i> Signed
+                        </span>
+                      ) : (
+                        <span
+                          className="badge"
+                          style={{
+                            fontSize: '0.72rem',
+                            padding: '2px 8px',
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            color: 'var(--accent-rose)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            fontWeight: 600,
+                          }}
+                        >
+                          <i className="fa-solid fa-asterisk" style={{ fontSize: '0.65rem' }}></i> Compulsory to submit
+                        </span>
+                      )}
+                    </div>
                     <div style={{ display: 'flex', gap: '0.4rem' }}>
                       <button
                         type="button"
                         className="btn btn-ghost btn-xs"
                         style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', borderRadius: '4px' }}
                         onClick={() => {
-                          setHasDrawn(false);
                           drawAutoSignature(formData.fullName);
                         }}
                         title="Generate signature from candidate name"
@@ -853,7 +866,16 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                       </button>
                     </div>
                   </div>
-                  <div className="signature-box" style={{ touchAction: 'none', position: 'relative' }}>
+                  <div
+                    className="signature-box"
+                    style={{
+                      touchAction: 'none',
+                      position: 'relative',
+                      border: !hasSignature ? '1.5px dashed #f59e0b' : '1.5px solid #10b981',
+                      borderRadius: 'var(--radius-md)',
+                      transition: 'border 0.2s ease',
+                    }}
+                  >
                     <canvas
                       ref={canvasRef}
                       width={700}
@@ -865,15 +887,35 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                         height: '110px',
                         display: 'block',
                         cursor: 'crosshair',
-                        touchAction: 'none'
+                        touchAction: 'none',
+                        background: 'var(--bg-primary)',
+                        borderRadius: 'var(--radius-md)',
                       }}
                       onPointerDown={handlePointerDown}
                       onPointerMove={handlePointerMove}
                       onPointerUp={handlePointerUp}
                       onPointerLeave={handlePointerUp}
                     />
+                    {!hasSignature && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          pointerEvents: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'var(--text-muted)',
+                          fontSize: '0.82rem',
+                          fontStyle: 'italic',
+                          opacity: 0.65,
+                        }}
+                      >
+                        <span><i className="fa-solid fa-signature" style={{ marginRight: '6px' }}></i> Sign here with mouse / touch or click Auto-sign</span>
+                      </div>
+                    )}
                   </div>
-                  <span className="field-hint">Draw your signature with mouse/touch or use <strong>Auto-sign</strong> to generate from the candidate's legal name.</span>
+                  <span className="field-hint">Draw your signature with mouse/touch or use <strong>Auto-sign</strong> to generate from the candidate's legal name. Candidate signature is compulsory to enable submission.</span>
                 </div>
               </motion.div>
             )}
@@ -893,13 +935,44 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                 </button>
               )}
               {currentStep === 2 && (
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting} aria-busy={isSubmitting}>
-                  {isSubmitting ? (
-                    <><i className="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Submitting…</>
-                  ) : (
-                    <><i className="fa-solid fa-paper-plane" aria-hidden="true"></i> Submit application</>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  {!hasSignature && (
+                    <span
+                      style={{
+                        fontSize: '0.78rem',
+                        color: 'var(--accent-amber)',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        background: 'rgba(245, 158, 11, 0.08)',
+                        padding: '4px 9px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(245, 158, 11, 0.25)',
+                      }}
+                    >
+                      <i className="fa-solid fa-triangle-exclamation"></i> Signature required to submit
+                    </span>
                   )}
-                </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={isSubmitting || !hasSignature}
+                    aria-busy={isSubmitting}
+                    style={{
+                      opacity: !hasSignature ? 0.45 : 1,
+                      cursor: !hasSignature ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    title={!hasSignature ? 'Candidate signature is compulsory before submitting application' : 'Submit onboarding application'}
+                  >
+                    {isSubmitting ? (
+                      <><i className="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Submitting…</>
+                    ) : (
+                      <><i className="fa-solid fa-paper-plane" aria-hidden="true"></i> Submit application</>
+                    )}
+                  </button>
+                </div>
               )}
             </div>
           </div>

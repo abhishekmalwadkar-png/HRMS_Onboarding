@@ -891,7 +891,7 @@ export default function OffboardingView() {
                         <i className="fa-solid fa-file-lines"></i> Resignation Letter
                       </a>
                       <a
-                        href={`/api/exit/payslip?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
+                        href={`/api/exit/offboarding-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
                         download
                         className="badge"
                         style={{
@@ -907,10 +907,10 @@ export default function OffboardingView() {
                           color: '#059669',
                           border: '1px solid rgba(16, 185, 129, 0.25)',
                         }}
-                        title={`Download official monthly payslip for ${item.empName}`}
-                        onClick={() => showToast(`📄 Downloading payslip for ${item.empName}...`, 'info')}
+                        title={`Download official Offboarding Letter for ${item.empName}`}
+                        onClick={() => showToast(`📄 Downloading Offboarding Letter for ${item.empName}...`, 'info')}
                       >
-                        <i className="fa-solid fa-file-invoice-dollar"></i> Payslip
+                        <i className="fa-solid fa-file-contract"></i> Offboarding letter
                       </a>
                       <span
                         onClick={() => inspectOffboardingFlow(item)}
@@ -1024,7 +1024,7 @@ export default function OffboardingView() {
                     </a>
 
                     <a
-                      href={`/api/exit/payslip?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
+                      href={`/api/exit/offboarding-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
                       download
                       className="btn btn-secondary btn-sm"
                       style={{
@@ -1037,10 +1037,10 @@ export default function OffboardingView() {
                         color: 'var(--text-main)',
                         fontWeight: 600,
                       }}
-                      title={`Download official monthly payslip for ${item.empName}`}
-                      onClick={() => showToast(`📄 Downloading payslip for ${item.empName}...`, 'info')}
+                      title={`Download official Offboarding Letter for ${item.empName}`}
+                      onClick={() => showToast(`📄 Downloading Offboarding Letter for ${item.empName}...`, 'info')}
                     >
-                      <i className="fa-solid fa-file-invoice-dollar text-accent"></i> Download payslip
+                      <i className="fa-solid fa-file-contract text-accent"></i> Offboarding letter
                     </a>
                   </div>
                 </div>

@@ -175,21 +175,23 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
         except Exception:
             pass
 
-        # Check OrangeHRM active employees (cached 60s for instant UI responsiveness)
+        # Check OrangeHRM active employees (asynchronous non-blocking cache for instant UI responsiveness)
         global _OHRM_NAMES_CACHE
         now = time.time()
-        if now - _OHRM_NAMES_CACHE.get("last_updated", 0) > 60:
-            try:
-                ohrm_emps = orangehrm_client.get_active_employees()
-                names = set()
-                for oemp in ohrm_emps:
-                    n = oemp.get('fullName') or f"{oemp.get('firstName', '')} {oemp.get('lastName', '')}".strip()
-                    if n:
-                        names.add(n.strip().lower())
-                _OHRM_NAMES_CACHE["names"] = names
-                _OHRM_NAMES_CACHE["last_updated"] = now
-            except Exception:
-                pass
+        if now - _OHRM_NAMES_CACHE.get("last_updated", 0) > 300:
+            _OHRM_NAMES_CACHE["last_updated"] = now
+            def _refresh_ohrm_names():
+                try:
+                    ohrm_emps = orangehrm_client.get_active_employees()
+                    names = set()
+                    for oemp in ohrm_emps:
+                        n = oemp.get('fullName') or f"{oemp.get('firstName', '')} {oemp.get('lastName', '')}".strip()
+                        if n:
+                            names.add(n.strip().lower())
+                    _OHRM_NAMES_CACHE["names"] = names
+                except Exception:
+                    pass
+            threading.Thread(target=_refresh_ohrm_names, daemon=True).start()
         existing_names.update(_OHRM_NAMES_CACHE.get("names", set()))
 
         # Pick a unique First + Last Name that has never been used
@@ -412,6 +414,55 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(b'Could not generate resignation letter')
                 return
+
+        # Download Official Offboarding Letter (Relieving & Experience Certificate) for Offboarded Employee
+        if self.path.split('?')[0] in ('/api/exit/offboarding-letter', '/api/exit/relieving-letter', '/api/offboarding-letter/download', '/api/relieving-letter/download'):
+            query = self.path.split('?')[1] if '?' in self.path else ''
+            import urllib.parse
+            params = urllib.parse.parse_qs(query)
+            target_id = params.get('id', [None])[0]
+            target_name = params.get('name', [None])[0]
+
+            db = self.read_db()
+            matched_emp = None
+            for item in db.get('exitRequests', []):
+                if (target_id and item.get('id') == target_id) or (target_name and item.get('empName') == target_name):
+                    matched_emp = item
+                    break
+            if not matched_emp:
+                for item in db.get('employees', []):
+                    if (target_id and item.get('id') == target_id) or (target_name and item.get('fullName') == target_name):
+                        matched_emp = item
+                        break
+
+            if not matched_emp:
+                matched_emp = {
+                    "empName": target_name or "Employee",
+                    "empId": target_id or "EMP-1042",
+                    "department": "Engineering",
+                    "role": "Senior Specialist",
+                    "serviceNowReq": "REQ0012000"
+                }
+
+            from generate_relieving_letter import generate_relieving_letter_pdf
+            pdf_path = generate_relieving_letter_pdf(matched_emp)
+            if os.path.exists(pdf_path):
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/pdf')
+                filename = os.path.basename(pdf_path)
+                self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
+                self.send_header('Content-Length', str(os.path.getsize(pdf_path)))
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                with open(pdf_path, 'rb') as f:
+                    shutil.copyfileobj(f, self.wfile)
+                return
+            else:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(b'Could not generate offboarding letter')
+                return
+
 
 
         if self.path.startswith('/api/'):
