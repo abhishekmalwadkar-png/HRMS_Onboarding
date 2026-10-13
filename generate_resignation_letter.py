@@ -112,7 +112,7 @@ def generate_resignation_letter_pdf(employee_data: dict) -> str:
     # 1. Company Letterhead Header
     header_data = [
         [
-            Paragraph("<b>MangoHRMS Suite</b><br/><font size=8 color='#64748b'>Enterprise Digital Workplace & Human Resources<br/>AutomationEdge Operations Centre, Pune, India</font>", styles['Normal']),
+            Paragraph("<b>AutomationEdge HR Suite</b><br/><font size=8 color='#64748b'>Enterprise Digital Workplace & Human Resources<br/>AutomationEdge Operations Centre, Pune, India</font>", styles['Normal']),
             Paragraph(f"<b>EMPLOYEE RESIGNATION</b><br/><font size=8 color='#64748b'>ServiceNow Ticket: <b>{service_now_req}</b><br/>Date of Tender: <b>{resignation_date}</b></font>", ParagraphStyle('RightHdr', parent=styles['Normal'], alignment=TA_RIGHT))
         ]
     ]
@@ -131,7 +131,7 @@ def generate_resignation_letter_pdf(employee_data: dict) -> str:
 
     # 3. Addressee Info
     story.append(Paragraph("<b>To:</b>", bold_body_style))
-    story.append(Paragraph("Head of Human Resources & Department Management<br/>MangoHRMS Enterprise Operations", body_style))
+    story.append(Paragraph("Head of Human Resources & Department Management<br/>AutomationEdge HR Enterprise Operations", body_style))
     story.append(Spacer(1, 4))
 
     # 4. From Info
@@ -143,7 +143,7 @@ def generate_resignation_letter_pdf(employee_data: dict) -> str:
     story.append(Paragraph("Dear HR Management & Leadership Team,", bold_body_style))
     story.append(Paragraph(
         f"Please accept this letter as formal notification that I am tendering my resignation from my position as "
-        f"<b>{role}</b> in the <b>{department}</b> Department with <b>MangoHRMS</b>, effective from <b>{resignation_date}</b>.",
+        f"<b>{role}</b> in the <b>{department}</b> Department with <b>AutomationEdge HR Suite</b>, effective from <b>{resignation_date}</b>.",
         body_style
     ))
 
@@ -220,7 +220,7 @@ def generate_resignation_letter_pdf(employee_data: dict) -> str:
     sig_data = [
         [
             Paragraph(f"<b>Digitally Tendered & Signed by:</b><br/><br/><b>{emp_name}</b><br/>{role}<br/>Emp ID: {emp_id}<br/>Date: {resignation_date}", styles['Normal']),
-            Paragraph("<b>HR Operations Acknowledgement:</b><br/><br/><b>Talent Operations Desk</b><br/>MangoHRMS Enterprise<br/>Status: <b>Logged & Under Clearance</b><br/>ServiceNow: Verified", styles['Normal'])
+            Paragraph("<b>HR Operations Acknowledgement:</b><br/><br/><b>Talent Operations Desk</b><br/>AutomationEdge HR Enterprise<br/>Status: <b>Logged & Under Clearance</b><br/>ServiceNow: Verified", styles['Normal'])
         ]
     ]
     sig_table = Table(sig_data, colWidths=[260, 260])
@@ -235,7 +235,7 @@ def generate_resignation_letter_pdf(employee_data: dict) -> str:
     story.append(Spacer(1, 10))
     story.append(HRFlowable(width="100%", thickness=0.75, color=c_border, spaceBefore=4, spaceAfter=4))
     story.append(Paragraph(
-        "<font size=7 color='#64748b'>Confidential Employee Record — MangoHRMS Exit Clearance & Offboarding Gateway — Generated Automatically</font>",
+        "<font size=7 color='#64748b'>Confidential Employee Record — AutomationEdge HR Exit Clearance & Offboarding Gateway — Generated Automatically</font>",
         ParagraphStyle('FooterNote', parent=styles['Normal'], alignment=TA_CENTER)
     ))
 

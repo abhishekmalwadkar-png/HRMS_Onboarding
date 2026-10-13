@@ -1,5 +1,5 @@
 """
-MangoHRMS Automated Relieving Letter & Experience Certificate Generator
+AutomationEdge HR Suite Automated Relieving Letter & Experience Certificate Generator
 Generates executive-quality PDF relieving & experience letters with official company seal,
 handover confirmation, and multi-system clearance acknowledgement, and dispatches them via email.
 """
@@ -113,7 +113,7 @@ def generate_relieving_letter_pdf(employee_data: dict) -> str:
     # 1. Company Letterhead Header
     header_data = [
         [
-            Paragraph("<b>MangoHRMS Suite</b><br/><font size=8 color='#64748b'>Enterprise Digital Workplace & Automation Corp.<br/>100 Innovation Way, Suite 500, San Francisco, CA 94105</font>", styles['Normal']),
+            Paragraph("<b>AutomationEdge HR Suite</b><br/><font size=8 color='#64748b'>Enterprise Digital Workplace & Automation Corp.<br/>100 Innovation Way, Suite 500, San Francisco, CA 94105</font>", styles['Normal']),
             Paragraph(f"<b>OFFICIAL DOCUMENT</b><br/><font size=8 color='#64748b'>Ref: <b>{ref_no}</b><br/>Date of Issue: <b>{issue_date}</b></font>", ParagraphStyle('RightHdr', parent=styles['Normal'], alignment=TA_RIGHT))
         ]
     ]
@@ -142,7 +142,7 @@ def generate_relieving_letter_pdf(employee_data: dict) -> str:
 
     story.append(Paragraph(
         f"This is to formally certify that <b>{emp_name}</b> (Employee ID: <b>{emp_id}</b>) was employed with "
-        f"<b>MangoHRMS Enterprise</b> from <b>{joining_date}</b> to <b>{last_working_day}</b>. "
+        f"<b>AutomationEdge HR Enterprise</b> from <b>{joining_date}</b> to <b>{last_working_day}</b>. "
         f"At the time of relieving, {emp_name} was serving as <b>{role}</b> in the <b>{department}</b> Department.",
         body_style
     ))
@@ -150,7 +150,7 @@ def generate_relieving_letter_pdf(employee_data: dict) -> str:
     story.append(Paragraph(
         f"Subsequent to the tender of resignation and satisfactory handover of all job responsibilities, "
         f"<b>{emp_name}</b> stands formally relieved from all duties and employment obligations with "
-        f"MangoHRMS at the close of business hours on <b>{last_working_day}</b>.",
+        f"AutomationEdge HR Suite at the close of business hours on <b>{last_working_day}</b>.",
         body_style
     ))
     story.append(Spacer(1, 6))
@@ -197,7 +197,7 @@ def generate_relieving_letter_pdf(employee_data: dict) -> str:
     sig_data = [
         [
             Paragraph(
-                "<b>For MangoHRMS Suite Inc.</b><br/><br/>"
+                "<b>For AutomationEdge HR Suite Inc.</b><br/><br/>"
                 "<b>Marcus Vance</b><br/>"
                 "<font size=8 color='#64748b'>Vice President — Human Resources & People Operations<br/>"
                 "Global HR Governance & Enterprise Clearances</font>",
@@ -206,7 +206,7 @@ def generate_relieving_letter_pdf(employee_data: dict) -> str:
             Paragraph(
                 "<font size=8 color='#059669'><b>[ DIGITALLY CERTIFIED & VERIFIED ]</b></font><br/>"
                 f"<font size=7 color='#64748b'>Certificate ID: {ref_no}<br/>"
-                f"Generated via MangoHRMS Clearance Pipeline<br/>"
+                f"Generated via AutomationEdge HR Clearance Pipeline<br/>"
                 f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S UTC')}</font>",
                 ParagraphStyle('SigRight', parent=styles['Normal'], alignment=TA_RIGHT)
             )
