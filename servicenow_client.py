@@ -1258,6 +1258,7 @@ class ServiceNowClient:
         assigned_name = "IT Asset Specialist"
         inc_sys_id = ""
         inc_number = inc_ident
+        record_found = True
 
         if self.is_configured():
             try:
@@ -1282,6 +1283,8 @@ class ServiceNowClient:
                                 state_code = "6"
                             else:
                                 state_label = "In Progress"
+                        else:
+                            record_found = False
                 else:
                     query = f"number={inc_ident}^ORsys_id={inc_ident}"
                     url = f"{self.instance_url}/api/now/table/incident?sysparm_query={query}&sysparm_display_value=all&sysparm_fields=sys_id,number,state,incident_state,assigned_to,category,short_description"
@@ -1323,12 +1326,31 @@ class ServiceNowClient:
                                 state_label = "In Progress"
                             elif state_code in ['3', 'On Hold']:
                                 state_label = "On Hold"
+                        else:
+                            record_found = False
             except Exception as e:
                 print(f"[ServiceNow Incident Check Error]: {e}")
+
+        if not record_found:
+            return {
+                "status": "not_found",
+                "exists": False,
+                "deleted": True,
+                "incidentNumber": inc_number,
+                "sysId": "",
+                "assignedTo": "N/A",
+                "category": "Hardware",
+                "stateCode": "deleted",
+                "stateLabel": "Deleted / Not Found",
+                "isCleared": False,
+                "uiMessage": "Ticket deleted in ServiceNow"
+            }
 
         ui_message = "IT Approved (Laptop Submitted)" if is_cleared else "Clearance waiting from IT department"
         return {
             "status": "success",
+            "exists": True,
+            "deleted": False,
             "incidentNumber": inc_number,
             "sysId": inc_sys_id,
             "assignedTo": assigned_name,
@@ -1338,6 +1360,67 @@ class ServiceNowClient:
             "isCleared": is_cleared,
             "uiMessage": ui_message
         }
+
+    def check_request_exists(self, req_ident):
+        """Checks if a ServiceNow Service Request (sc_request) exists."""
+        self.reload_config()
+        if not self.is_configured() or not req_ident:
+            return True
+        try:
+            q = f"number={req_ident}^ORsys_id={req_ident}"
+            u = f"{self.instance_url}/api/now/table/sc_request?sysparm_query={urllib.parse.quote(q)}&sysparm_fields=sys_id,number&sysparm_limit=1"
+            req = urllib.request.Request(u, headers=self._get_headers())
+            with urllib.request.urlopen(req, timeout=8, context=self.ctx) as resp:
+                res = json.loads(resp.read().decode('utf-8')).get('result', [])
+                return len(res) > 0
+        except Exception as e:
+            print(f"[check_request_exists error]: {e}")
+            return True
+
+    def check_incident_exists(self, inc_ident):
+        """Checks if a ServiceNow Incident exists."""
+        self.reload_config()
+        if not self.is_configured() or not inc_ident:
+            return True
+        try:
+            q = f"number={inc_ident}^ORsys_id={inc_ident}"
+            u = f"{self.instance_url}/api/now/table/incident?sysparm_query={urllib.parse.quote(q)}&sysparm_fields=sys_id,number&sysparm_limit=1"
+            req = urllib.request.Request(u, headers=self._get_headers())
+            with urllib.request.urlopen(req, timeout=8, context=self.ctx) as resp:
+                res = json.loads(resp.read().decode('utf-8')).get('result', [])
+                return len(res) > 0
+        except Exception as e:
+            print(f"[check_incident_exists error]: {e}")
+            return True
+
+    def is_exit_ticket_alive(self, item):
+        """
+        Determines whether the ServiceNow ticket(s) for an exit clearance item still exist.
+        If the user deleted the ticket (either the parent request or the laptop incident)
+        in ServiceNow, this returns False so it gets purged from the active view.
+        """
+        if not self.is_configured():
+            return True
+
+        req_num = item.get('serviceNowReq') or item.get('serviceNowReqSysId')
+        laptop_ticket = item.get('laptopTicket') or item.get('laptopTicketSysId')
+
+        if not req_num and not laptop_ticket:
+            return True
+
+        # If a request was assigned, verify it still exists in ServiceNow
+        if req_num:
+            if not self.check_request_exists(req_num):
+                print(f"[ServiceNow Live Check] Request {req_num} was deleted in ServiceNow.")
+                return False
+
+        # If an incident was assigned, verify it still exists in ServiceNow
+        if laptop_ticket:
+            if not self.check_incident_exists(laptop_ticket):
+                print(f"[ServiceNow Live Check] Incident {laptop_ticket} was deleted in ServiceNow.")
+                return False
+
+        return True
 
     def resolve_laptop_incident(self, incident_number_or_sys_id, resolve=True):
         """
@@ -1412,6 +1495,10 @@ class ServiceNowClient:
                 if is_excluded(emp_name):
                     continue
                 
+                # Check if ticket was deleted in ServiceNow
+                if not self.is_exit_ticket_alive(item):
+                    continue
+
                 # Check laptop recovery incident state in ServiceNow
                 laptop_ticket = item.get('laptopTicket') or item.get('laptopTicketSysId')
                 is_incident_active = True

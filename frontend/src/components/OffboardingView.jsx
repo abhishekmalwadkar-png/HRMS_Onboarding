@@ -95,6 +95,8 @@ export default function OffboardingView() {
     }
   };
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const fetchExitRequests = async () => {
     setHasChecked(true);
     try {
@@ -117,12 +119,39 @@ export default function OffboardingView() {
       const res = await fetch('/api/exit/sync-live-clearance', { method: 'POST' });
       if (res.ok) {
         const json = await res.json();
-        if (Array.isArray(json.data) && json.data.length > 0) {
+        if (Array.isArray(json.data)) {
           setExitRequests(json.data);
         }
       }
     } catch (e) {
       // quiet sync
+    }
+  };
+
+  const handleRefresh = async () => {
+    setHasChecked(true);
+    setIsRefreshing(true);
+    showToast('Syncing tickets with ServiceNow...', 'info');
+    try {
+      const res = await fetch('/api/exit/sync-live-clearance', { method: 'POST' });
+      if (res.ok) {
+        const json = await res.json();
+        const items = Array.isArray(json.data) ? json.data : [];
+        setExitRequests(items);
+        const removed = json.removed || 0;
+        if (removed > 0) {
+          showToast(`✓ Synced with ServiceNow: ${items.length} active ticket(s). Removed ${removed} deleted ticket(s).`, 'success');
+        } else {
+          showToast(`✓ Synced with ServiceNow: ${items.length} active ticket(s).`, 'success');
+        }
+      } else {
+        await fetchExitRequests();
+      }
+    } catch (e) {
+      console.warn('Refresh sync failed:', e);
+      await fetchExitRequests();
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -775,8 +804,14 @@ export default function OffboardingView() {
                 <i className="fa-solid fa-trash-can"></i> Clear logs
               </button>
             )}
-            <button className="btn btn-secondary" onClick={fetchExitRequests} style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>
-              <i className="fa-solid fa-arrows-rotate"></i> Refresh
+            <button
+              className="btn btn-secondary"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}
+              title="Sync tickets with ServiceNow"
+            >
+              <i className={`fa-solid fa-arrows-rotate ${isRefreshing ? 'fa-spin' : ''}`}></i> {isRefreshing ? 'Syncing...' : 'Refresh'}
             </button>
           </div>
         </div>

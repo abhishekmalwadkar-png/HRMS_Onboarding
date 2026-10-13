@@ -1104,7 +1104,15 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
         elif self.path == '/api/exit/sync-live-clearance':
             exits = db.get('exitRequests', [])
             updated = False
+            active_exits = []
             for item in exits:
+                # 1. First check if ticket was deleted in ServiceNow
+                if not sn_client.is_exit_ticket_alive(item):
+                    updated = True
+                    print(f"[ServiceNow Live Sync] Ticket was deleted in ServiceNow. Purging: {item.get('empName')} (REQ: {item.get('serviceNowReq')}, Laptop: {item.get('laptopTicket')})")
+                    continue
+
+                # 2. Sync live clearance status from ServiceNow
                 laptop_ticket = item.get('laptopTicket')
                 req_num = item.get('serviceNowReq')
                 if laptop_ticket or req_num:
@@ -1123,12 +1131,19 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                             updated = True
                     except Exception as sync_e:
                         print(f"[Exit live sync error]: {sync_e}")
-            if updated:
+
+                active_exits.append(item)
+
+            if updated or len(active_exits) != len(exits):
+                db['exitRequests'] = active_exits
                 self.write_db(db)
+
             self.end_headers()
             self.wfile.write(json.dumps({
                 "status": "success",
-                "data": exits
+                "data": active_exits,
+                "count": len(active_exits),
+                "removed": len(exits) - len(active_exits)
             }).encode('utf-8'))
 
         elif self.path == '/api/exit/clear':
