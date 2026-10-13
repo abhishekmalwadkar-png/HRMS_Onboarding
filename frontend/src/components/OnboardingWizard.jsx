@@ -281,12 +281,23 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
   const handleFileChange = (docKey, e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const fileNameLower = file.name.toLowerCase();
+      const isPdf = file.type === 'application/pdf' || fileNameLower.endsWith('.pdf');
+      const isDoc = file.type === 'application/msword' ||
+        file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        fileNameLower.endsWith('.doc') ||
+        fileNameLower.endsWith('.docx');
+
+      if (!isPdf && !isDoc) {
+        showToast(`Strict upload policy: Only PDF (.pdf) or Word (.doc, .docx) documents are allowed. "${file.name}" was rejected.`, 'error');
+        e.target.value = '';
+        return;
+      }
+
       const sizeStr = file.size > 1024 * 1024
         ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
         : `${Math.round(file.size / 1024)} KB`;
       const previewUrl = URL.createObjectURL(file);
-      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-      const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(file.name);
 
       const reader = new FileReader();
       reader.onload = () => {
@@ -308,7 +319,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
           size: sizeStr,
           file,
           previewUrl,
-          fileType: isPdf ? 'pdf' : isImage ? 'image' : 'other',
+          fileType: isPdf ? 'pdf' : 'doc',
           customUploaded: true,
         },
       }));
@@ -576,6 +587,19 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
       document.getElementById('signature-label')?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
+
+    // Strict document verification: ensure only PDF or DOC files are uploaded
+    const allowedDocExts = ['.pdf', '.doc', '.docx'];
+    for (const [key, docObj] of Object.entries(documents)) {
+      if (docObj?.name) {
+        const nameLower = docObj.name.toLowerCase();
+        if (!allowedDocExts.some((ext) => nameLower.endsWith(ext))) {
+          showToast(`Strict document policy: Only PDF (.pdf) or Word (.doc, .docx) documents can be uploaded. "${docObj.name}" is invalid.`, 'error');
+          return;
+        }
+      }
+    }
+
     setIsSubmitting(true);
     setSubmitResult(null);
     showToast('Submitting candidate profile to ServiceNow...', 'info');
@@ -765,7 +789,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                             <span className="doc-card-icon" aria-hidden="true"><i className={`fa-solid ${doc.icon}`}></i></span>
                             <div>
                               <strong>{doc.title}</strong>
-                              <span>{doc.hint} (PDF, PNG, JPG)</span>
+                              <span>{doc.hint} (PDF, DOC, DOCX only)</span>
                             </div>
                           </div>
                           {isUploaded ? (
@@ -777,7 +801,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
 
                         <div className="doc-card-file">
                           <div className="doc-file-name">
-                            <i className="fa-solid fa-file-pdf text-accent" aria-hidden="true"></i>
+                            <i className={`fa-solid ${docInfo?.fileType === 'doc' ? 'fa-file-word' : 'fa-file-pdf'} text-accent`} aria-hidden="true"></i>
                             <span title={docInfo?.name || 'No file chosen'}>{docInfo?.name || 'No file chosen'}</span>
                             {docInfo?.size && <small>{docInfo.size}</small>}
                           </div>
@@ -798,7 +822,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                               <input
                                 id={inputId}
                                 type="file"
-                                accept=".pdf,.png,.jpg,.jpeg"
+                                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                                 onChange={(e) => handleFileChange(doc.key, e)}
                               />
                             </label>
@@ -1074,18 +1098,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                   {/* USER UPLOADED DOCUMENT DISPLAY (WHEN USER HAS REPLACED/UPLOADED A FILE) */}
                   {isShowingUploaded ? (
                     <div style={{ width: '100%', minHeight: '400px' }}>
-                      {activeDoc.fileType === 'image' ? (
-                        <div style={{ textAlign: 'center', padding: '1rem', background: '#020617', borderRadius: '8px', overflow: 'hidden' }}>
-                          <img
-                            src={activeDoc.previewUrl}
-                            alt={activeDoc.name}
-                            style={{ maxWidth: '100%', maxHeight: '72vh', objectFit: 'contain', borderRadius: '6px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
-                          />
-                          <div style={{ marginTop: '0.75rem', color: '#94a3b8', fontSize: '0.8rem' }}>
-                            <i className="fa-solid fa-file-image text-accent"></i> {activeDoc.name} ({activeDoc.size})
-                          </div>
-                        </div>
-                      ) : activeDoc.fileType === 'pdf' ? (
+                      {activeDoc.fileType === 'pdf' ? (
                         <div style={{ width: '100%', height: '74vh', borderRadius: '8px', overflow: 'hidden', background: '#020617' }}>
                           <iframe
                             src={activeDoc.previewUrl}
@@ -1094,11 +1107,11 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                           />
                         </div>
                       ) : (
-                        <div style={{ textAlign: 'center', padding: '3.5rem 1rem', background: 'var(--bg-surface)', borderRadius: '8px' }}>
-                          <i className="fa-solid fa-file-lines" style={{ fontSize: '3rem', color: 'var(--brand-orange)', marginBottom: '1rem' }}></i>
-                          <h4>{activeDoc.name}</h4>
-                          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{activeDoc.size}</p>
-                          <a href={activeDoc.previewUrl} download={activeDoc.name} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                        <div style={{ textAlign: 'center', padding: '3.5rem 1rem', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                          <i className="fa-solid fa-file-word" style={{ fontSize: '3.5rem', color: '#2b579a', marginBottom: '1rem' }}></i>
+                          <h4 style={{ margin: '0.5rem 0', color: 'var(--text-main)' }}>{activeDoc.name}</h4>
+                          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>Word Document ({activeDoc.size}) • Verified .doc/.docx Format</p>
+                          <a href={activeDoc.previewUrl} download={activeDoc.name} className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                             <i className="fa-solid fa-download"></i> Download & Open Document
                           </a>
                         </div>

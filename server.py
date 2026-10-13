@@ -774,6 +774,18 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(offer_result).encode('utf-8'))
 
         elif self.path == '/api/employees':
+            # Strict file validation: only PDF, DOC, and DOCX files are allowed
+            allowed_exts = ('.pdf', '.doc', '.docx')
+            for doc_field in ['idDocumentName', 'uanDocumentName', 'salarySlipDocName']:
+                doc_name = payload.get(doc_field)
+                if doc_name and not any(doc_name.lower().endswith(ext) for ext in allowed_exts):
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "status": "error",
+                        "message": f"Strict upload policy: Only PDF (.pdf) and Word (.doc, .docx) documents are allowed. '{doc_name}' was rejected."
+                    }).encode('utf-8'))
+                    return
+
             if not payload.get('id'):
                 payload['id'] = f"EMP-{int(time.time()) % 9000 + 1000}"
             if not payload.get('status'):
