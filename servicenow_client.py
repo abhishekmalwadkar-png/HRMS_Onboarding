@@ -1149,24 +1149,6 @@ class ServiceNowClient:
                             offboarding_req = r_data.get('number')
                             req_sys_id = r_data.get('sys_id', '')
                             offboarding_req_url = f"{self.instance_url}/nav_to.do?uri=sc_request.do?sys_id={req_sys_id}" if req_sys_id else f"{self.instance_url}/nav_to.do?uri=sc_request_list.do?sysparm_query=number={offboarding_req}"
-                            
-                            # Also attach employee monthly payslip to ServiceNow parent request
-                            try:
-                                from generate_payslip import generate_payslip_pdf
-                                ps_path = generate_payslip_pdf({
-                                    "empName": emp_name,
-                                    "empId": exit_data.get('empId'),
-                                    "department": dept,
-                                    "role": exit_data.get('role') or exit_data.get('jobTitle'),
-                                    "serviceNowReq": offboarding_req
-                                })
-                                if os.path.exists(ps_path):
-                                    with open(ps_path, 'rb') as ps_f:
-                                        ps_bytes = ps_f.read()
-                                    ps_filename = os.path.basename(ps_path)
-                                    self.attach_file('sc_request', req_sys_id, ps_filename, ps_bytes)
-                            except Exception as att_err:
-                                print(f"[ServiceNow Payslip Attachment Note]: {att_err}")
                 except Exception as re_err:
                     print(f"[ServiceNow Offboarding REQ Note]: {re_err}")
 

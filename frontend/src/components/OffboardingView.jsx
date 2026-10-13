@@ -892,10 +892,10 @@ export default function OffboardingView() {
                       style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
                       onClick={() => toggleITClearance(item)}
                       disabled={isChecking}
-                      title="Toggle ServiceNow Hardware Incident State between In Progress and Resolved"
+                      title="Update ServiceNow Hardware Incident State between In Progress and Resolved"
                     >
                       <i className={`fa-solid ${isChecking ? 'fa-spinner fa-spin' : 'fa-laptop'}`}></i>{' '}
-                      {isChecking ? 'Updating ServiceNow…' : 'Toggle IT clearance'}
+                      {isChecking ? 'Updating ServiceNow…' : 'IT clearance'}
                     </button>
                     <button
                       className="btn btn-secondary"

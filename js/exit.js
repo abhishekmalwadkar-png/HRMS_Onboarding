@@ -71,7 +71,7 @@ function renderExitPipeline() {
 
       <div style="display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;">
         <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="toggleITClearance('${item.id}')">
-          <i class="fa-solid fa-laptop"></i> Toggle IT Clearance
+          <i class="fa-solid fa-laptop"></i> IT Clearance
         </button>
         <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="triggerAccessRevocation('${item.id}', '${item.empName}')">
           <i class="fa-solid fa-user-xmark"></i> Revoke AD Access
