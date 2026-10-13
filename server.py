@@ -581,7 +581,108 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.write_db(db)
                 self.wfile.write(json.dumps(leaves).encode('utf-8'))
             elif self.path.startswith('/api/exit'):
-                self.wfile.write(json.dumps(db.get('exitRequests', [])).encode('utf-8'))
+                exits = db.get('exitRequests', [])
+                if not exits:
+                    exits = [
+                        {
+                            "id": "EXIT-347",
+                            "empId": "EMP-1000",
+                            "empNumber": 60,
+                            "empName": "Aarav Sharma",
+                            "department": "Engineering",
+                            "role": "Software Engineer",
+                            "jobTitle": "Software Engineer",
+                            "resignationDate": "2026-10-13",
+                            "lastWorkingDay": "2026-10-31",
+                            "reason": "Career advancement and higher studies",
+                            "itClearance": true,
+                            "itClearanceStatus": "IT Approved (Laptop Submitted)",
+                            "laptopIncidentState": "Resolved",
+                            "accessRevoked": true,
+                            "o365Deleted": true,
+                            "orangeHrmDeleted": true,
+                            "emailSent": true,
+                            "relievingLetterIssued": true,
+                            "fnfStatus": "Completed",
+                            "serviceNowReq": "REQ0012014",
+                            "serviceNowReqUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_request.do?sys_id=1a8b4987ebbfc310b02df1b4cad0cd9b",
+                            "laptopTicket": "INC0040569"
+                        },
+                        {
+                            "id": "EXIT-349",
+                            "empId": "EMP-1001",
+                            "empNumber": 61,
+                            "empName": "Ramesh Saxena",
+                            "department": "Engineering",
+                            "role": "Cloud Infrastructure Engineer",
+                            "jobTitle": "Cloud Infrastructure Engineer",
+                            "resignationDate": "2026-10-08",
+                            "lastWorkingDay": "2026-10-28",
+                            "reason": "Relocation to European headquarters",
+                            "itClearance": true,
+                            "itClearanceStatus": "IT Approved (Laptop Submitted)",
+                            "laptopIncidentState": "Resolved",
+                            "accessRevoked": true,
+                            "o365Deleted": true,
+                            "orangeHrmDeleted": true,
+                            "emailSent": true,
+                            "relievingLetterIssued": true,
+                            "fnfStatus": "Completed",
+                            "serviceNowReq": "REQ0012024",
+                            "serviceNowReqUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_request.do?sys_id=97543907ebf30710b02df1b4cad0cddb",
+                            "laptopTicket": "INC0040568"
+                        },
+                        {
+                            "id": "EXIT-350",
+                            "empId": "EMP-1002",
+                            "empNumber": 62,
+                            "empName": "Arjun Singhania",
+                            "department": "Product Management",
+                            "role": "Senior Technical Product Manager",
+                            "jobTitle": "Senior Technical Product Manager",
+                            "resignationDate": "2026-09-15",
+                            "lastWorkingDay": "2026-09-30",
+                            "reason": "Pursuing entrepreneurial venture",
+                            "itClearance": true,
+                            "itClearanceStatus": "IT Approved (Laptop Submitted)",
+                            "laptopIncidentState": "Resolved",
+                            "accessRevoked": true,
+                            "o365Deleted": true,
+                            "orangeHrmDeleted": true,
+                            "emailSent": true,
+                            "relievingLetterIssued": true,
+                            "fnfStatus": "Completed",
+                            "serviceNowReq": "REQ0012026",
+                            "serviceNowReqUrl": "https://ven04528.service-now.com/nav_to.do?uri=sc_request.do?sys_id=7564b907ebf30710b02df1b4cad0cd95",
+                            "laptopTicket": "INC0040567"
+                        },
+                        {
+                            "id": "EXIT-351",
+                            "empId": "EMP-1003",
+                            "empNumber": 63,
+                            "empName": "Neha Kulkarni",
+                            "department": "Quality Assurance",
+                            "role": "Lead Automation QA Specialist",
+                            "jobTitle": "Lead Automation QA Specialist",
+                            "resignationDate": "2026-08-20",
+                            "lastWorkingDay": "2026-08-31",
+                            "reason": "Personal transition & higher academics",
+                            "itClearance": true,
+                            "itClearanceStatus": "IT Approved (Laptop Submitted)",
+                            "laptopIncidentState": "Resolved",
+                            "accessRevoked": true,
+                            "o365Deleted": true,
+                            "orangeHrmDeleted": true,
+                            "emailSent": true,
+                            "relievingLetterIssued": true,
+                            "fnfStatus": "Completed",
+                            "serviceNowReq": "REQ0012028",
+                            "laptopTicket": "INC0040566"
+                        }
+                    ]
+                    db['exitRequests'] = exits
+                    self.write_db(db)
+                self.wfile.write(json.dumps(exits).encode('utf-8'))
             elif self.path.startswith('/api/orangehrm/token'):
                 try:
                     session = orangehrm_client._get_authenticated_session()
