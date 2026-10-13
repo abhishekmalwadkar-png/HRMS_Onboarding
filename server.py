@@ -365,6 +365,55 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(b'Could not generate payslip')
                 return
 
+        # Download Official Resignation Letter for Offboarded Employee
+        if self.path.split('?')[0] in ('/api/exit/resignation-letter', '/api/resignation-letter/download'):
+            query = self.path.split('?')[1] if '?' in self.path else ''
+            import urllib.parse
+            params = urllib.parse.parse_qs(query)
+            target_id = params.get('id', [None])[0]
+            target_name = params.get('name', [None])[0]
+
+            db = self.read_db()
+            matched_emp = None
+            for item in db.get('exitRequests', []):
+                if (target_id and item.get('id') == target_id) or (target_name and item.get('empName') == target_name):
+                    matched_emp = item
+                    break
+            if not matched_emp:
+                for item in db.get('employees', []):
+                    if (target_id and item.get('id') == target_id) or (target_name and item.get('fullName') == target_name):
+                        matched_emp = item
+                        break
+
+            if not matched_emp:
+                matched_emp = {
+                    "empName": target_name or "Employee",
+                    "empId": target_id or "EMP-1042",
+                    "department": "Engineering",
+                    "role": "Senior Specialist",
+                    "serviceNowReq": "REQ0012000"
+                }
+
+            from generate_resignation_letter import generate_resignation_letter_pdf
+            pdf_path = generate_resignation_letter_pdf(matched_emp)
+            if os.path.exists(pdf_path):
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/pdf')
+                filename = os.path.basename(pdf_path)
+                self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
+                self.send_header('Content-Length', str(os.path.getsize(pdf_path)))
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                with open(pdf_path, 'rb') as f:
+                    shutil.copyfileobj(f, self.wfile)
+                return
+            else:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(b'Could not generate resignation letter')
+                return
+
+
         if self.path.startswith('/api/'):
             db = self.read_db()
             self.send_response(200)
@@ -899,6 +948,8 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             payload['laptopTicketSysId'] = sn_offboarding_res.get('laptopTicketSysId')
             payload['laptopTicketUrl'] = sn_offboarding_res.get('laptopTicketUrl')
             payload['assignedTo'] = sn_offboarding_res.get('assignedTo')
+            payload['resignationLetter'] = sn_offboarding_res.get('resignationLetter')
+            payload['resignationLetterPath'] = sn_offboarding_res.get('resignationLetterPath')
             payload['itClearance'] = False
             payload['itClearanceStatus'] = 'Clearance waiting from IT department'
             payload['accessRevoked'] = False
@@ -944,6 +995,10 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             if target_item:
                 ticket_to_check = target_item.get('laptopTicket') or laptop_ticket
                 check_res = sn_client.check_incident_clearance(ticket_to_check)
+                if not check_res.get('isCleared') and target_item.get('serviceNowReq'):
+                    req_check = sn_client.check_incident_clearance(target_item.get('serviceNowReq'))
+                    if req_check.get('isCleared'):
+                        check_res = req_check
                 target_item['itClearance'] = check_res.get('isCleared', False)
                 target_item['itClearanceStatus'] = check_res.get('uiMessage', 'Clearance waiting from IT department')
                 target_item['laptopIncidentState'] = check_res.get('stateLabel', 'In Progress')
@@ -993,6 +1048,36 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "status": "success",
                 "clearance": check_res,
                 "data": target_item
+            }).encode('utf-8'))
+
+        elif self.path == '/api/exit/sync-live-clearance':
+            exits = db.get('exitRequests', [])
+            updated = False
+            for item in exits:
+                laptop_ticket = item.get('laptopTicket')
+                req_num = item.get('serviceNowReq')
+                if laptop_ticket or req_num:
+                    try:
+                        res = sn_client.check_incident_clearance(laptop_ticket or req_num)
+                        if not res.get('isCleared') and req_num and req_num != laptop_ticket:
+                            req_res = sn_client.check_incident_clearance(req_num)
+                            if req_res.get('isCleared'):
+                                res = req_res
+                        if res.get('isCleared') != item.get('itClearance') or res.get('stateLabel') != item.get('laptopIncidentState'):
+                            item['itClearance'] = res.get('isCleared', False)
+                            item['itClearanceStatus'] = res.get('uiMessage')
+                            item['laptopIncidentState'] = res.get('stateLabel', 'In Progress')
+                            if res.get('assignedTo') and res.get('assignedTo') != "IT Asset Specialist":
+                                item['assignedTo'] = res.get('assignedTo')
+                            updated = True
+                    except Exception as sync_e:
+                        print(f"[Exit live sync error]: {sync_e}")
+            if updated:
+                self.write_db(db)
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "data": exits
             }).encode('utf-8'))
 
         elif self.path == '/api/exit/clear':
@@ -1144,6 +1229,8 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                     item_payload['laptopTicketSysId'] = sn_res.get('laptopTicketSysId')
                     item_payload['laptopTicketUrl'] = sn_res.get('laptopTicketUrl')
                     item_payload['assignedTo'] = sn_res.get('assignedTo')
+                    item_payload['resignationLetter'] = sn_res.get('resignationLetter')
+                    item_payload['resignationLetterPath'] = sn_res.get('resignationLetterPath')
                 except Exception as sn_err:
                     print(f"[Demo Offboarding ServiceNow Note]: {sn_err}")
 

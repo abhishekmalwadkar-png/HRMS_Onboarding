@@ -35,6 +35,8 @@ generated_relieving_letters/*.pdf
 !generated_relieving_letters/.gitkeep
 generated_payslips/*.pdf
 !generated_payslips/.gitkeep
+generated_resignation_letters/*.pdf
+!generated_resignation_letters/.gitkeep
 
 
 

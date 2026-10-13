@@ -98,10 +98,28 @@ export default function OffboardingView() {
       const res = await fetch('/api/exit');
       if (res.ok) {
         const data = await res.json();
-        setExitRequests(Array.isArray(data) ? data : []);
+        const items = Array.isArray(data) ? data : [];
+        setExitRequests(items);
+        if (items.some((x) => x.laptopTicket || x.serviceNowReq)) {
+          syncLiveClearances();
+        }
       }
     } catch (e) {
       console.warn('Failed to load exit requests from server:', e);
+    }
+  };
+
+  const syncLiveClearances = async () => {
+    try {
+      const res = await fetch('/api/exit/sync-live-clearance', { method: 'POST' });
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.data) && json.data.length > 0) {
+          setExitRequests(json.data);
+        }
+      }
+    } catch (e) {
+      // quiet sync
     }
   };
 
@@ -291,12 +309,12 @@ export default function OffboardingView() {
       );
 
       if (isCleared) {
-        showToast(`✓ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) is Resolved/Closed: User Submitted Laptop.`, 'success');
+        showToast(`✓ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) is Approved: IT Approved in ServiceNow.`, 'success');
       } else {
-        showToast(`⏳ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) status is In Progress: Clearance waiting from IT department.`, 'info');
+        showToast(`⏳ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) status is In Progress: Waiting for IT Approval.`, 'info');
       }
     } catch (e) {
-      console.error('Failed to toggle IT clearance in ServiceNow:', e);
+      console.error('Failed to toggle IT approval in ServiceNow:', e);
       setExitRequests((prev) =>
         prev.map((it) => {
           if (it.id === item.id) {
@@ -304,14 +322,14 @@ export default function OffboardingView() {
             return {
               ...it,
               itClearance: nextVal,
-              itClearanceStatus: nextVal ? 'User Submitted Laptop' : 'Clearance waiting from IT department',
+              itClearanceStatus: nextVal ? 'IT Approved (Laptop Submitted)' : 'Clearance waiting from IT department',
               laptopIncidentState: nextVal ? 'Resolved' : 'In Progress',
             };
           }
           return it;
         })
       );
-      showToast('IT Asset Clearance status updated.', 'info');
+      showToast('IT Approval status updated.', 'info');
     } finally {
       setCheckingClearanceId(null);
     }
@@ -328,7 +346,7 @@ export default function OffboardingView() {
       const result = await res.json();
       const isCleared = result?.clearance?.isCleared;
       const stateLabel = result?.clearance?.stateLabel || (isCleared ? 'Resolved' : 'In Progress');
-      const uiMsg = result?.clearance?.uiMessage || (isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department');
+      const uiMsg = result?.clearance?.uiMessage || (isCleared ? 'IT Approved (Laptop Submitted)' : 'Clearance waiting from IT department');
       const assignedTo = result?.clearance?.assignedTo || item.assignedTo;
 
       setExitRequests((prev) =>
@@ -347,13 +365,13 @@ export default function OffboardingView() {
       );
 
       if (isCleared) {
-        showToast(`✓ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) is ${stateLabel}: User Submitted Laptop.`, 'success');
+        showToast(`✓ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) is Approved in ServiceNow!`, 'success');
       } else {
-        showToast(`⏳ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) is ${stateLabel}: Clearance waiting from IT department.`, 'info');
+        showToast(`⏳ ServiceNow IT Ticket (${item.laptopTicket || 'Hardware'}) is ${stateLabel}: Waiting for IT Approval.`, 'info');
       }
     } catch (e) {
-      console.error('Failed to check IT clearance from ServiceNow:', e);
-      showToast('Checked IT clearance status from ServiceNow.', 'info');
+      console.error('Failed to check IT approval from ServiceNow:', e);
+      showToast('Checked IT approval status from ServiceNow.', 'info');
     } finally {
       setCheckingClearanceId(null);
     }
@@ -775,7 +793,15 @@ export default function OffboardingView() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {exitRequests.map((item) => {
-              const isCleared = !!(item.itClearance || item.itClearanceStatus === 'User Submitted Laptop');
+              const isCleared = !!(
+                item.itClearance || 
+                item.itClearanceStatus === 'User Submitted Laptop' || 
+                item.itClearanceStatus === 'IT Approved' || 
+                item.itClearanceStatus?.includes('Approved') ||
+                item.laptopIncidentState === 'Resolved' ||
+                item.laptopIncidentState === 'Closed' ||
+                item.laptopIncidentState === 'Approved'
+              );
               const isChecking = checkingClearanceId === item.id;
               const isRevoking = revokingId === item.id;
 
@@ -823,13 +849,47 @@ export default function OffboardingView() {
                             const target = item.laptopTicketUrl || `https://ven04528.service-now.com/nav_to.do?uri=incident_list.do`;
                             openServiceNowDirect(target, () => showToast(`⚡ Opening ${item.laptopTicket} in ServiceNow...`, 'success'));
                           }}
-                          className="badge badge-verified"
-                          style={{ fontSize: '0.78rem', textDecoration: 'none', padding: '0.35rem 0.65rem', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                          className="badge"
+                          style={{
+                            fontSize: '0.78rem',
+                            textDecoration: 'none',
+                            padding: '0.35rem 0.65rem',
+                            fontWeight: 700,
+                            border: isCleared ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(59, 130, 246, 0.25)',
+                            cursor: 'pointer',
+                            background: isCleared ? 'rgba(16, 185, 129, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                            color: isCleared ? '#059669' : '#2563eb',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                          }}
                           title="Auto-login & view ServiceNow Incident"
                         >
-                          <i className="fa-solid fa-arrow-up-right-from-square"></i> ServiceNow: <strong>{item.laptopTicket}</strong>
+                          <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-arrow-up-right-from-square'}`}></i> ServiceNow: <strong>{item.laptopTicket}</strong> {isCleared ? '(IT Approved)' : ''}
                         </button>
                       )}
+                      <a
+                        href={`/api/exit/resignation-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
+                        download
+                        className="badge"
+                        style={{
+                          fontSize: '0.78rem',
+                          textDecoration: 'none',
+                          padding: '0.35rem 0.65rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          background: 'rgba(2, 132, 199, 0.12)',
+                          color: '#0284c7',
+                          border: '1px solid rgba(2, 132, 199, 0.25)',
+                        }}
+                        title={`Download official Resignation Letter for ${item.empName}`}
+                        onClick={() => showToast(`📄 Downloading Resignation Letter for ${item.empName}...`, 'info')}
+                      >
+                        <i className="fa-solid fa-file-lines"></i> Resignation Letter
+                      </a>
                       <a
                         href={`/api/exit/payslip?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
                         download
@@ -867,7 +927,7 @@ export default function OffboardingView() {
                   <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                       <i className="fa-solid fa-laptop text-accent" style={{ fontSize: '1.05rem' }}></i>
-                      <strong style={{ fontSize: '0.88rem', color: '#0f172a' }}>IT hardware & laptop clearance</strong>
+                      <strong style={{ fontSize: '0.88rem', color: 'var(--text-main)' }}>IT hardware & laptop approval</strong>
                     </div>
                     <span
                       style={{
@@ -881,7 +941,7 @@ export default function OffboardingView() {
                       }}
                     >
                       <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-clock'}`}></i>{' '}
-                      {isCleared ? 'User Submitted Laptop' : 'Clearance waiting from IT department'}
+                      {isCleared ? 'IT Approved in ServiceNow' : 'Clearance waiting from IT department'}
                     </span>
                   </div>
 
@@ -889,13 +949,20 @@ export default function OffboardingView() {
                   <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                     <button
                       className="btn btn-secondary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        fontSize: '0.78rem',
+                        background: isCleared ? '#ecfdf5' : undefined,
+                        color: isCleared ? '#059669' : undefined,
+                        borderColor: isCleared ? '#a7f3d0' : undefined,
+                        fontWeight: isCleared ? 700 : 500,
+                      }}
                       onClick={() => toggleITClearance(item)}
                       disabled={isChecking}
-                      title="Update ServiceNow Hardware Incident State between In Progress and Resolved"
+                      title={isCleared ? "Ticket approved in ServiceNow (Click to modify state)" : "Approve IT Clearance in ServiceNow"}
                     >
-                      <i className={`fa-solid ${isChecking ? 'fa-spinner fa-spin' : 'fa-laptop'}`}></i>{' '}
-                      {isChecking ? 'Updating ServiceNow…' : 'IT clearance'}
+                      <i className={`fa-solid ${isChecking ? 'fa-spinner fa-spin' : (isCleared ? 'fa-circle-check' : 'fa-laptop')}`}></i>{' '}
+                      {isChecking ? 'Updating ServiceNow…' : (isCleared ? 'IT Approved' : 'IT Approval')}
                     </button>
                     <button
                       className="btn btn-secondary"
@@ -935,6 +1002,26 @@ export default function OffboardingView() {
                       <i className={`fa-solid ${issuingLetterId === item.id ? 'fa-spinner fa-spin' : (item.relievingLetterIssued ? 'fa-circle-check' : 'fa-file-export')}`}></i>{' '}
                       {issuingLetterId === item.id ? 'Generating…' : (item.relievingLetterIssued ? 'Relieving letter sent' : 'Issue relieving letter')}
                     </button>
+
+                    <a
+                      href={`/api/exit/resignation-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
+                      download
+                      className="btn btn-secondary btn-sm"
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        fontSize: '0.78rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        textDecoration: 'none',
+                        color: 'var(--text-main)',
+                        fontWeight: 600,
+                      }}
+                      title={`Download official Resignation Letter for ${item.empName}`}
+                      onClick={() => showToast(`📄 Downloading Resignation Letter for ${item.empName}...`, 'info')}
+                    >
+                      <i className="fa-solid fa-file-lines" style={{ color: '#0284c7' }}></i> Resignation Letter
+                    </a>
 
                     <a
                       href={`/api/exit/payslip?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}

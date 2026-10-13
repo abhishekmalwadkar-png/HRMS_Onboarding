@@ -1176,6 +1176,39 @@ class ServiceNowClient:
                         inc_sys_id = i_data.get('sys_id')
                         laptop_ticket_url = f"{self.instance_url}/nav_to.do?uri=incident.do?sys_id={inc_sys_id}"
                         print(f"[ServiceNow LIVE SUCCESS] Created Offboarding Laptop Recovery Incident: {laptop_ticket} (Assigned to: {assigned_name}) under category 'Hardware'")
+
+                # 4. Generate & Attach Resignation Letter PDF to ServiceNow Offboarding Tickets
+                rl_filename = None
+                rl_pdf_path = None
+                try:
+                    from generate_resignation_letter import generate_resignation_letter_pdf
+                    rl_pdf_path = generate_resignation_letter_pdf({
+                        "empName": emp_name,
+                        "empId": exit_data.get('empId') or exit_data.get('id'),
+                        "department": dept,
+                        "role": exit_data.get('role') or exit_data.get('designation') or exit_data.get('jobTitle'),
+                        "resignationDate": exit_data.get('resignationDate') or time.strftime('%B %d, %Y'),
+                        "lastWorkingDay": lwd,
+                        "reason": reason,
+                        "serviceNowReq": offboarding_req,
+                        "laptopTicket": laptop_ticket
+                    })
+                    if rl_pdf_path and os.path.exists(rl_pdf_path):
+                        with open(rl_pdf_path, 'rb') as f_rl:
+                            rl_bytes = f_rl.read()
+                        rl_filename = os.path.basename(rl_pdf_path)
+
+                        # Attach to Parent Request (sc_request)
+                        if req_sys_id:
+                            self.attach_file("sc_request", req_sys_id, rl_filename, rl_bytes)
+                            print(f"[ServiceNow LIVE SUCCESS] Attached Resignation Letter '{rl_filename}' to sc_request {offboarding_req}")
+
+                        # Attach to Laptop Incident (incident)
+                        if inc_sys_id:
+                            self.attach_file("incident", inc_sys_id, rl_filename, rl_bytes)
+                            print(f"[ServiceNow LIVE SUCCESS] Attached Resignation Letter '{rl_filename}' to incident {laptop_ticket}")
+                except Exception as rl_err:
+                    print(f"[ServiceNow Resignation Letter Attachment Error]: {rl_err}")
             except Exception as e:
                 print(f"[ServiceNow Offboarding Request Error]: {e}")
 
@@ -1192,13 +1225,16 @@ class ServiceNowClient:
             "incidentState": "In Progress",
             "itClearanceStatus": "Clearance waiting from IT department",
             "itClearance": False,
-            "message": f"Offboarding Request ({offboarding_req}) and Laptop Submission Incident ({laptop_ticket}) created in ServiceNow under category 'Hardware' and assigned to {assigned_name}."
+            "resignationLetter": rl_filename if 'rl_filename' in locals() and rl_filename else None,
+            "resignationLetterPath": rl_pdf_path if 'rl_pdf_path' in locals() and rl_pdf_path else None,
+            "message": f"Offboarding Request ({offboarding_req}) and Laptop Submission Incident ({laptop_ticket}) created in ServiceNow under category 'Hardware' and assigned to {assigned_name} with attached Resignation Letter."
         }
 
     def check_incident_clearance(self, incident_number_or_sys_id):
         """
-        Queries ServiceNow for the laptop recovery incident status.
-        If state is '6' (Resolved) or '7' (Closed) -> isCleared: True ("User Submitted Laptop").
+        Queries ServiceNow for the laptop recovery incident or request status.
+        If incident state is '6' (Resolved) or '7' (Closed), or request is Approved:
+        -> isCleared: True ("IT Approved (Laptop Submitted)").
         Otherwise -> isCleared: False ("Clearance waiting from IT department").
         """
         self.reload_config()
@@ -1225,50 +1261,72 @@ class ServiceNowClient:
 
         if self.is_configured():
             try:
-                query = f"number={inc_ident}^ORsys_id={inc_ident}"
-                url = f"{self.instance_url}/api/now/table/incident?sysparm_query={query}&sysparm_display_value=all&sysparm_fields=sys_id,number,state,incident_state,assigned_to,category,short_description"
-                req = urllib.request.Request(url, headers=self._get_headers())
-                with urllib.request.urlopen(req, timeout=10, context=self.ctx) as resp:
-                    data = json.loads(resp.read().decode('utf-8'))
-                    res = data.get('result', [])
-                    if res:
-                        inc_data = res[0]
-                        inc_sys_id = inc_data.get('sys_id', {}).get('value') if isinstance(inc_data.get('sys_id'), dict) else (inc_data.get('sys_id') or "")
-                        
-                        num_obj = inc_data.get('number', {})
-                        inc_number = num_obj.get('display_value') if isinstance(num_obj, dict) else (num_obj or inc_ident)
+                # Check if identifier is a Request (sc_request)
+                if inc_ident.startswith("REQ"):
+                    q = f"number={inc_ident}^ORsys_id={inc_ident}"
+                    u = f"{self.instance_url}/api/now/table/sc_request?sysparm_query={urllib.parse.quote(q)}&sysparm_display_value=all&sysparm_fields=sys_id,number,approval,request_state,state,stage"
+                    req = urllib.request.Request(u, headers=self._get_headers())
+                    with urllib.request.urlopen(req, timeout=10, context=self.ctx) as resp:
+                        res = json.loads(resp.read().decode('utf-8')).get('result', [])
+                        if res:
+                            rec = res[0]
+                            appr = rec.get('approval', {})
+                            appr_val = (appr.get('value') if isinstance(appr, dict) else str(appr or '')).lower()
+                            req_st = rec.get('request_state', {})
+                            req_st_val = (req_st.get('value') if isinstance(req_st, dict) else str(req_st or '')).lower()
+                            st = rec.get('state', {})
+                            st_val = str(st.get('value') if isinstance(st, dict) else st)
+                            if appr_val == 'approved' or req_st_val in ['approved', 'closed_complete'] or st_val in ['3', '6', '7']:
+                                is_cleared = True
+                                state_label = "Approved"
+                                state_code = "6"
+                            else:
+                                state_label = "In Progress"
+                else:
+                    query = f"number={inc_ident}^ORsys_id={inc_ident}"
+                    url = f"{self.instance_url}/api/now/table/incident?sysparm_query={query}&sysparm_display_value=all&sysparm_fields=sys_id,number,state,incident_state,assigned_to,category,short_description"
+                    req = urllib.request.Request(url, headers=self._get_headers())
+                    with urllib.request.urlopen(req, timeout=10, context=self.ctx) as resp:
+                        data = json.loads(resp.read().decode('utf-8'))
+                        res = data.get('result', [])
+                        if res:
+                            inc_data = res[0]
+                            inc_sys_id = inc_data.get('sys_id', {}).get('value') if isinstance(inc_data.get('sys_id'), dict) else (inc_data.get('sys_id') or "")
 
-                        # Assigned To
-                        assign_obj = inc_data.get('assigned_to', {})
-                        if isinstance(assign_obj, dict):
-                            assigned_name = assign_obj.get('display_value') or assign_obj.get('value') or assigned_name
-                        elif assign_obj:
-                            assigned_name = str(assign_obj)
+                            num_obj = inc_data.get('number', {})
+                            inc_number = num_obj.get('display_value') if isinstance(num_obj, dict) else (num_obj or inc_ident)
 
-                        # State
-                        st_obj = inc_data.get('state', {})
-                        if isinstance(st_obj, dict):
-                            state_code = str(st_obj.get('value', '2'))
-                            state_label = st_obj.get('display_value') or ('Resolved' if state_code == '6' else 'Closed' if state_code == '7' else 'In Progress')
-                        else:
-                            state_code = str(st_obj or '2')
-                            state_label = 'In Progress'
+                            # Assigned To
+                            assign_obj = inc_data.get('assigned_to', {})
+                            if isinstance(assign_obj, dict):
+                                assigned_name = assign_obj.get('display_value') or assign_obj.get('value') or assigned_name
+                            elif assign_obj:
+                                assigned_name = str(assign_obj)
 
-                        # In ServiceNow: 6=Resolved, 7=Closed
-                        if state_code in ['6', '7', 'Resolved', 'Closed', 'resolved', 'closed']:
-                            is_cleared = True
-                            if not state_label or state_label in ['6', '7']:
-                                state_label = "Closed" if state_code in ['7', 'Closed', 'closed'] else "Resolved"
-                        elif state_code in ['1', 'New', 'new']:
-                            state_label = "New"
-                        elif state_code in ['2', 'In Progress']:
-                            state_label = "In Progress"
-                        elif state_code in ['3', 'On Hold']:
-                            state_label = "On Hold"
+                            # State
+                            st_obj = inc_data.get('state', {})
+                            if isinstance(st_obj, dict):
+                                state_code = str(st_obj.get('value', '2'))
+                                state_label = st_obj.get('display_value') or ('Resolved' if state_code == '6' else 'Closed' if state_code == '7' else 'In Progress')
+                            else:
+                                state_code = str(st_obj or '2')
+                                state_label = 'In Progress'
+
+                            # In ServiceNow: 6=Resolved, 7=Closed, or Approved
+                            if state_code in ['6', '7', 'Resolved', 'Closed', 'resolved', 'closed']:
+                                is_cleared = True
+                                if not state_label or state_label in ['6', '7']:
+                                    state_label = "Closed" if state_code in ['7', 'Closed', 'closed'] else "Resolved"
+                            elif state_code in ['1', 'New', 'new']:
+                                state_label = "New"
+                            elif state_code in ['2', 'In Progress']:
+                                state_label = "In Progress"
+                            elif state_code in ['3', 'On Hold']:
+                                state_label = "On Hold"
             except Exception as e:
                 print(f"[ServiceNow Incident Check Error]: {e}")
 
-        ui_message = "User Submitted Laptop" if is_cleared else "Clearance waiting from IT department"
+        ui_message = "IT Approved (Laptop Submitted)" if is_cleared else "Clearance waiting from IT department"
         return {
             "status": "success",
             "incidentNumber": inc_number,
