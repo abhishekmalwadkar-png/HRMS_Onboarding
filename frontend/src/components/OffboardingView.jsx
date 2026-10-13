@@ -928,28 +928,6 @@ export default function OffboardingView() {
                           <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-arrow-up-right-from-square'}`}></i> ServiceNow: <strong>{item.laptopTicket}</strong> {isCleared ? '(IT Approved)' : ''}
                         </button>
                       )}
-                      <a
-                        href={`/api/exit/offboarding-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
-                        download
-                        className="badge"
-                        style={{
-                          fontSize: '0.78rem',
-                          textDecoration: 'none',
-                          padding: '0.35rem 0.65rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          background: 'rgba(16, 185, 129, 0.12)',
-                          color: '#059669',
-                          border: '1px solid rgba(16, 185, 129, 0.25)',
-                        }}
-                        title={`Download official Offboarding Letter for ${item.empName}`}
-                        onClick={() => showToast(`📄 Downloading Offboarding Letter for ${item.empName}...`, 'info')}
-                      >
-                        <i className="fa-solid fa-download"></i> Offboarding letter
-                      </a>
                       <span
                         onClick={() => inspectOffboardingFlow(item)}
                         className={`badge ${item.accessRevoked ? 'badge-verified' : 'badge-pending'}`}
