@@ -189,6 +189,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
   };
 
   const handleApprove = async (cand) => {
+    if (approvingId) return;
     setApprovingId(cand.id);
     setActiveFlowCandidate(cand);
     setFlowStepStatus({ ...allSteps('idle'), step1: 'running' });
@@ -212,10 +213,21 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...cand,
           id: cand.id,
           fullName: cand.fullName,
           email: cand.email,
           phone: cand.phone || '',
+          dob: cand.dob || '',
+          address: cand.address || '',
+          emergencyName: cand.emergencyName || '',
+          emergencyPhone: cand.emergencyPhone || '',
+          aadhaar: cand.aadhaar || '',
+          uan: cand.uan || '',
+          pan: cand.pan || '',
+          bankName: cand.bankName || '',
+          accountNumber: cand.accountNumber || '',
+          routingCode: cand.routingCode || '',
           department: cand.department || 'Engineering',
           jobTitle: cand.jobTitle || 'Staff AI Systems Engineer',
           hardware: cand.hardware || 'Apple MacBook Pro M3 Max',

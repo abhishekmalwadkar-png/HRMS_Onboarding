@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, animate, useReducedMotion } from 'motion/react';
+import { motion, animate, useReducedMotion, AnimatePresence } from 'motion/react';
 import { PageHeader, Skeleton, Avatar, Card } from './ui';
 
 // Animation variants
@@ -665,36 +665,86 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
         <button
           className={`analytics-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
           onClick={() => setActiveTab('all')}
+          style={{ position: 'relative' }}
         >
-          <i className="fa-solid fa-layer-group"></i> All Reports
+          {activeTab === 'all' && (
+            <motion.div
+              layoutId="analytics-tab-active-indicator"
+              className="analytics-tab-indicator"
+              transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+            />
+          )}
+          <span style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+            <i className="fa-solid fa-layer-group"></i> All Reports
+          </span>
         </button>
         <button
           className={`analytics-tab-btn ${activeTab === 'onboarding' ? 'active' : ''}`}
           onClick={() => setActiveTab('onboarding')}
+          style={{ position: 'relative' }}
         >
-          <i className="fa-solid fa-user-plus text-emerald"></i> Onboarded
-          <span className="tab-count">{filteredOnboardingStats.approved}</span>
+          {activeTab === 'onboarding' && (
+            <motion.div
+              layoutId="analytics-tab-active-indicator"
+              className="analytics-tab-indicator"
+              transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+            />
+          )}
+          <span style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+            <i className="fa-solid fa-user-plus text-emerald"></i> Onboarded
+            <span className="tab-count">{filteredOnboardingStats.approved}</span>
+          </span>
         </button>
         <button
           className={`analytics-tab-btn ${activeTab === 'offboarding' ? 'active' : ''}`}
           onClick={() => setActiveTab('offboarding')}
+          style={{ position: 'relative' }}
         >
-          <i className="fa-solid fa-arrow-right-from-bracket text-rose"></i> Offboarded
-          <span className="tab-count">{exitStats.filteredTotal}</span>
+          {activeTab === 'offboarding' && (
+            <motion.div
+              layoutId="analytics-tab-active-indicator"
+              className="analytics-tab-indicator"
+              transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+            />
+          )}
+          <span style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+            <i className="fa-solid fa-arrow-right-from-bracket text-rose"></i> Offboarded
+            <span className="tab-count">{exitStats.filteredTotal}</span>
+          </span>
         </button>
         <button
           className={`analytics-tab-btn ${activeTab === 'leaves' ? 'active' : ''}`}
           onClick={() => setActiveTab('leaves')}
+          style={{ position: 'relative' }}
         >
-          <i className="fa-solid fa-calendar-check text-purple"></i> Leave Approvals
-          <span className="tab-count">{filteredLeaveStats.filteredCount}</span>
+          {activeTab === 'leaves' && (
+            <motion.div
+              layoutId="analytics-tab-active-indicator"
+              className="analytics-tab-indicator"
+              transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+            />
+          )}
+          <span style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+            <i className="fa-solid fa-calendar-check text-purple"></i> Leave Approvals
+            <span className="tab-count">{filteredLeaveStats.filteredCount}</span>
+          </span>
         </button>
         <button
           className={`analytics-tab-btn ${activeTab === 'departments' ? 'active' : ''}`}
           onClick={() => setActiveTab('departments')}
+          style={{ position: 'relative' }}
         >
-          <i className="fa-solid fa-sitemap text-accent"></i> Department Headcount
-          <span className="tab-count">{onboardingStats.departments.length}</span>
+          {activeTab === 'departments' && (
+            <motion.div
+              layoutId="analytics-tab-active-indicator"
+              className="analytics-tab-indicator"
+              transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+            />
+          )}
+          <span style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+            <i className="fa-solid fa-sitemap text-accent"></i> Department Headcount
+            <span className="tab-count">{onboardingStats.departments.length}</span>
+          </span>
         </button>
       </div>
 
@@ -807,8 +857,33 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
         </motion.div>
       </motion.div>
 
-      {/* HR LIFECYCLE FLOW PIPELINE (Stage-Gate Interactive Process Flow) */}
-      {activeTab === 'all' && (
+      {/* Dynamic Tab Content with Modern Spring Slide & Fade Animation */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            transition: {
+              type: 'spring',
+              stiffness: 320,
+              damping: 28,
+              mass: 0.8,
+              opacity: { duration: 0.22, ease: 'easeOut' },
+            },
+          }}
+          exit={{
+            opacity: 0,
+            y: -10,
+            transition: {
+              duration: 0.16,
+              ease: [0.4, 0, 1, 1],
+            },
+          }}
+        >
+          {/* HR LIFECYCLE FLOW PIPELINE (Stage-Gate Interactive Process Flow) */}
+          {activeTab === 'all' && (
         <motion.div variants={tileVariants} className="glass-card lifecycle-flow-card">
           <div className="lifecycle-flow-header">
             <div>
@@ -1959,6 +2034,8 @@ export default function AnalyticsView({ employees = [], isLoading = false }) {
           )}
         </motion.div>
       )}
+        </motion.div>
+      </AnimatePresence>
     </section>
   );
 }

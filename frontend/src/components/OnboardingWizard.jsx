@@ -341,16 +341,27 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
   const [hasDrawn, setHasDrawn] = useState(false);
   const isDrawingRef = useRef(false);
 
+  const getThemeColors = () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || document.body.classList.contains('dark-theme');
+    return {
+      isDark,
+      strokeColor: isDark ? '#ffffff' : '#0f172a',
+      autoSigColor: isDark ? '#ffffff' : '#c2410c',
+      guidelineColor: isDark ? 'rgba(255, 255, 255, 0.25)' : '#e2e8f0',
+    };
+  };
+
   // Helper to draw clean cursive auto-signature
   const drawAutoSignature = (name) => {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    const { autoSigColor, guidelineColor } = getThemeColors();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Subtle guideline
     ctx.beginPath();
-    ctx.strokeStyle = '#e2e8f0';
+    ctx.strokeStyle = guidelineColor;
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.moveTo(30, canvas.height - 25);
@@ -361,11 +372,11 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     // Cursive signature
     const sigName = (name || formData.fullName || 'Candidate Signature').trim();
     ctx.font = "italic bold 32px 'Caveat', cursive, 'Brush Script MT', sans-serif";
-    ctx.fillStyle = '#c2410c';
+    ctx.fillStyle = autoSigColor;
     ctx.fillText(sigName, 40, canvas.height / 2 + 8);
 
     ctx.beginPath();
-    ctx.strokeStyle = '#c2410c';
+    ctx.strokeStyle = autoSigColor;
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -381,11 +392,12 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    const { guidelineColor } = getThemeColors();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Subtle guideline
     ctx.beginPath();
-    ctx.strokeStyle = '#e2e8f0';
+    ctx.strokeStyle = guidelineColor;
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.moveTo(30, canvas.height - 25);
@@ -402,9 +414,10 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     if (currentStep === 2 && canvasRef.current && !hasSignature) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
+      const { guidelineColor } = getThemeColors();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
-      ctx.strokeStyle = '#e2e8f0';
+      ctx.strokeStyle = guidelineColor;
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.moveTo(30, canvas.height - 25);
@@ -432,12 +445,13 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    const { strokeColor, guidelineColor } = getThemeColors();
 
     if (!hasDrawn) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       // Subtle guideline
       ctx.beginPath();
-      ctx.strokeStyle = '#e2e8f0';
+      ctx.strokeStyle = guidelineColor;
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.moveTo(30, canvas.height - 25);
@@ -451,7 +465,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     setHasSignature(true);
     const pos = getCanvasCoordinates(e);
     ctx.beginPath();
-    ctx.strokeStyle = '#0f172a';
+    ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 2.8;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -464,6 +478,8 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    const { strokeColor } = getThemeColors();
+    ctx.strokeStyle = strokeColor;
     const pos = getCanvasCoordinates(e);
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
@@ -749,10 +765,23 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
             {currentStep === 1 && (
               <motion.div
                 key="step1"
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -12 }}
-                transition={{ duration: 0.25, ease: EASE_OUT }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    type: 'spring',
+                    stiffness: 320,
+                    damping: 28,
+                    mass: 0.8,
+                    opacity: { duration: 0.22, ease: 'easeOut' },
+                  },
+                }}
+                exit={{
+                  opacity: 0,
+                  y: -10,
+                  transition: { duration: 0.16, ease: [0.4, 0, 1, 1] },
+                }}
               >
                 <h2 className="wizard-section-title">
                   <i className="fa-solid fa-id-card text-accent" aria-hidden="true"></i> Personal details
@@ -781,10 +810,23 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
             {currentStep === 2 && (
               <motion.div
                 key="step2"
-                initial={{ opacity: 0, x: 12 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 12 }}
-                transition={{ duration: 0.25, ease: EASE_OUT }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    type: 'spring',
+                    stiffness: 320,
+                    damping: 28,
+                    mass: 0.8,
+                    opacity: { duration: 0.22, ease: 'easeOut' },
+                  },
+                }}
+                exit={{
+                  opacity: 0,
+                  y: -10,
+                  transition: { duration: 0.16, ease: [0.4, 0, 1, 1] },
+                }}
               >
                 <h2 className="wizard-section-title">
                   <i className="fa-solid fa-folder-open text-accent" aria-hidden="true"></i> Verification documents
@@ -911,6 +953,8 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                       border: !hasSignature ? '1.5px dashed #f59e0b' : '1.5px solid #10b981',
                       borderRadius: 'var(--radius-md)',
                       transition: 'border 0.2s ease',
+                      padding: 0,
+                      background: 'transparent',
                     }}
                   >
                     <canvas
@@ -925,7 +969,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                         display: 'block',
                         cursor: 'crosshair',
                         touchAction: 'none',
-                        background: 'var(--bg-primary)',
+                        background: 'transparent',
                         borderRadius: 'var(--radius-md)',
                       }}
                       onPointerDown={handlePointerDown}
@@ -1019,37 +1063,59 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
       {/* ========================================================================= */}
       {/* DOCUMENT PREVIEW MODAL (DYNAMIC DATA BOUND TO ENTERED PERSONAL DETAILS) */}
       {/* ========================================================================= */}
-      {previewDocKey && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(5px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1100,
-            padding: '1rem',
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setPreviewDocKey(null);
-          }}
-        >
-          <div
-            className="glass-card"
+      <AnimatePresence>
+        {previewDocKey && (
+          <motion.div
+            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            animate={{ opacity: 1, backdropFilter: 'blur(6px)' }}
+            exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             style={{
-              maxWidth: previewDocKey === 'idDoc' ? '820px' : '680px',
-              width: '100%',
-              background: 'var(--bg-card)',
-              borderRadius: '12px',
-              padding: '1.25rem 1.4rem',
-              maxHeight: '92vh',
-              overflowY: 'auto',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
-              border: '1px solid var(--border-color)',
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.75)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1100,
+              padding: '1rem',
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setPreviewDocKey(null);
             }}
           >
+            <motion.div
+              className="glass-card"
+              initial={{ opacity: 0, scale: 0.94, y: 22 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0,
+                transition: {
+                  type: 'spring',
+                  stiffness: 340,
+                  damping: 28,
+                  mass: 0.9,
+                },
+              }}
+              exit={{
+                opacity: 0,
+                scale: 0.96,
+                y: 12,
+                transition: { duration: 0.16, ease: [0.4, 0, 1, 1] },
+              }}
+              style={{
+                maxWidth: previewDocKey === 'idDoc' ? '820px' : '680px',
+                width: '100%',
+                background: 'var(--bg-card)',
+                borderRadius: '12px',
+                padding: '1.25rem 1.4rem',
+                maxHeight: '92vh',
+                overflowY: 'auto',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+                border: '1px solid var(--border-color)',
+              }}
+            >
             {/* Modal Header & Content Switcher */}
             {(() => {
               const activeDoc = previewDocKey ? documents[previewDocKey] : null;
@@ -1631,9 +1697,10 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                 <i className="fa-solid fa-check" aria-hidden="true"></i> Close Preview
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+    </AnimatePresence>
     </section>
   );
 }

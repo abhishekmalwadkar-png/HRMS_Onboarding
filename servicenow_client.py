@@ -9,6 +9,7 @@ import time
 import base64
 import json
 import ssl
+import threading
 import urllib.request
 import urllib.error
 from orangehrm_client import orangehrm_client
@@ -34,6 +35,9 @@ def load_env():
 load_env()
 
 class ServiceNowClient:
+    _approval_lock = threading.Lock()
+    _in_flight_requests = set()
+
     def __init__(self):
         self.reload_config()
         self.ctx = ssl.create_default_context()
@@ -255,6 +259,39 @@ class ServiceNowClient:
         except Exception as e:
             print(f"[ServiceNow Attachment Error for {file_name} on {table_name}]: {e}")
             return {"status": "error", "filename": file_name, "error": str(e)}
+
+    def get_record_attachment_bytes(self, table_name: str, table_sys_id: str, file_pattern: str = None) -> tuple:
+        """
+        Retrieves attachment file bytes for a ServiceNow record using the Attachment API.
+        Returns (filename, bytes_data, content_type) or (None, None, None) on failure.
+        """
+        self.reload_config()
+        if not self.is_configured() or not table_sys_id:
+            return None, None, None
+        try:
+            url = f"{self.instance_url}/api/now/attachment?sysparm_query=table_name={table_name}^table_sys_id={table_sys_id}&sysparm_limit=10"
+            headers = self._get_headers()
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=10, context=self.ctx) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+                results = data.get('result', [])
+                if results and len(results) > 0:
+                    matched_att = results[0]
+                    if file_pattern:
+                        for a in results:
+                            if file_pattern.lower() in (a.get('file_name') or '').lower():
+                                matched_att = a
+                                break
+                    download_url = matched_att.get('download_link')
+                    filename = matched_att.get('file_name', 'Resignation_Letter.pdf')
+                    content_type = matched_att.get('content_type', 'application/pdf')
+                    if download_url:
+                        dl_req = urllib.request.Request(download_url, headers=self._get_headers())
+                        with urllib.request.urlopen(dl_req, timeout=15, context=self.ctx) as dl_resp:
+                            return filename, dl_resp.read(), content_type
+        except Exception as e:
+            print(f"[ServiceNow get_record_attachment_bytes error for {table_name}:{table_sys_id}]: {e}")
+        return None, None, None
 
     def _create_onboarding_doc_pdf(self, title: str, lines: list) -> bytes:
         """
@@ -699,6 +736,18 @@ class ServiceNowClient:
         active_req = req_number or employee_data.get('serviceNowReq', f"REQ{int(time.time()) % 1000000:07d}")
         req_sys_id = employee_data.get('serviceNowReqId')
 
+        # DEDUPLICATION GUARD: Prevent duplicate concurrent approval executions (e.g., from UI + background watcher thread)
+        req_key = str(active_req or emp_id).strip()
+        with self._approval_lock:
+            if req_key in self._in_flight_requests:
+                print(f"[ServiceNow Client Guard] Duplicate approval prevented: {req_key} ({emp_name}) is ALREADY in-flight!")
+                return {
+                    "status": "already_running",
+                    "message": f"Approval and sequential provisioning is already in progress for {emp_name} ({req_key}). Duplicate run skipped.",
+                    "duplicatePrevented": True
+                }
+            self._in_flight_requests.add(req_key)
+
         laptop_ticket = f"ITSM-ASSET-{int(time.time()) % 10000:04d}"
         laptop_ticket_url = f"{self.instance_url}/nav_to.do?uri=incident_list.do"
 
@@ -922,6 +971,9 @@ class ServiceNowClient:
             print(f"[APPROVAL FLOW - STEP 7/7 ERROR] Offer Letter Email: {off_err}")
             offer_letter_result = {"status": "error", "message": str(off_err)}
 
+        with self._approval_lock:
+            self._in_flight_requests.discard(req_key)
+
         return {
             "status": "success",
             "approvalStatus": "Approved",
@@ -1028,7 +1080,16 @@ class ServiceNowClient:
         if not self.is_configured():
             return False, []
 
-        pending_emps = [e for e in employees if e.get('status') == 'Pending Review' and e.get('serviceNowReqId')]
+        with self._approval_lock:
+            in_flight = set(self._in_flight_requests)
+
+        pending_emps = [
+            e for e in employees 
+            if e.get('status') == 'Pending Review' 
+            and e.get('serviceNowReqId')
+            and str(e.get('serviceNowReq') or '').strip() not in in_flight
+            and str(e.get('id') or '').strip() not in in_flight
+        ]
         if not pending_emps:
             return False, []
 
@@ -1044,6 +1105,9 @@ class ServiceNowClient:
                         print(f"\n[ServiceNow Approval Detected via ServiceNow PDI] Candidate {emp.get('fullName')} ({emp.get('id')}) approved in ServiceNow ({data.get('number')})!")
                         print("[Initiating Flow] 1st AD -> 2nd Office 365 -> 3rd OrangeHRM -> 4th ServiceNow...")
                         approve_result = self.approve_and_provision_laptop(emp, data.get('number') or emp.get('serviceNowReq'))
+                        if approve_result.get('duplicatePrevented'):
+                            print(f"[ServiceNow Poller] Skipped duplicate execution for {emp.get('fullName')}")
+                            continue
 
                         emp['status'] = 'Approved'
                         emp['serviceNowStatus'] = 'Approved'

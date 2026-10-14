@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { useToast } from '../context/ToastContext';
-import { PageHeader, Card, EmptyState, Modal, Avatar, Pagination, statusBadgeClass, staggerContainer, staggerItem, staggerTableRow } from './ui';
+import { PageHeader, Card, EmptyState, Modal, Drawer, Avatar, Pagination, statusBadgeClass, staggerContainer, staggerItem, staggerTableRow } from './ui';
 import { openServiceNowDirect } from '../utils/serviceNowAuth';
 
 const ITEMS_PER_PAGE = 10;
@@ -249,15 +249,15 @@ export default function DirectoryView({ employees }) {
         )}
       </Card>
 
-      {/* Employee dossier: status in each provisioned system */}
-      <Modal
+      {/* Employee dossier: slide-over drawer showing status in each provisioned system */}
+      <Drawer
         open={Boolean(sel)}
         onClose={() => setSelectedCandidate(null)}
-        size="lg"
+        width="620px"
         icon={sel && <Avatar name={sel.fullName} size={44} />}
         title={sel?.fullName}
         subtitle={sel && `${sel.jobTitle || '—'} · ${sel.department || '—'} · ${sel.id}`}
-        footer={<button className="btn btn-secondary" onClick={() => setSelectedCandidate(null)}>Close</button>}
+        footer={<button className="btn btn-secondary" onClick={() => setSelectedCandidate(null)}>Close Dossier</button>}
       >
         {sel && (
           <motion.div className="system-grid" variants={staggerContainer} initial="hidden" animate="show">
@@ -311,7 +311,7 @@ export default function DirectoryView({ employees }) {
             </SystemCard>
           </motion.div>
         )}
-      </Modal>
+      </Drawer>
     </section>
   );
 }

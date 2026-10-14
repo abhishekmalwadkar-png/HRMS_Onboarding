@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -6,17 +6,30 @@ import { PageHeader, Card, Field, StatusBanner, staggerContainer, EASE_OUT } fro
 
 const SUGGESTED_QUESTIONS = ['How many leaves do I get?', 'When is my laptop dispatched?', 'What is my work email?'];
 
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December'
+];
+
+const CURRENT_YEAR = new Date().getFullYear().toString();
+const PAYSLIP_YEARS = [CURRENT_YEAR, '2025', '2024', '2023', '2022'];
+
+
 const DEFAULT_ORANGEHRM_EMPLOYEES = [
-  { empNumber: 41, fullName: 'Karthik Swaminathan', department: 'Engineering', jobTitle: 'Senior Software Engineer', balances: { casual: 12, sick: 8, privilege: 15 } },
-  { empNumber: 34, fullName: 'Samantha Chang', department: 'Engineering', jobTitle: 'Lead Cloud Architect', balances: { casual: 9, sick: 6, privilege: 14 } },
-  { empNumber: 33, fullName: 'Marcus Aurelius', department: 'Engineering', jobTitle: 'Principal Systems Architect', balances: { casual: 14, sick: 10, privilege: 18 } },
-  { empNumber: 32, fullName: 'Siddharth Mehta', department: 'Engineering', jobTitle: 'Senior AI Engineer', balances: { casual: 11, sick: 7, privilege: 12 } },
-  { empNumber: 18, fullName: 'Test Emp 3', department: 'Engineering', jobTitle: 'Senior Software Engineer', balances: { casual: 10, sick: 9, privilege: 16 } },
-  { empNumber: 16, fullName: 'Aarav Sharma', department: 'Engineering', jobTitle: 'Lead Full Stack Engineer', balances: { casual: 13, sick: 8, privilege: 15 } },
-  { empNumber: 3, fullName: 'Priyanka Chopra', department: 'Product', jobTitle: 'Lead Product Manager', balances: { casual: 8, sick: 5, privilege: 11 } },
-  { empNumber: 10, fullName: 'Sumit Deshmukh', department: 'IT Systems', jobTitle: 'ServiceNow Specialist', balances: { casual: 10, sick: 8, privilege: 13 } },
-  { empNumber: 5, fullName: 'Suhas Kulkarni', department: 'Engineering', jobTitle: 'Senior DevOps Engineer', balances: { casual: 7, sick: 6, privilege: 10 } },
-  { empNumber: 19, fullName: 'Jagdish Verma', department: 'Finance', jobTitle: 'Financial Operations Lead', balances: { casual: 12, sick: 9, privilege: 17 } }
+  { empNumber: 67, employeeId: '1030', empId: 'EMP-1030', fullName: 'Soham Menon', department: 'Engineering', jobTitle: 'Software Engineer', balances: { casual: 12, sick: 8, privilege: 15 } },
+  { empNumber: 64, employeeId: '9773', empId: 'EMP-9773', fullName: 'Tushar Bansal', department: 'Engineering', jobTitle: 'Software Engineer', balances: { casual: 10, sick: 7, privilege: 14 } },
+  { empNumber: 68, employeeId: '5642', empId: 'EMP-5642', fullName: 'Kavita Gupta', department: 'Engineering', jobTitle: 'Software Engineer', balances: { casual: 11, sick: 6, privilege: 12 } },
+  { empNumber: 1, employeeId: '0001', empId: 'EMP-0001', fullName: 'Suhas Kajawe', department: 'Engineering', jobTitle: 'Admin / Senior Specialist', balances: { casual: 14, sick: 10, privilege: 18 } }
 ];
 
 function getEmployeeLeaveBalances(emp) {
@@ -65,8 +78,8 @@ export default function ServicesView() {
   const [leaveRequests, setLeaveRequests] = useState([
     {
       id: 'LR-301',
-      employeeName: 'Karthik Swaminathan',
-      empNumber: 41,
+      employeeName: 'Soham Menon',
+      empNumber: 67,
       type: 'Privilege Leave',
       from: '2026-10-10',
       to: '2026-10-14',
@@ -78,8 +91,8 @@ export default function ServicesView() {
     },
     {
       id: 'LR-302',
-      employeeName: 'Samantha Chang',
-      empNumber: 34,
+      employeeName: 'Kavita Gupta',
+      empNumber: 68,
       type: 'Casual Leave',
       from: '2026-10-24',
       to: '2026-10-24',
@@ -91,8 +104,8 @@ export default function ServicesView() {
     },
     {
       id: 'LR-303',
-      employeeName: 'Amit Deshmukh',
-      empNumber: 42,
+      employeeName: 'Tushar Bansal',
+      empNumber: 64,
       type: 'Sick Leave',
       from: '2026-10-18',
       to: '2026-10-19',
@@ -104,8 +117,8 @@ export default function ServicesView() {
     },
     {
       id: 'LR-304',
-      employeeName: 'Priya Iyer',
-      empNumber: 43,
+      employeeName: 'Suhas Kajawe',
+      empNumber: 1,
       type: 'Privilege Leave',
       from: '2026-11-02',
       to: '2026-11-05',
@@ -114,45 +127,6 @@ export default function ServicesView() {
       status: 'Approved',
       orangeHrmAssigned: true,
       leaveId: '4'
-    },
-    {
-      id: 'LR-305',
-      employeeName: 'Rohan Mehta',
-      empNumber: 44,
-      type: 'Casual Leave',
-      from: '2026-10-28',
-      to: '2026-10-28',
-      days: 1,
-      reason: 'Banking & administrative paperwork',
-      status: 'Pending HR Approval',
-      orangeHrmAssigned: false,
-      leaveId: '5'
-    },
-    {
-      id: 'LR-306',
-      employeeName: 'Sneha Patil',
-      empNumber: 45,
-      type: 'Sick Leave',
-      from: '2026-10-15',
-      to: '2026-10-16',
-      days: 2,
-      reason: 'Viral fever recovery',
-      status: 'Approved',
-      orangeHrmAssigned: true,
-      leaveId: '6'
-    },
-    {
-      id: 'LR-307',
-      employeeName: 'Vikram Malhotra',
-      empNumber: 46,
-      type: 'Privilege Leave',
-      from: '2026-11-10',
-      to: '2026-11-12',
-      days: 3,
-      reason: 'Outstation family wedding',
-      status: 'Pending HR Approval',
-      orangeHrmAssigned: false,
-      leaveId: '7'
     }
   ]);
 
@@ -217,10 +191,110 @@ export default function ServicesView() {
     }
   }, []);
 
+  const parseServiceSubtabFromHash = useCallback(() => {
+    if (typeof window === 'undefined') return 'leaves';
+    const hash = (window.location.hash || '').toLowerCase();
+    if (hash.includes('payslip')) return 'payslips';
+    return 'leaves';
+  }, []);
+
+  const [activeServiceTab, setActiveServiceTab] = useState(parseServiceSubtabFromHash);
+
+  const handleSelectServiceTab = (tab) => {
+    if (tab === activeServiceTab) return;
+    setActiveServiceTab(tab);
+    const targetHash = `#/services/${tab}`;
+    if (window.location.hash !== targetHash) {
+      window.history.pushState({ view: 'services', subtab: tab }, '', targetHash);
+    }
+  };
+
+  useEffect(() => {
+    const handleSubtabSync = (e) => {
+      const subtab = e.state?.subtab || parseServiceSubtabFromHash();
+      setActiveServiceTab(subtab);
+    };
+    window.addEventListener('popstate', handleSubtabSync);
+    window.addEventListener('hashchange', handleSubtabSync);
+    return () => {
+      window.removeEventListener('popstate', handleSubtabSync);
+      window.removeEventListener('hashchange', handleSubtabSync);
+    };
+  }, [parseServiceSubtabFromHash]);
+
+  const loggedInName = useMemo(() => {
+    return (currentUser?.name?.split(' (')[0] || currentUser?.fullName || 'Jessica Miller').trim();
+  }, [currentUser]);
+
+  const loggedInRole = useMemo(() => {
+    return currentUser?.title || (currentUser?.role === 'hr' ? 'HR Operations Director' : 'Employee');
+  }, [currentUser]);
+
+  const loggedInDept = useMemo(() => {
+    return currentUser?.department || (currentUser?.role === 'hr' ? 'Human Resources' : 'Engineering');
+  }, [currentUser]);
+
+  const loggedInEmpId = useMemo(() => {
+    return currentUser?.empId || 'EMP-1001';
+  }, [currentUser]);
+
+  const [payslipMonth, setPayslipMonth] = useState('October');
+  const [payslipYear, setPayslipYear] = useState(CURRENT_YEAR);
+  const [isDownloadingPayslip, setIsDownloadingPayslip] = useState(false);
+  const [systemEmployees, setSystemEmployees] = useState([]);
+
+  const fetchSystemEmployees = useCallback(async () => {
+    try {
+      const res = await fetch('/api/employees');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setSystemEmployees(data);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not fetch system employees:', e);
+    }
+  }, []);
+
   useEffect(() => {
     fetchLeaves();
     fetchOrangeHrmEmployees();
-  }, [fetchLeaves, fetchOrangeHrmEmployees]);
+    fetchSystemEmployees();
+  }, [fetchLeaves, fetchOrangeHrmEmployees, fetchSystemEmployees]);
+
+  const handleDownloadPayslip = async () => {
+    const targetName = loggedInName;
+    const targetMonth = `${payslipMonth} ${payslipYear}`;
+    const targetId = loggedInEmpId;
+
+    setIsDownloadingPayslip(true);
+    try {
+      const downloadUrl = `/api/payslip/download?name=${encodeURIComponent(targetName)}&month=${encodeURIComponent(targetMonth)}&id=${encodeURIComponent(targetId)}`;
+      const res = await fetch(downloadUrl);
+      if (!res.ok) {
+        throw new Error(`Failed to generate payslip (HTTP ${res.status})`);
+      }
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      const safeName = targetName.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const safeMonth = targetMonth.replace(/[^a-zA-Z0-9_-]/g, '_');
+      link.download = `Payslip_${safeMonth}_${safeName}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+
+      showToast(`Payslip downloaded for ${targetName} (${targetMonth})`, 'success');
+    } catch (err) {
+      console.error('Payslip download error:', err);
+      showToast('Could not download payslip. Please try again.', 'error');
+    } finally {
+      setIsDownloadingPayslip(false);
+    }
+  };
 
   const autofillIndexRef = useRef(0);
 
@@ -516,12 +590,65 @@ export default function ServicesView() {
   return (
     <section className="view-section active page">
       <PageHeader
-        icon="fa-solid fa-headset"
-        title="Self-service & AI assistant"
-        description={`Check leave balances, request time off and assign leave directly in OrangeHRM for ${employeeName} (Emp #${empNumber}).`}
+        icon={activeServiceTab === 'leaves' ? 'fa-solid fa-headset' : 'fa-solid fa-file-invoice-dollar'}
+        title={activeServiceTab === 'leaves' ? 'Self-service & Leaves' : 'Executive Payslips Hub'}
+        description={
+          activeServiceTab === 'leaves'
+            ? `Check leave balances, request time off and assign leave directly in OrangeHRM for ${employeeName || 'employees'}.`
+            : 'Official HR Payroll & Compensation portal. Generate and download monthly employee payslips.'
+        }
       />
 
-      <motion.div className="kpi-grid kpi-grid-3" variants={staggerContainer} initial="hidden" animate="show">
+      {/* Top Navigation Tabs: Leaves and Pay slips */}
+      <div className="analytics-tabs-bar" style={{ marginBottom: '1.5rem' }}>
+        <button
+          type="button"
+          className={`analytics-tab-btn ${activeServiceTab === 'leaves' ? 'active' : ''}`}
+          onClick={() => handleSelectServiceTab('leaves')}
+        >
+          {activeServiceTab === 'leaves' && (
+            <motion.div
+              layoutId="services-tab-active-indicator"
+              className="analytics-tab-indicator"
+              transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+            />
+          )}
+          <span style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+            <i className="fa-solid fa-umbrella-beach"></i>
+            <span>Leaves</span>
+            <span className="tab-count">{leaveRequests.length}</span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          className={`analytics-tab-btn ${activeServiceTab === 'payslips' ? 'active' : ''}`}
+          onClick={() => handleSelectServiceTab('payslips')}
+        >
+          {activeServiceTab === 'payslips' && (
+            <motion.div
+              layoutId="services-tab-active-indicator"
+              className="analytics-tab-indicator"
+              transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+            />
+          )}
+          <span style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+            <i className="fa-solid fa-file-invoice-dollar"></i>
+            <span>Pay slips</span>
+          </span>
+        </button>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {activeServiceTab === 'leaves' ? (
+          <motion.div
+            key="services-leaves-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.22, ease: EASE_OUT }}
+          >
+            <motion.div className="kpi-grid kpi-grid-3" variants={staggerContainer} initial="hidden" animate="show">
         {[
           { label: 'Casual leave', value: leaveBalances.casual, tone: 'accent', icon: 'fa-mug-hot' },
           { label: 'Sick leave', value: leaveBalances.sick, tone: 'success', icon: 'fa-briefcase-medical' },
@@ -924,6 +1051,162 @@ export default function ServicesView() {
           </form>
         </Card>
       </motion.div>
+    </motion.div>
+  ) : (
+          <motion.div
+            key="services-payslips-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.22, ease: EASE_OUT }}
+          >
+            {/* 1. Payslips Overview KPI Cards */}
+            <motion.div className="kpi-grid kpi-grid-3" variants={staggerContainer} initial="hidden" animate="show" style={{ marginBottom: '1.5rem' }}>
+              <motion.div
+                className="ui-card kpi-tile"
+                variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT } } }}
+              >
+                <span className="kpi-label"><i className="fa-solid fa-user-check text-accent" aria-hidden="true"></i> Employee Profile</span>
+                <div className="kpi-value tone-accent" style={{ fontSize: '1.35rem' }}>{loggedInName}</div>
+                <span className="kpi-note">{loggedInRole} ({loggedInEmpId})</span>
+              </motion.div>
+
+              <motion.div
+                className="ui-card kpi-tile"
+                variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT } } }}
+              >
+                <span className="kpi-label"><i className="fa-solid fa-calendar-check text-success" aria-hidden="true"></i> Selected Pay Period</span>
+                <div className="kpi-value tone-success" style={{ fontSize: '1.4rem' }}>{payslipMonth} {payslipYear}</div>
+                <span className="kpi-note">{payslipMonth} {payslipYear} Cycle</span>
+              </motion.div>
+
+              <motion.div
+                className="ui-card kpi-tile"
+                variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT } } }}
+              >
+                <span className="kpi-label"><i className="fa-solid fa-shield-halved text-warning" aria-hidden="true"></i> Statutory Status</span>
+                <div className="kpi-value tone-warning" style={{ fontSize: '1.4rem' }}>Compliant</div>
+                <span className="kpi-note">EPF, TDS & PT 100% Verified</span>
+              </motion.div>
+            </motion.div>
+
+            {/* 2. Main Payslip Generator Card */}
+            <div>
+              <Card
+                title="Download My Payslip"
+                icon="fa-solid fa-file-invoice-dollar"
+              >
+                <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+                  Download your official monthly PDF payslip for <strong>{loggedInName}</strong> ({loggedInEmpId}).
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', alignItems: 'end' }}>
+                  {/* Logged in Employee Badge */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontWeight: '600' }}>
+                      Logged-in User
+                    </label>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.65rem',
+                        padding: '0.55rem 0.85rem',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: '0.86rem'
+                      }}
+                    >
+                      <i className="fa-solid fa-circle-user text-accent" style={{ fontSize: '1.35rem' }}></i>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <span>{loggedInName}</span>
+                          <span className="badge badge-approved" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>{loggedInEmpId}</span>
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                          {loggedInRole} • {loggedInDept}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Month & Year Selection Dropdowns */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '0.65rem', marginBottom: 0 }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label htmlFor="payslip-month-select" className="form-label" style={{ fontWeight: '600' }}>
+                        Month
+                      </label>
+                      <select
+                        id="payslip-month-select"
+                        className="form-control form-select"
+                        value={payslipMonth}
+                        onChange={(e) => setPayslipMonth(e.target.value)}
+                      >
+                        {MONTH_NAMES.map((m) => (
+                          <option key={m} value={m}>
+                            {m} {m === 'October' && payslipYear === CURRENT_YEAR ? '(Current)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label htmlFor="payslip-year-select" className="form-label" style={{ fontWeight: '600' }}>
+                        Year
+                      </label>
+                      <select
+                        id="payslip-year-select"
+                        className="form-control form-select"
+                        value={payslipYear}
+                        onChange={(e) => setPayslipYear(e.target.value)}
+                      >
+                        {PAYSLIP_YEARS.map((y) => (
+                          <option key={y} value={y}>
+                            {y}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Download Button */}
+                  <div>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{
+                        width: '100%',
+                        padding: '0.68rem 1.25rem',
+                        fontSize: '0.92rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.6rem',
+                        cursor: isDownloadingPayslip ? 'wait' : 'pointer'
+                      }}
+                      onClick={handleDownloadPayslip}
+                      disabled={isDownloadingPayslip}
+                    >
+                      {isDownloadingPayslip ? (
+                        <>
+                          <i className="fa-solid fa-spinner fa-spin"></i>
+                          <span>Generating Official PDF...</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="fa-solid fa-file-arrow-down"></i>
+                          <span>Download Payslip</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

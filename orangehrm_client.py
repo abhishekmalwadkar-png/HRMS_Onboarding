@@ -208,8 +208,42 @@ class OrangeHRMClient:
         work_email = o365_email or employee_data.get('o365Email') or personal_email
         phone = employee_data.get('phone', '')
         address = employee_data.get('address', '')
-        dob = employee_data.get('dob', None)
+        raw_dob = employee_data.get('dob', None)
+        aadhaar = employee_data.get('aadhaar', '')
+        uan = employee_data.get('uan', '')
+        pan = employee_data.get('pan', '')
+        other_id = str(aadhaar or uan or pan or '')
+        emergency_name = employee_data.get('emergencyName', '')
+        emergency_phone = employee_data.get('emergencyPhone', '')
+        raw_salary = employee_data.get('salary') or employee_data.get('annualCtc') or '3200000'
         joining_date = employee_data.get('startDate', time.strftime('%Y-%m-%d'))
+
+        # Format Date of Birth to YYYY-MM-DD
+        formatted_dob = None
+        if raw_dob:
+            raw_dob_str = str(raw_dob).strip()
+            m_dmy = re.match(r'^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$', raw_dob_str)
+            if m_dmy:
+                d, m, y = m_dmy.groups()
+                formatted_dob = f"{y}-{int(m):02d}-{int(d):02d}"
+            else:
+                m_ymd = re.match(r'^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$', raw_dob_str)
+                if m_ymd:
+                    y, m, d = m_ymd.groups()
+                    formatted_dob = f"{y}-{int(m):02d}-{int(d):02d}"
+                else:
+                    formatted_dob = raw_dob_str
+
+        # Format Numeric Salary for OrangeHRM
+        salary_digits = "2400000"
+        if raw_salary:
+            lpa_match = re.search(r'(\d+(?:\.\d+)?)\s*LPA', str(raw_salary), re.IGNORECASE)
+            if lpa_match:
+                salary_digits = str(int(float(lpa_match.group(1)) * 100000))
+            else:
+                clean_digits = re.sub(r'[^\d]', '', str(raw_salary))
+                if clean_digits:
+                    salary_digits = clean_digits
 
         name_parts = emp_name.strip().split(' ')
         first_name = name_parts[0] if len(name_parts) > 0 else emp_name
@@ -247,8 +281,8 @@ class OrangeHRMClient:
 
                 profile_url = f"{self.base_url}/web/index.php/pim/viewPersonalDetails/empNumber/{emp_number}" if emp_number else f"{self.base_url}/web/index.php/pim/viewEmployeeList"
 
-                # 2. Update Personal Details (DOB if present)
-                if emp_number and dob:
+                # 2. Update Personal Details (DOB, Aadhaar/OtherId, Marital Status)
+                if emp_number:
                     try:
                         personal_url = f"{self.base_url}/web/index.php/api/v2/pim/employees/{emp_number}/personal-details"
                         personal_payload = {
@@ -256,7 +290,10 @@ class OrangeHRMClient:
                             "middleName": middle_name,
                             "lastName": last_name,
                             "employeeId": assigned_emp_id,
-                            "birthday": dob
+                            "otherId": other_id,
+                            "birthday": formatted_dob,
+                            "maritalStatus": "Single",
+                            "gender": 1
                         }
                         req_p = urllib.request.Request(
                             personal_url,
@@ -265,6 +302,7 @@ class OrangeHRMClient:
                             method='PUT'
                         )
                         opener.open(req_p, timeout=15)
+                        print(f"[OrangeHRM Personal Details Updated] Set DOB: {formatted_dob}, Aadhaar/OtherID: {other_id}")
                     except Exception as pe:
                         print(f"[OrangeHRM Personal Update Note]: {pe}")
 
@@ -285,16 +323,36 @@ class OrangeHRMClient:
                     except Exception as je:
                         print(f"[OrangeHRM Job Update Note]: {je}")
 
-                # 4. Update Contact Details with Office 365 Work Email
-                if emp_number and work_email:
+                # 4. Update Contact Details (Residential address, city, state, zip, mobile, work & personal email)
+                if emp_number:
                     try:
+                        city = "Pune"
+                        province = "Maharashtra"
+                        zip_code = ""
+                        if address:
+                            pin_match = re.search(r'\b(\d{6})\b', address)
+                            if pin_match:
+                                zip_code = pin_match.group(1)
+                            if "Hyderabad" in address:
+                                city = "Hyderabad"
+                                province = "Telangana"
+                            elif "Bangalore" in address or "Bengaluru" in address:
+                                city = "Bengaluru"
+                                province = "Karnataka"
+                            elif "Mumbai" in address:
+                                city = "Mumbai"
+                                province = "Maharashtra"
+                            elif "Delhi" in address:
+                                city = "New Delhi"
+                                province = "Delhi"
+
                         contact_url = f"{self.base_url}/web/index.php/api/v2/pim/employee/{emp_number}/contact-details"
                         contact_payload = {
                             "street1": address or "Corporate Campus",
                             "street2": "",
-                            "city": "Pune",
-                            "province": "",
-                            "zipCode": "",
+                            "city": city,
+                            "province": province,
+                            "zipCode": zip_code,
                             "countryCode": "IN",
                             "homeTelephone": "",
                             "workTelephone": "",
@@ -309,11 +367,53 @@ class OrangeHRMClient:
                             method='PUT'
                         )
                         opener.open(req_c, timeout=15)
-                        print(f"[OrangeHRM Contact Details Updated] Successfully set workEmail to: {work_email}")
+                        print(f"[OrangeHRM Contact Details Updated] Address: {address} | Mobile: {phone} | Email: {work_email}")
                     except Exception as ce:
                         print(f"[OrangeHRM Contact Details Update Note]: {ce}")
 
-                # 5. Attach Onboarding Verification Documents to OrangeHRM PIM (Personal Details)
+                # 5. Add Emergency Contacts (Name, Relationship, Phone)
+                if emp_number and (emergency_name or emergency_phone):
+                    try:
+                        em_url = f"{self.base_url}/web/index.php/api/v2/pim/employees/{emp_number}/emergency-contacts"
+                        em_payload = {
+                            "name": emergency_name or "Emergency Contact",
+                            "relationship": "Family",
+                            "homePhone": "",
+                            "mobilePhone": emergency_phone or phone or "",
+                            "officePhone": ""
+                        }
+                        req_em = urllib.request.Request(
+                            em_url,
+                            data=json.dumps(em_payload).encode('utf-8'),
+                            headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+                            method='POST'
+                        )
+                        opener.open(req_em, timeout=15)
+                        print(f"[OrangeHRM Emergency Contact Added] {emergency_name} ({emergency_phone})")
+                    except Exception as eme:
+                        print(f"[OrangeHRM Emergency Contact Update Note]: {eme}")
+
+                # 6. Add Salary Components (CTC, Amount, Currency INR)
+                if emp_number and salary_digits:
+                    try:
+                        sal_url = f"{self.base_url}/web/index.php/api/v2/pim/employees/{emp_number}/salary-components"
+                        sal_payload = {
+                            "salaryComponent": "CTC",
+                            "salaryAmount": str(salary_digits),
+                            "currencyId": "INR"
+                        }
+                        req_sal = urllib.request.Request(
+                            sal_url,
+                            data=json.dumps(sal_payload).encode('utf-8'),
+                            headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+                            method='POST'
+                        )
+                        opener.open(req_sal, timeout=15)
+                        print(f"[OrangeHRM Salary Component Added] CTC: INR {salary_digits}")
+                    except Exception as sale:
+                        print(f"[OrangeHRM Salary Update Note]: {sale}")
+
+                # 7. Attach Onboarding Verification Documents to OrangeHRM PIM (Personal Details)
                 attached_docs = []
                 try:
                     attached_docs = self.attach_employee_documents(emp_number, employee_data)
