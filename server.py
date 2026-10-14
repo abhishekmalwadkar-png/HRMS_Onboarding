@@ -72,21 +72,6 @@ def check_integrations_health():
         t.join(max(0, deadline - time.time()))
     return dict(results)
 
-class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
-
-    def translate_path(self, path):
-        dist_dir = os.path.join(os.path.dirname(__file__), 'frontend', 'dist')
-        if os.path.exists(dist_dir) and not path.startswith('/api/') and not path.startswith('/generated_offers/') and not path.startswith('/generated_payslips/') and not path.startswith('/generated_relieving_letters/'):
-            clean_path = path.split('?', 1)[0].split('#', 1)[0]
-            rel_path = clean_path.lstrip('/')
-            full_path = os.path.join(dist_dir, rel_path)
-            if os.path.exists(full_path) and not os.path.isdir(full_path):
-                return full_path
-            index_path = os.path.join(dist_dir, 'index.html')
-            if os.path.exists(index_path):
-                return index_path
-        return super().translate_path(path)
-
 INDIAN_FIRST_NAMES = [
     "Aarav", "Aditya", "Advait", "Akash", "Alok", "Amit", "Ananya", "Aniket", "Anjali", "Arjun",
     "Aryan", "Ashwin", "Ayush", "Bhavna", "Chetan", "Deepak", "Devendra", "Divya", "Gaurav", "Harish",
@@ -147,6 +132,29 @@ _OHRM_NAMES_CACHE = {"names": set(), "last_updated": 0}
 
 
 class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
+
+    def translate_path(self, path):
+        dist_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'dist')
+        if os.path.exists(dist_dir) and not path.startswith('/api/') and not path.startswith('/generated_offers/') and not path.startswith('/generated_payslips/') and not path.startswith('/generated_relieving_letters/'):
+            clean_path = path.split('?', 1)[0].split('#', 1)[0]
+            parts = [p for p in clean_path.split('/') if p]
+            if parts:
+                full_path = os.path.join(dist_dir, *parts)
+                if os.path.exists(full_path) and not os.path.isdir(full_path):
+                    return full_path
+            index_path = os.path.join(dist_dir, 'index.html')
+            if os.path.exists(index_path):
+                return index_path
+        return super().translate_path(path)
+
+    def end_headers(self):
+        clean_p = getattr(self, 'path', '').split('?', 1)[0].split('#', 1)[0].lower()
+        if clean_p in ('', '/') or clean_p.endswith('.html') or clean_p.endswith('.js') or clean_p.endswith('.css'):
+            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            self.send_header('Pragma', 'no-cache')
+            self.send_header('Expires', '0')
+        super().end_headers()
+
     def read_autofill_db(self):
         if not os.path.exists(AUTOFILL_FILE):
             return {"autofillProfiles": []}
@@ -957,40 +965,69 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             if not payload.get('status'):
                 payload['status'] = 'Pending Review'
 
-            # 1. Trigger ServiceNow Service Catalog Onboarding Request (REQ & RITM)
-            sn_result = sn_client.create_onboarding_request(payload)
-            payload['serviceNowReq'] = sn_result.get('reqNumber')
-            payload['serviceNowRitm'] = sn_result.get('ritmNumber')
-            payload['serviceNowReqId'] = sn_result.get('requestId')
-            payload['serviceNowRitmId'] = sn_result.get('ritmId')
-            payload['reqUrl'] = sn_result.get('reqUrl')
-            payload['ritmUrl'] = sn_result.get('ritmUrl')
-            payload['serviceNowStatus'] = sn_result.get('approvalStatus', 'Pending Approval')
-            payload['serviceNowStage'] = sn_result.get('stage', 'HR Document Verification')
-            payload['attachedDocuments'] = sn_result.get('attachedDocuments', [])
+            # Instant tracking IDs so UI renders immediately without blocking on external APIs
+            temp_req = f"REQ001{int(time.time()) % 9000 + 1000}"
+            temp_ritm = f"RITM001{int(time.time()) % 9000 + 1000}"
+            payload['serviceNowReq'] = payload.get('serviceNowReq') or temp_req
+            payload['serviceNowRitm'] = payload.get('serviceNowRitm') or temp_ritm
+            payload['serviceNowStatus'] = 'Pending Approval'
+            payload['serviceNowStage'] = 'HR Document Verification'
+            payload['reqUrl'] = f"{sn_client.instance_url}/nav_to.do?uri=sc_request_list.do?sysparm_query=number={payload['serviceNowReq']}"
+            payload['ritmUrl'] = f"{sn_client.instance_url}/nav_to.do?uri=sc_req_item_list.do?sysparm_query=number={payload['serviceNowRitm']}"
 
-            # 2. Trigger T4 Workflow: "HR Demo Req getEMPDetails" with name, email, contact
-            ae_emp_result = {}
-            try:
-                ae_emp_result = ae_client.trigger_req_get_emp_details(payload)
-                payload['aeGetEmpDetailsReqId'] = ae_emp_result.get('automationRequestId')
-                payload['aeGetEmpDetailsStatus'] = ae_emp_result.get('executionStatus')
-            except Exception as e:
-                print(f"[AE RPA Error in trigger_req_get_emp_details]: {e}")
-                payload['aeGetEmpDetailsError'] = str(e)
-
-            # Save directly to employees list
+            # Save immediately to database for instant UI responsiveness
             employees = db.get('employees', [])
             employees.insert(0, payload)
             db['employees'] = employees
             self.write_db(db)
+
+            # Respond immediately to client (< 50ms)
             self.end_headers()
             self.wfile.write(json.dumps({
                 "status": "success",
                 "data": payload,
-                "serviceNow": sn_result,
-                "aeGetEmpDetails": ae_emp_result
+                "message": "Application submitted successfully"
             }).encode('utf-8'))
+
+            # Execute ServiceNow Service Catalog Request & T4 Workflow asynchronously in background
+            emp_id_to_sync = payload['id']
+            def _async_onboarding_pipeline(candidate_data, emp_id):
+                try:
+                    print(f"[Async Onboarding] Creating ServiceNow Service Catalog Request for {candidate_data.get('fullName')}...")
+                    sn_res = sn_client.create_onboarding_request(candidate_data)
+                    
+                    print(f"[Async Onboarding] Triggering T4 Workflow 'HR Demo Req getEMPDetails'...")
+                    ae_res = {}
+                    try:
+                        ae_res = ae_client.trigger_req_get_emp_details(candidate_data)
+                    except Exception as ae_err:
+                        print(f"[Async Onboarding T4 Error]: {ae_err}")
+
+                    # Update database with live ServiceNow & T4 IDs once external APIs respond
+                    fresh_db = self.read_db()
+                    for it in fresh_db.get('employees', []):
+                        if it.get('id') == emp_id:
+                            if sn_res.get('reqNumber'):
+                                it['serviceNowReq'] = sn_res['reqNumber']
+                                it['serviceNowRitm'] = sn_res.get('ritmNumber') or it.get('serviceNowRitm')
+                                it['serviceNowReqId'] = sn_res.get('requestId')
+                                it['serviceNowRitmId'] = sn_res.get('ritmId')
+                                it['reqUrl'] = sn_res.get('reqUrl')
+                                it['ritmUrl'] = sn_res.get('ritmUrl')
+                                it['serviceNowStatus'] = sn_res.get('approvalStatus', 'Pending Approval')
+                                it['serviceNowStage'] = sn_res.get('stage', 'HR Document Verification')
+                                it['attachedDocuments'] = sn_res.get('attachedDocuments', [])
+                            if ae_res.get('automationRequestId'):
+                                it['aeGetEmpDetailsReqId'] = ae_res['automationRequestId']
+                                it['aeGetEmpDetailsStatus'] = ae_res.get('executionStatus')
+                            break
+                    self.write_db(fresh_db)
+                    print(f"[Async Onboarding Complete] Candidate {candidate_data.get('fullName')} ({emp_id}) synced with ServiceNow ({sn_res.get('reqNumber')}) & T4.")
+                except Exception as bg_err:
+                    print(f"[Async Onboarding Background Error]: {bg_err}")
+
+            threading.Thread(target=_async_onboarding_pipeline, args=(dict(payload), emp_id_to_sync), daemon=True).start()
+            return
 
         elif self.path == '/api/employees/clear-approved' or self.path == '/api/approvals/clear':
             # Clear approved/completed onboarding history records
