@@ -1007,17 +1007,12 @@ export default function OffboardingView() {
                     </button>
                     <button
                       className="btn btn-secondary"
-                      style={{
-                        padding: '0.35rem 0.75rem',
-                        fontSize: '0.78rem',
-                        opacity: !isCleared ? 0.45 : 1,
-                        cursor: !isCleared ? 'not-allowed' : 'pointer',
-                      }}
-                      onClick={() => isCleared && checkLiveClearance(item)}
-                      disabled={!isCleared || isChecking}
-                      title={!isCleared ? "IT clearance approval required first" : "Check live status from ServiceNow ITSM"}
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                      onClick={() => checkLiveClearance(item)}
+                      disabled={isChecking}
+                      title="Check live status from ServiceNow ITSM"
                     >
-                      <i className="fa-solid fa-arrows-rotate"></i> Check live status
+                      <i className={`fa-solid ${isChecking ? 'fa-spinner fa-spin' : 'fa-arrows-rotate'}`}></i> Check live status
                     </button>
                     
                     {/* Revoke Access Button */}
