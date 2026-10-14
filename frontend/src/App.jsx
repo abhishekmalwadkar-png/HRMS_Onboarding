@@ -15,11 +15,42 @@ import DashboardView from './components/DashboardView';
 import WhatsAppView from './components/WhatsAppView';
 import CredentialsView from './components/CredentialsView';
 
+const VALID_VIEWS = [
+  'home',
+  'wizard',
+  'approvals',
+  'recruitment',
+  'dashboard',
+  'credentials',
+  'services',
+  'exit',
+  'analytics',
+  'whatsapp'
+];
+
+function parseRouteFromHash() {
+  if (typeof window === 'undefined') return { view: null, subtab: null };
+  const raw = (window.location.hash || '').replace(/^#\/?/, '').trim();
+  if (!raw) return { view: null, subtab: null };
+  const parts = raw.split('/');
+  let view = (parts[0] || '').toLowerCase();
+  const subtab = (parts[1] || '').toLowerCase();
+  if (view === 'offboarding') view = 'exit';
+  if (view === 'directory') view = 'dashboard';
+  return { view, subtab };
+}
+
 export default function App() {
   const { currentUser } = useAuth();
 
   const isHR = currentUser?.role === 'hr';
-  const [currentView, setCurrentView] = useState(() => (isHR ? 'home' : 'wizard'));
+  const [currentView, setCurrentView] = useState(() => {
+    const route = parseRouteFromHash();
+    if (route.view && VALID_VIEWS.includes(route.view)) {
+      return route.view;
+    }
+    return isHR ? 'home' : 'wizard';
+  });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     return localStorage.getItem('mangohrms_sidebar_collapsed') !== 'false';
   });
@@ -46,17 +77,62 @@ export default function App() {
     }
   }, []);
 
+  const navigateTo = useCallback((view, subtab = null, replace = false) => {
+    let resolvedView = view;
+    if (resolvedView === 'offboarding') resolvedView = 'exit';
+    if (resolvedView === 'directory') resolvedView = 'dashboard';
+
+    if (!VALID_VIEWS.includes(resolvedView)) return;
+
+    setCurrentView(resolvedView);
+    setIsMobileNavOpen(false);
+
+    const newHash = subtab ? `#/${resolvedView}/${subtab}` : `#/${resolvedView}`;
+    if (window.location.hash !== newHash) {
+      if (replace) {
+        window.history.replaceState({ view: resolvedView, subtab }, '', newHash);
+      } else {
+        window.history.pushState({ view: resolvedView, subtab }, '', newHash);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (currentUser) {
       fetchEmployees();
-      setCurrentView(currentUser.role === 'hr' ? 'home' : 'wizard');
+      const route = parseRouteFromHash();
+      const defaultView = currentUser.role === 'hr' ? 'home' : 'wizard';
+      const initialView = route.view && VALID_VIEWS.includes(route.view) ? route.view : defaultView;
+      setCurrentView(initialView);
+
+      // Initialize browser history entry so clicking back doesn't immediately exit the app
+      const initialHash = route.subtab ? `#/${initialView}/${route.subtab}` : `#/${initialView}`;
+      if (window.location.hash !== initialHash) {
+        window.history.replaceState({ view: initialView, subtab: route.subtab }, '', initialHash);
+      }
     }
   }, [currentUser, fetchEmployees]);
 
-  const navigateTo = (view) => {
-    setCurrentView(view);
-    setIsMobileNavOpen(false);
-  };
+  // Listen for Chrome Back / Forward navigation (popstate & hashchange)
+  useEffect(() => {
+    const handlePopState = (event) => {
+      const route = parseRouteFromHash();
+      const stateView = event.state?.view;
+      const targetView = stateView || route.view || (isHR ? 'home' : 'wizard');
+
+      if (VALID_VIEWS.includes(targetView)) {
+        setCurrentView(targetView);
+        setIsMobileNavOpen(false);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
+  }, [isHR]);
 
   const toggleSidebar = () => {
     if (window.innerWidth <= MOBILE_BREAKPOINT) {
@@ -112,9 +188,26 @@ export default function App() {
         <motion.div
           key={currentView}
           className="app-container"
-          initial={{ opacity: 0, y: 10, scale: 0.995, filter: 'blur(2px)' }}
-          animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] } }}
-          exit={{ opacity: 0, y: -6, scale: 0.995, filter: 'blur(1px)', transition: { duration: 0.16, ease: 'easeIn' } }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            transition: {
+              type: 'spring',
+              stiffness: 320,
+              damping: 28,
+              mass: 0.8,
+              opacity: { duration: 0.22, ease: 'easeOut' },
+            },
+          }}
+          exit={{
+            opacity: 0,
+            y: -10,
+            transition: {
+              duration: 0.16,
+              ease: [0.4, 0, 1, 1],
+            },
+          }}
         >
           {currentView === 'home' && isHR && (
             <DashboardView employees={employees} isLoading={isLoadingEmployees} onNavigate={navigateTo} />

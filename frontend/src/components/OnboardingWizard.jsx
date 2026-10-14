@@ -749,10 +749,23 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
             {currentStep === 1 && (
               <motion.div
                 key="step1"
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -12 }}
-                transition={{ duration: 0.25, ease: EASE_OUT }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    type: 'spring',
+                    stiffness: 320,
+                    damping: 28,
+                    mass: 0.8,
+                    opacity: { duration: 0.22, ease: 'easeOut' },
+                  },
+                }}
+                exit={{
+                  opacity: 0,
+                  y: -10,
+                  transition: { duration: 0.16, ease: [0.4, 0, 1, 1] },
+                }}
               >
                 <h2 className="wizard-section-title">
                   <i className="fa-solid fa-id-card text-accent" aria-hidden="true"></i> Personal details
@@ -781,10 +794,23 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
             {currentStep === 2 && (
               <motion.div
                 key="step2"
-                initial={{ opacity: 0, x: 12 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 12 }}
-                transition={{ duration: 0.25, ease: EASE_OUT }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    type: 'spring',
+                    stiffness: 320,
+                    damping: 28,
+                    mass: 0.8,
+                    opacity: { duration: 0.22, ease: 'easeOut' },
+                  },
+                }}
+                exit={{
+                  opacity: 0,
+                  y: -10,
+                  transition: { duration: 0.16, ease: [0.4, 0, 1, 1] },
+                }}
               >
                 <h2 className="wizard-section-title">
                   <i className="fa-solid fa-folder-open text-accent" aria-hidden="true"></i> Verification documents
@@ -1019,37 +1045,59 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
       {/* ========================================================================= */}
       {/* DOCUMENT PREVIEW MODAL (DYNAMIC DATA BOUND TO ENTERED PERSONAL DETAILS) */}
       {/* ========================================================================= */}
-      {previewDocKey && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(5px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1100,
-            padding: '1rem',
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setPreviewDocKey(null);
-          }}
-        >
-          <div
-            className="glass-card"
+      <AnimatePresence>
+        {previewDocKey && (
+          <motion.div
+            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            animate={{ opacity: 1, backdropFilter: 'blur(6px)' }}
+            exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             style={{
-              maxWidth: previewDocKey === 'idDoc' ? '820px' : '680px',
-              width: '100%',
-              background: 'var(--bg-card)',
-              borderRadius: '12px',
-              padding: '1.25rem 1.4rem',
-              maxHeight: '92vh',
-              overflowY: 'auto',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
-              border: '1px solid var(--border-color)',
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.75)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1100,
+              padding: '1rem',
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setPreviewDocKey(null);
             }}
           >
+            <motion.div
+              className="glass-card"
+              initial={{ opacity: 0, scale: 0.94, y: 22 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0,
+                transition: {
+                  type: 'spring',
+                  stiffness: 340,
+                  damping: 28,
+                  mass: 0.9,
+                },
+              }}
+              exit={{
+                opacity: 0,
+                scale: 0.96,
+                y: 12,
+                transition: { duration: 0.16, ease: [0.4, 0, 1, 1] },
+              }}
+              style={{
+                maxWidth: previewDocKey === 'idDoc' ? '820px' : '680px',
+                width: '100%',
+                background: 'var(--bg-card)',
+                borderRadius: '12px',
+                padding: '1.25rem 1.4rem',
+                maxHeight: '92vh',
+                overflowY: 'auto',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+                border: '1px solid var(--border-color)',
+              }}
+            >
             {/* Modal Header & Content Switcher */}
             {(() => {
               const activeDoc = previewDocKey ? documents[previewDocKey] : null;
@@ -1631,9 +1679,10 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                 <i className="fa-solid fa-check" aria-hidden="true"></i> Close Preview
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+    </AnimatePresence>
     </section>
   );
 }

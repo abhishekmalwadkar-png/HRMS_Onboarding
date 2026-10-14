@@ -76,7 +76,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def translate_path(self, path):
         dist_dir = os.path.join(os.path.dirname(__file__), 'frontend', 'dist')
-        if os.path.exists(dist_dir) and not path.startswith('/api/') and not path.startswith('/generated_offers/'):
+        if os.path.exists(dist_dir) and not path.startswith('/api/') and not path.startswith('/generated_offers/') and not path.startswith('/generated_payslips/') and not path.startswith('/generated_relieving_letters/'):
             clean_path = path.split('?', 1)[0].split('#', 1)[0]
             rel_path = clean_path.lstrip('/')
             full_path = os.path.join(dist_dir, rel_path)
@@ -390,34 +390,64 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             params = urllib.parse.parse_qs(query)
             target = params.get('target', [None])[0] or params.get('url', [None])[0] or "https://t4.automationedge.com/#/requests/list"
             self.send_response(302)
-        # Download Official Monthly Payslip for Offboarded Employee
-        if self.path.split('?')[0] in ('/api/exit/payslip', '/api/payslip/download'):
+        # Download Official Monthly Payslip for Employee (HR Services / Offboarding)
+        if self.path.split('?')[0] in ('/api/exit/payslip', '/api/payslip/download', '/api/payslips/download'):
             query = self.path.split('?')[1] if '?' in self.path else ''
             import urllib.parse
             params = urllib.parse.parse_qs(query)
             target_id = params.get('id', [None])[0]
             target_name = params.get('name', [None])[0]
+            target_month = params.get('month', [None])[0] or params.get('payPeriod', [None])[0]
 
             db = self.read_db()
             matched_emp = None
-            for item in db.get('exitRequests', []):
-                if (target_id and item.get('id') == target_id) or (target_name and item.get('empName') == target_name):
-                    matched_emp = item
+            for item in db.get('employees', []):
+                if (target_id and str(item.get('id')) == str(target_id)) or (target_name and (str(item.get('fullName', '')).strip().lower() == target_name.strip().lower() or str(item.get('name', '')).strip().lower() == target_name.strip().lower())):
+                    matched_emp = dict(item)
                     break
             if not matched_emp:
-                for item in db.get('employees', []):
-                    if (target_id and item.get('id') == target_id) or (target_name and item.get('fullName') == target_name):
-                        matched_emp = item
+                for item in db.get('exitRequests', []):
+                    if (target_id and str(item.get('id')) == str(target_id)) or (target_name and str(item.get('empName', '')).strip().lower() == target_name.strip().lower()):
+                        matched_emp = dict(item)
                         break
 
-            if not matched_emp:
+            # Cross-reference live OrangeHRM employees to ensure exact OrangeHRM Employee ID
+            if not matched_emp and (target_name or target_id):
+                try:
+                    for o_emp in orangehrm_client.get_active_employees():
+                        o_full = (o_emp.get('fullName') or '').strip().lower()
+                        o_id = str(o_emp.get('empId') or f"EMP-{o_emp.get('employeeId')}")
+                        if (target_name and o_full == target_name.strip().lower()) or (target_id and o_id.lower() == target_id.strip().lower()):
+                            matched_emp = {
+                                "empName": o_emp.get('fullName'),
+                                "empId": o_id,
+                                "department": o_emp.get('department') or "Engineering",
+                                "role": o_emp.get('jobTitle') or "Software Engineer",
+                                "serviceNowReq": "REQ0012000"
+                            }
+                            break
+                except Exception as e:
+                    print(f"[OrangeHRM Payslip Lookup Note]: {e}")
+
+            if matched_emp:
+                if target_name:
+                    matched_emp['empName'] = target_name
+                elif matched_emp.get('fullName'):
+                    matched_emp['empName'] = matched_emp.get('fullName')
+                if target_id:
+                    matched_emp['empId'] = target_id
+            else:
+                is_jessica = "jessica" in (target_name or "").lower()
                 matched_emp = {
                     "empName": target_name or "Employee",
-                    "empId": target_id or "EMP-1042",
-                    "department": "Engineering",
-                    "role": "Senior Specialist",
+                    "empId": target_id or ("EMP-1001" if is_jessica else f"EMP-{int(time.time()) % 9000 + 1000}"),
+                    "department": "Human Resources" if is_jessica else "Engineering",
+                    "role": "HR Operations Director" if is_jessica else "Senior Software Specialist",
                     "serviceNowReq": "REQ0012000"
                 }
+
+            if target_month:
+                matched_emp['payPeriod'] = target_month
 
             from generate_payslip import generate_payslip_pdf
             pdf_path = generate_payslip_pdf(matched_emp)
@@ -574,8 +604,8 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 leaves = db.get('leaveRequests', [])
                 if not leaves:
                     leaves = [
-                        { "id": "LR-301", "employeeName": "Karthik Swaminathan", "empNumber": 41, "type": "Privilege Leave", "from": "2026-10-10", "to": "2026-10-14", "days": 5, "reason": "Annual family travel", "status": "Approved", "orangeHrmAssigned": True, "leaveId": "1" },
-                        { "id": "LR-302", "employeeName": "Samantha Chang", "empNumber": 34, "type": "Casual Leave", "from": "2026-10-24", "to": "2026-10-24", "days": 1, "reason": "Personal errands", "status": "Approved", "orangeHrmAssigned": True, "leaveId": "2" }
+                        { "id": "LR-301", "employeeName": "Soham Menon", "empNumber": 67, "type": "Privilege Leave", "from": "2026-10-10", "to": "2026-10-14", "days": 5, "reason": "Annual family travel", "status": "Approved", "orangeHrmAssigned": True, "leaveId": "1" },
+                        { "id": "LR-302", "employeeName": "Kavita Gupta", "empNumber": 68, "type": "Casual Leave", "from": "2026-10-24", "to": "2026-10-24", "days": 1, "reason": "Personal errands", "status": "Approved", "orangeHrmAssigned": True, "leaveId": "2" }
                     ]
                     db['leaveRequests'] = leaves
                     self.write_db(db)

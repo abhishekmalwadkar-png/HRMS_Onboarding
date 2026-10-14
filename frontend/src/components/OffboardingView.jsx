@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { PageHeader } from './ui';
@@ -1054,33 +1055,58 @@ export default function OffboardingView() {
       {/* ========================================================= */}
       {/* OFFBOARDING & DEPROVISIONING FLOW MODAL WINDOW */}
       {/* ========================================================= */}
-      {showFlowModal && activeFlowItem && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '0.75rem',
-          }}
-        >
-          <div
-            className="glass-card"
+      <AnimatePresence>
+        {showFlowModal && activeFlowItem && (
+          <motion.div
+            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            animate={{ opacity: 1, backdropFilter: 'blur(6px)' }}
+            exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             style={{
-              maxWidth: '640px',
-              width: '100%',
-              background: 'var(--bg-card)',
-              borderRadius: '12px',
-              padding: '1.2rem 1.35rem',
-              maxHeight: '92vh',
-              overflowY: 'auto',
-              boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.25)',
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.65)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              padding: '0.75rem',
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowFlowModal(false);
             }}
           >
+            <motion.div
+              className="glass-card"
+              initial={{ opacity: 0, scale: 0.94, y: 22 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0,
+                transition: {
+                  type: 'spring',
+                  stiffness: 340,
+                  damping: 28,
+                  mass: 0.9,
+                },
+              }}
+              exit={{
+                opacity: 0,
+                scale: 0.96,
+                y: 12,
+                transition: { duration: 0.16, ease: [0.4, 0, 1, 1] },
+              }}
+              style={{
+                maxWidth: '640px',
+                width: '100%',
+                background: 'var(--bg-card)',
+                borderRadius: '12px',
+                padding: '1.2rem 1.35rem',
+                maxHeight: '92vh',
+                overflowY: 'auto',
+                boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.25)',
+              }}
+            >
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.45rem' }}>
               <div>
@@ -1360,9 +1386,10 @@ export default function OffboardingView() {
                 <i className="fa-solid fa-check"></i> Close Pipeline View
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+    </AnimatePresence>
     </section>
   );
 }

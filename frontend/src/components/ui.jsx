@@ -187,10 +187,10 @@ export function Modal({ open, onClose, title, subtitle, icon, children, footer, 
         <motion.div
           className="ui-modal-backdrop"
           onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+          animate={{ opacity: 1, backdropFilter: 'blur(6px)' }}
+          exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         >
           <motion.div
             ref={panelRef}
@@ -199,9 +199,24 @@ export function Modal({ open, onClose, title, subtitle, icon, children, footer, 
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
-            initial={{ opacity: 0, y: 16, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.28, ease: EASE_OUT } }}
-            exit={{ opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.16 } }}
+            initial={{ opacity: 0, y: 22, scale: 0.94 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              transition: {
+                type: 'spring',
+                stiffness: 340,
+                damping: 28,
+                mass: 0.9,
+              },
+            }}
+            exit={{
+              opacity: 0,
+              y: 12,
+              scale: 0.96,
+              transition: { duration: 0.16, ease: [0.4, 0, 1, 1] },
+            }}
           >
             <div className="ui-modal-head">
               <div className="ui-modal-heading">
@@ -217,6 +232,122 @@ export function Modal({ open, onClose, title, subtitle, icon, children, footer, 
             </div>
             <div className="ui-modal-body">{children}</div>
             {footer && <div className="ui-modal-foot">{footer}</div>}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// Slide-Over Drawer Component with spring animation from right/left edge
+export function Drawer({ open, onClose, title, subtitle, icon, children, footer, width = '560px', side = 'right' }) {
+  const titleId = useId();
+  const panelRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') onCloseRef.current();
+    };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="ui-drawer-backdrop"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+          initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+          animate={{ opacity: 1, backdropFilter: 'blur(6px)' }}
+          exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+          transition={{ duration: 0.22, ease: 'easeOut' }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            zIndex: 1200,
+            display: 'flex',
+            justifyContent: side === 'right' ? 'flex-end' : 'flex-start',
+          }}
+        >
+          <motion.div
+            ref={panelRef}
+            className="ui-drawer-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
+            initial={{ x: side === 'right' ? '100%' : '-100%', opacity: 0.7 }}
+            animate={{
+              x: 0,
+              opacity: 1,
+              transition: {
+                type: 'spring',
+                stiffness: 340,
+                damping: 32,
+                mass: 0.85,
+              },
+            }}
+            exit={{
+              x: side === 'right' ? '100%' : '-100%',
+              opacity: 0,
+              transition: { duration: 0.2, ease: [0.4, 0, 1, 1] },
+            }}
+            style={{
+              width: '100%',
+              maxWidth: width,
+              height: '100%',
+              background: 'var(--bg-card)',
+              borderLeft: side === 'right' ? '1px solid var(--border-color)' : 'none',
+              borderRight: side === 'left' ? '1px solid var(--border-color)' : 'none',
+              boxShadow: side === 'right' ? '-10px 0 35px rgba(0, 0, 0, 0.35)' : '10px 0 35px rgba(0, 0, 0, 0.35)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+          >
+            <div className="ui-modal-head" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="ui-modal-heading" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                {icon}
+                <div>
+                  <h2 id={titleId} style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-main)', fontWeight: 700 }}>{title}</h2>
+                  {subtitle && <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{subtitle}</p>}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="ui-modal-close"
+                onClick={onClose}
+                aria-label="Close drawer"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                <i className="fa-solid fa-xmark" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div className="ui-modal-body" style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>{children}</div>
+            {footer && <div className="ui-modal-foot" style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', background: 'var(--bg-secondary)', display: 'flex', justifyContent: 'flex-end', gap: '0.6rem' }}>{footer}</div>}
           </motion.div>
         </motion.div>
       )}

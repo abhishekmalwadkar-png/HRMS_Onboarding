@@ -36,9 +36,23 @@ def generate_payslip_pdf(employee_data: dict) -> str:
     last_working_day = employee_data.get('lastWorkingDay') or employee_data.get('lwd') or time.strftime('%Y-%m-%d')
     service_now_req = employee_data.get('serviceNowReq') or 'REQ0012000'
 
-    # Month of payslip (e.g., September 2026)
-    pay_period = employee_data.get('payPeriod') or "September 2026"
-    pay_date = "September 30, 2026"
+    # Month of payslip (e.g., October 2026)
+    pay_period = employee_data.get('payPeriod') or employee_data.get('month') or "October 2026"
+    pay_date = employee_data.get('payDate')
+    if not pay_date:
+        import calendar
+        try:
+            parts = pay_period.strip().split()
+            if len(parts) == 2:
+                m_name, y_str = parts[0], parts[1]
+                m_num = list(calendar.month_name).index(m_name)
+                y_num = int(y_str)
+                _, last_day = calendar.monthrange(y_num, m_num)
+                pay_date = f"{m_name} {last_day}, {y_num}"
+            else:
+                pay_date = f"{pay_period} (Disbursement)"
+        except Exception:
+            pay_date = f"{pay_period} (Disbursement)"
 
     safe_name = "".join(c for c in emp_name if c.isalnum() or c in (' ', '_', '-')).strip()
     filename = f"Payslip_{pay_period.replace(' ', '_')}_{safe_name.replace(' ', '_')}_{emp_id}.pdf"
