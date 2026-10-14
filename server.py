@@ -479,12 +479,12 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             db = self.read_db()
             matched_emp = None
             for item in db.get('exitRequests', []):
-                if (target_id and item.get('id') == target_id) or (target_name and item.get('empName') == target_name):
+                if (target_id and str(item.get('id')) == str(target_id)) or (target_name and str(item.get('empName', '')).strip().lower() == target_name.strip().lower()):
                     matched_emp = item
                     break
             if not matched_emp:
                 for item in db.get('employees', []):
-                    if (target_id and item.get('id') == target_id) or (target_name and item.get('fullName') == target_name):
+                    if (target_id and str(item.get('id')) == str(target_id)) or (target_name and (str(item.get('fullName', '')).strip().lower() == target_name.strip().lower() or str(item.get('name', '')).strip().lower() == target_name.strip().lower())):
                         matched_emp = item
                         break
 
@@ -497,8 +497,35 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                     "serviceNowReq": "REQ0012000"
                 }
 
-            from generate_resignation_letter import generate_resignation_letter_pdf
-            pdf_path = generate_resignation_letter_pdf(matched_emp)
+            # 1. Try fetching live Resignation Letter attachment from ServiceNow if record exists
+            sn_file_data = None
+            if matched_emp.get('serviceNowReqSysId'):
+                fn, bdata, ctype = sn_client.get_record_attachment_bytes("sc_request", matched_emp['serviceNowReqSysId'], file_pattern="resignation")
+                if bdata:
+                    sn_file_data = (fn, bdata, ctype)
+            if not sn_file_data and matched_emp.get('laptopTicketSysId'):
+                fn, bdata, ctype = sn_client.get_record_attachment_bytes("incident", matched_emp['laptopTicketSysId'], file_pattern="resignation")
+                if bdata:
+                    sn_file_data = (fn, bdata, ctype)
+
+            if sn_file_data:
+                fn, bdata, ctype = sn_file_data
+                self.send_response(200)
+                self.send_header('Content-Type', ctype or 'application/pdf')
+                self.send_header('Content-Disposition', f'attachment; filename="{fn}"')
+                self.send_header('Content-Length', str(len(bdata)))
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(bdata)
+                return
+
+            # 2. Check pre-generated file or generate official resignation letter PDF
+            if matched_emp.get('resignationLetterPath') and os.path.exists(matched_emp['resignationLetterPath']):
+                pdf_path = matched_emp['resignationLetterPath']
+            else:
+                from generate_resignation_letter import generate_resignation_letter_pdf
+                pdf_path = generate_resignation_letter_pdf(matched_emp)
+
             if os.path.exists(pdf_path):
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/pdf')
@@ -814,8 +841,16 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # ServiceNow, OrangeHRM & Office 365: HR Approval, Laptop Provisioning & User Provisioning
         elif self.path == '/api/servicenow/approve':
-            approve_result = sn_client.approve_and_provision_laptop(payload, payload.get('reqNumber'))
             target_id = payload.get('id')
+            matched_emp = next((e for e in db.get('employees', []) if e.get('id') == target_id), None)
+            if matched_emp:
+                matched_emp['status'] = 'Processing Approval'
+                matched_emp['serviceNowStatus'] = 'Approved'
+                self.write_db(db)
+
+            full_employee_data = dict(matched_emp or {})
+            full_employee_data.update(payload)
+            approve_result = sn_client.approve_and_provision_laptop(full_employee_data, full_employee_data.get('reqNumber'))
             if target_id:
                 for emp in db.get('employees', []):
                     if emp.get('id') == target_id:

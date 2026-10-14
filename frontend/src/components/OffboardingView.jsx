@@ -931,6 +931,28 @@ export default function OffboardingView() {
                           <i className={`fa-solid ${isCleared ? 'fa-circle-check' : 'fa-arrow-up-right-from-square'}`}></i> ServiceNow: <strong>{item.laptopTicket}</strong> {isCleared ? '(IT Approved)' : ''}
                         </button>
                       )}
+                      <a
+                        href={`/api/exit/resignation-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
+                        download
+                        className="badge"
+                        style={{
+                          fontSize: '0.78rem',
+                          padding: '0.35rem 0.65rem',
+                          fontWeight: 700,
+                          background: 'rgba(249, 115, 22, 0.12)',
+                          color: '#f97316',
+                          border: '1px solid rgba(249, 115, 22, 0.3)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          textDecoration: 'none',
+                        }}
+                        title={`Download Resignation Letter attached in ServiceNow for ${item.empName}`}
+                        onClick={() => showToast(`📄 Downloading Resignation Letter for ${item.empName} (ServiceNow attachment)...`, 'info')}
+                      >
+                        <i className="fa-solid fa-file-arrow-down"></i> Resignation letter
+                      </a>
                       <span
                         onClick={() => inspectOffboardingFlow(item)}
                         className={`badge ${item.accessRevoked ? 'badge-verified' : 'badge-pending'}`}
@@ -985,10 +1007,15 @@ export default function OffboardingView() {
                     </button>
                     <button
                       className="btn btn-secondary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
-                      onClick={() => checkLiveClearance(item)}
-                      disabled={isChecking}
-                      title="Check live status from ServiceNow ITSM"
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        fontSize: '0.78rem',
+                        opacity: !isCleared ? 0.45 : 1,
+                        cursor: !isCleared ? 'not-allowed' : 'pointer',
+                      }}
+                      onClick={() => isCleared && checkLiveClearance(item)}
+                      disabled={!isCleared || isChecking}
+                      title={!isCleared ? "IT clearance approval required first" : "Check live status from ServiceNow ITSM"}
                     >
                       <i className="fa-solid fa-arrows-rotate"></i> Check live status
                     </button>
@@ -996,9 +1023,13 @@ export default function OffboardingView() {
                     {/* Revoke Access Button */}
                     <button
                       className={`btn btn-secondary btn-sm ${item.accessRevoked ? '' : 'btn-danger-outline'}`}
-                      onClick={() => triggerAccessRevocation(item)}
-                      disabled={isRevoking}
-                      title="Run T4 Offboarding RPA Workflows (AD, O365, OrangeHRM) and show live step execution popup"
+                      onClick={() => isCleared && triggerAccessRevocation(item)}
+                      disabled={!isCleared || isRevoking}
+                      style={{
+                        opacity: !isCleared ? 0.45 : 1,
+                        cursor: !isCleared ? 'not-allowed' : 'pointer',
+                      }}
+                      title={!isCleared ? "IT clearance approval required first" : "Run T4 Offboarding RPA Workflows (AD, O365, OrangeHRM) and show live step execution popup"}
                     >
                       <i className={`fa-solid ${isRevoking ? 'fa-spinner fa-spin' : 'fa-user-xmark'}`}></i>{' '}
                       {isRevoking ? 'Revoking access…' : 'Revoke access'}
@@ -1013,34 +1044,59 @@ export default function OffboardingView() {
                         color: item.relievingLetterIssued ? '#ffffff' : undefined,
                         borderColor: 'transparent',
                         fontWeight: 600,
+                        opacity: !isCleared ? 0.45 : 1,
+                        cursor: !isCleared ? 'not-allowed' : 'pointer',
                       }}
-                      onClick={() => issueRelievingLetter(item)}
-                      disabled={issuingLetterId === item.id}
-                      title="Generate PDF Relieving Letter & Experience Certificate and email to abhishek.malwadkar@valuedx.com"
+                      onClick={() => isCleared && issueRelievingLetter(item)}
+                      disabled={!isCleared || issuingLetterId === item.id}
+                      title={!isCleared ? "IT clearance approval required first" : "Generate PDF Relieving Letter & Experience Certificate and email to abhishek.malwadkar@valuedx.com"}
                     >
                       <i className={`fa-solid ${issuingLetterId === item.id ? 'fa-spinner fa-spin' : (item.relievingLetterIssued ? 'fa-circle-check' : 'fa-envelope')}`}></i>{' '}
                       {issuingLetterId === item.id ? 'Generating…' : (item.relievingLetterIssued ? 'Relieving letter sent' : 'Issue relieving letter')}
                     </button>
 
-                    <a
-                      href={`/api/exit/offboarding-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
-                      download
-                      className="btn btn-secondary btn-sm"
-                      style={{
-                        padding: '0.35rem 0.75rem',
-                        fontSize: '0.78rem',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        textDecoration: 'none',
-                        color: 'var(--text-main)',
-                        fontWeight: 600,
-                      }}
-                      title={`Download official Offboarding Letter for ${item.empName}`}
-                      onClick={() => showToast(`📄 Downloading Offboarding Letter for ${item.empName}...`, 'info')}
-                    >
-                      <i className="fa-solid fa-download text-accent"></i> Offboarding letter
-                    </a>
+                    {!isCleared ? (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        disabled
+                        style={{
+                          padding: '0.35rem 0.65rem',
+                          fontSize: '0.85rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: 0.45,
+                          cursor: 'not-allowed',
+                        }}
+                        title="IT clearance approval required first"
+                        aria-label="Download offboarding letter (disabled - IT approval required)"
+                      >
+                        <i className="fa-solid fa-download" style={{ color: 'var(--text-muted)' }}></i>
+                      </button>
+                    ) : (
+                      <a
+                        href={`/api/exit/offboarding-letter?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.empName)}`}
+                        download
+                        className="btn btn-secondary btn-sm"
+                        style={{
+                          padding: '0.35rem 0.65rem',
+                          fontSize: '0.85rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          textDecoration: 'none',
+                          color: 'var(--text-main)',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                        title={`Download official Offboarding Letter for ${item.empName}`}
+                        aria-label="Download offboarding letter"
+                        onClick={() => showToast(`📄 Downloading Offboarding Letter for ${item.empName}...`, 'info')}
+                      >
+                        <i className="fa-solid fa-download text-accent"></i>
+                      </a>
+                    )}
                   </div>
                 </div>
               );

@@ -341,16 +341,27 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
   const [hasDrawn, setHasDrawn] = useState(false);
   const isDrawingRef = useRef(false);
 
+  const getThemeColors = () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || document.body.classList.contains('dark-theme');
+    return {
+      isDark,
+      strokeColor: isDark ? '#ffffff' : '#0f172a',
+      autoSigColor: isDark ? '#ffffff' : '#c2410c',
+      guidelineColor: isDark ? 'rgba(255, 255, 255, 0.25)' : '#e2e8f0',
+    };
+  };
+
   // Helper to draw clean cursive auto-signature
   const drawAutoSignature = (name) => {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    const { autoSigColor, guidelineColor } = getThemeColors();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Subtle guideline
     ctx.beginPath();
-    ctx.strokeStyle = '#e2e8f0';
+    ctx.strokeStyle = guidelineColor;
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.moveTo(30, canvas.height - 25);
@@ -361,11 +372,11 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     // Cursive signature
     const sigName = (name || formData.fullName || 'Candidate Signature').trim();
     ctx.font = "italic bold 32px 'Caveat', cursive, 'Brush Script MT', sans-serif";
-    ctx.fillStyle = '#c2410c';
+    ctx.fillStyle = autoSigColor;
     ctx.fillText(sigName, 40, canvas.height / 2 + 8);
 
     ctx.beginPath();
-    ctx.strokeStyle = '#c2410c';
+    ctx.strokeStyle = autoSigColor;
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -381,11 +392,12 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    const { guidelineColor } = getThemeColors();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Subtle guideline
     ctx.beginPath();
-    ctx.strokeStyle = '#e2e8f0';
+    ctx.strokeStyle = guidelineColor;
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.moveTo(30, canvas.height - 25);
@@ -402,9 +414,10 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     if (currentStep === 2 && canvasRef.current && !hasSignature) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
+      const { guidelineColor } = getThemeColors();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
-      ctx.strokeStyle = '#e2e8f0';
+      ctx.strokeStyle = guidelineColor;
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.moveTo(30, canvas.height - 25);
@@ -432,12 +445,13 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    const { strokeColor, guidelineColor } = getThemeColors();
 
     if (!hasDrawn) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       // Subtle guideline
       ctx.beginPath();
-      ctx.strokeStyle = '#e2e8f0';
+      ctx.strokeStyle = guidelineColor;
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.moveTo(30, canvas.height - 25);
@@ -451,7 +465,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     setHasSignature(true);
     const pos = getCanvasCoordinates(e);
     ctx.beginPath();
-    ctx.strokeStyle = '#0f172a';
+    ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 2.8;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -464,6 +478,8 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    const { strokeColor } = getThemeColors();
+    ctx.strokeStyle = strokeColor;
     const pos = getCanvasCoordinates(e);
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
@@ -937,6 +953,8 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                       border: !hasSignature ? '1.5px dashed #f59e0b' : '1.5px solid #10b981',
                       borderRadius: 'var(--radius-md)',
                       transition: 'border 0.2s ease',
+                      padding: 0,
+                      background: 'transparent',
                     }}
                   >
                     <canvas
@@ -951,7 +969,7 @@ export default function OnboardingWizard({ onRefreshEmployees, onNavigate }) {
                         display: 'block',
                         cursor: 'crosshair',
                         touchAction: 'none',
-                        background: 'var(--bg-primary)',
+                        background: 'transparent',
                         borderRadius: 'var(--radius-md)',
                       }}
                       onPointerDown={handlePointerDown}

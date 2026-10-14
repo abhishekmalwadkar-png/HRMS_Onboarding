@@ -2787,6 +2787,25 @@ a:focus-visible,
   color: #f8fafc;
 }
 
+[data-theme="dark"] ::placeholder,
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder,
+[data-theme="dark"] .form-control::placeholder {
+  color: #ffffff !important;
+  opacity: 0.85 !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+[data-theme="dark"] select.form-control:invalid,
+[data-theme="dark"] select.form-control option[value=""] {
+  color: #ffffff !important;
+  opacity: 0.85 !important;
+}
+
+[data-theme="dark"] .signature-box {
+  background: rgba(15, 23, 42, 0.7) !important;
+}
+
 .status-banner {
   display: flex;
   align-items: flex-start;
@@ -4782,8 +4801,11 @@ a:focus-visible,
 .signature-box {
   border: 1px dashed var(--border-orange-strong);
   border-radius: var(--radius-md);
-  padding: 0.75rem 1rem;
-  background: #fff;
+  padding: 0.35rem;
+  background: var(--bg-surface, #fff);
+}
+[data-theme="dark"] .signature-box {
+  background: transparent !important;
 }
 .signature-box canvas {
   width: 100%;
