@@ -439,41 +439,14 @@ function renderGraphicalOutput(tc) {
 
 // Dynamic welcome message generator for selected catalog
 function getCatalogWelcomeMessage(catalogId, userName) {
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   if (catalogId === 'onboarding') {
     return {
       id: `msg-welcome-onboarding-${Date.now()}`,
       sender: 'bot',
-      steps: [
-        {
-          id: 's-act-ob',
-          iconType: 'user',
-          text: 'Activating Employee Onboarding Agentic Flow (Microsoft Agent Framework)',
-          completed: true
-        },
-        {
-          id: 's-con-ob',
-          iconType: 'check',
-          text: 'Connected to ServiceNow ITSM, Active Directory (AutomationEdge AE server), Microsoft 365 & OrangeHRM PIM',
-          completed: true
-        }
-      ],
-      text: `Hello ${userName}! Welcome to the **Employee Onboarding** catalog powered by **Autonomous Agentic Flow (Microsoft Agent Framework)**.
-
-Every onboarding task is orchestrated across specialized autonomous agents in our **Agentic Flow**:
-• 📄 **Document Verification** (\`ocr_compliance.extract_and_verify\`): Simulated Aadhaar & Degree inspection
-• 💻 **ServiceNow Hardware Dispatch** (\`servicenow_table_api.prepare_sc_request\`): Laptop & catalog item staging
-• 🏢 **Active Directory Domain User** (\`ae_server.execute_ad_workflow\`): Account provisioning with role via AE server
-• ☁️ **Microsoft 365 Cloud Identity** (\`microsoft_graph.create_entra_id_user\`): Corporate mailbox & Entra ID sync
-• 👤 **OrangeHRM Employee Profile** (\`orangehrm_pim.create_employee_profile\`): Synchronize HR directory profile
-
-To begin, type a candidate name like **"Onboard"** to start the Agentic Flow, or select an option below:`,
-      pills: [
-        '🚀 Onboard',
-        '⚡ AD create user',
-        '📄 Verify Candidate Documents',
-        '🔍 Track Onboarding Status'
-      ],
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      text: `Hello ${userName}! Welcome to Employee Onboarding. How can I help you today?`,
+      timestamp: time
     };
   }
 
@@ -481,34 +454,8 @@ To begin, type a candidate name like **"Onboard"** to start the Agentic Flow, or
     return {
       id: `msg-welcome-leave-${Date.now()}`,
       sender: 'bot',
-      steps: [
-        {
-          id: 's-act-lv',
-          iconType: 'user',
-          text: 'Activating Leave & Attendance Assistant',
-          completed: true
-        },
-        {
-          id: 's-con-lv',
-          iconType: 'check',
-          text: 'Synchronized with OrangeHRM PIM Leave Balance Engine',
-          completed: true
-        }
-      ],
-      text: `Hello ${userName}! Welcome to the **Leave & Attendance** catalog powered by **Autonomous Agentic Flow (Microsoft Agent Framework)**.
-
-You can inspect real-time leave quotas and apply for leaves with autonomous policy checks:
-• 🌴 **Leave Applications** (\`orangehrm_pim.apply_leave\`)
-• 🔍 **Leave Quota Checks** (\`orangehrm_pim.get_leave_balance\`)
-• ⚡ **AE server Approval Routing** (\`ae_server.trigger_apply_leave\`)
-
-What would you like to request today?`,
-      pills: [
-        '🌴 Apply for 2 Days Leave',
-        '🔍 Check Leave Balance',
-        '🤒 Apply Sick Leave'
-      ],
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      text: `Hello ${userName}! Welcome to Leave & Attendance. How can I help you today?`,
+      timestamp: time
     };
   }
 
@@ -516,34 +463,8 @@ What would you like to request today?`,
     return {
       id: `msg-welcome-services-${Date.now()}`,
       sender: 'bot',
-      steps: [
-        {
-          id: 's-act-sv',
-          iconType: 'user',
-          text: 'Activating Enterprise HR & IT Services Desk',
-          completed: true
-        },
-        {
-          id: 's-con-sv',
-          iconType: 'check',
-          text: 'Connected to ServiceNow Service Catalog & Automated Payroll Engine',
-          completed: true
-        }
-      ],
-      text: `Hello ${userName}! Welcome to the **HR & IT Services** catalog powered by **Microsoft Agent Framework (MAF)**.
-
-Self-service catalog for enterprise requests:
-• 📄 **Payslip Generation** (\`payroll.generate_payslip\`): Instant salary slip download
-• 💻 **Hardware Replacement Ticket** (\`servicenow.create_incident\`)
-• 🔑 **Software Access Request** (\`servicenow.sc_request\`)
-
-How can I assist your request?`,
-      pills: [
-        '📄 Download Latest Payslip',
-        '💻 Hardware Replacement',
-        '🔍 Track Open Tickets'
-      ],
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      text: `Hello ${userName}! Welcome to HR & IT Services. How can I help you today?`,
+      timestamp: time
     };
   }
 
@@ -551,34 +472,8 @@ How can I assist your request?`,
   return {
     id: `msg-welcome-offboarding-${Date.now()}`,
     sender: 'bot',
-    steps: [
-      {
-        id: 's-act-of',
-        iconType: 'user',
-        text: 'Activating Employee Offboarding Engine',
-        completed: true
-      },
-      {
-        id: 's-con-of',
-        iconType: 'check',
-        text: 'Connected to ServiceNow IT Asset Recovery & OrangeHRM Exit Workflow',
-        completed: true
-      }
-    ],
-    text: `Hello ${userName}! Welcome to the **Employee Offboarding** catalog powered by **Autonomous Agentic Flow (Microsoft Agent Framework)**.
-
-Guided exit clearance and deprovisioning orchestration in our Agentic Flow:
-• 📝 **Employee Resignation** (\`servicenow.create_offboarding_incident\`)
-• 📦 **IT Asset Recovery** (\`servicenow.laptop_recovery\`)
-• 🔄 **Deprovisioning Staging** (\`ae_server.trigger_offboarding\`)
-
-Please select an action to proceed:`,
-    pills: [
-      '📝 Submit Resignation',
-      '📦 Track Clearance Status',
-      '📜 Relieving Letter Preview'
-    ],
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    text: `Hello ${userName}! Welcome to Employee Offboarding. How can I help you today?`,
+    timestamp: time
   };
 }
 
