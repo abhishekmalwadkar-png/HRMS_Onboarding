@@ -26,7 +26,7 @@ function extractCandidateName(text) {
   if (!text) return null;
   const clean = text.trim();
 
-  // Pattern: "i have to onboard Harsh Makadiya", "onboard Harsh Makadiya", "hire Harsh Makadiya"
+  // Pattern: "i have to onboard candidate", "onboard John Doe", "hire Jane Doe"
   const patterns = [
     /(?:have to onboard|want to onboard|need to onboard|please onboard|onboard(?:ing)?(?:\s+for)?|hire|adding|add candidate|candidate)\s+([a-zA-Z\s]+?)(?:\s+as\s+|\s+in\s+|$)/i,
     /(?:onboard|hire)\s+([a-zA-Z\s]+)/i
@@ -487,6 +487,7 @@ export default function LeenaAIView({ onNavigate, currentSubtab }) {
   };
   const chatBottomRef = useRef(null);
   const toolStreamBottomRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -707,16 +708,33 @@ export default function LeenaAIView({ onNavigate, currentSubtab }) {
     return botMsg;
   };
 
-  // Handle simulated document attachment
+  // Handle document attachment from user's system
   const handleAttachClick = () => {
-    const sampleDocs = [
-      { name: 'Government_Aadhaar_ID_Verified.pdf', type: 'id' },
-      { name: 'Degree_Certificate_Verified.pdf', type: 'education' },
-      { name: 'Signed_Offer_Letter.pdf', type: 'offer' }
-    ];
-    const picked = sampleDocs[Math.floor(Math.random() * sampleDocs.length)];
-    setAttachedDoc(picked);
-    showToast(`📎 Document attached: ${picked.name}`, 'info');
+    fileInputRef.current?.click();
+  };
+
+  const handleFileInputChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const sizeStr = file.size > 1024 * 1024
+      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+      : `${Math.round(file.size / 1024)} KB`;
+
+    addUserMessage(`📎 Uploaded document: ${file.name} (${sizeStr})`);
+    setIsProcessing(true);
+    showToast(`✓ Uploaded ${file.name}`, 'success');
+
+    setTimeout(() => {
+      addBotMessage({
+        text: 'Got your documents, will be back to you once verified.',
+        pills: ['🚀 Onboard New Employee', '⚡ AD create user', '🔍 Track Onboarding Status']
+      });
+      setIsProcessing(false);
+      setDialogueState({ activeIntent: null, step: 'idle', data: {} });
+    }, 600);
+
+    e.target.value = '';
   };
 
   // Main natural language query processor
@@ -726,8 +744,20 @@ export default function LeenaAIView({ onNavigate, currentSubtab }) {
 
     setInputVal('');
     const fullQuery = attachedDoc ? `${query} [Attached: ${attachedDoc.name}]`.trim() : query;
+    if (attachedDoc) {
+      addUserMessage(fullQuery);
+      setAttachedDoc(null);
+      setIsProcessing(true);
+      setTimeout(() => {
+        addBotMessage({
+          text: 'Got your documents, will be back to you once verified.',
+          pills: ['🚀 Onboard New Employee', '⚡ AD create user', '🔍 Track Onboarding Status']
+        });
+        setIsProcessing(false);
+      }, 600);
+      return;
+    }
     addUserMessage(fullQuery);
-    setAttachedDoc(null);
     setIsProcessing(true);
 
     const lower = query.toLowerCase();
@@ -781,18 +811,33 @@ export default function LeenaAIView({ onNavigate, currentSubtab }) {
       return;
     }
 
-    // 2. ONBOARDING FLOW (Extracts name dynamically & asks for simulated documents)
+    // Direct Attach action (e.g. typing attach or attch)
+    if (lower === 'attach' || lower === 'attch' || lower === 'attach document' || lower === 'attch document' || lower.includes('📎 attach')) {
+      fileInputRef.current?.click();
+      setIsProcessing(false);
+      return;
+    }
+
+    // 2. DOCUMENT UPLOAD FLOW
+    if (
+      lower.includes('document upload') ||
+      lower.includes('upload document') ||
+      lower.includes('upload doc') ||
+      lower.includes('verify document') ||
+      lower.includes('upload') ||
+      lower.includes('document')
+    ) {
+      handleDocumentUploadRequest();
+      return;
+    }
+
+    // 2.5 ONBOARDING FLOW
     if (
       lower.includes('onboard') ||
       lower.includes('hire') ||
       lower.includes('new joiner') ||
       lower.includes('new employee') ||
-      lower.includes('candidate') ||
-      lower.includes('document upload') ||
-      lower.includes('upload document') ||
-      lower.includes('upload doc') ||
-      lower.includes('verify document') ||
-      lower.includes('document')
+      lower.includes('candidate')
     ) {
       handleOnboardingDialogue(lower, query);
       return;
@@ -974,10 +1019,48 @@ Your request will be submitted for supervisor approval and synced with **OrangeH
     }, 600);
   };
 
+  // --- DOCUMENT UPLOAD REQUEST HANDLER ---
+  const handleDocumentUploadRequest = () => {
+    setDialogueState({
+      activeIntent: 'document_upload',
+      step: 'awaiting_documents',
+      data: {}
+    });
+
+    setAgentThought('User requested document upload. Prompting user to attach candidate document from device.');
+    setTimeout(() => {
+      addBotMessage({
+        text: 'Please attach your candidate documents (such as Government ID / Aadhaar, Degree Certificate, or Signed Offer Letter) using the attach button below.',
+        actionCard: {
+          type: 'attach_prompt'
+        },
+        pills: ['📎 Attach Document', 'Cancel']
+      });
+      setIsProcessing(false);
+    }, 350);
+  };
+
   // --- ONBOARDING DIALOGUE ENGINE: STEP 1 (EXTRACTS NAME & PROMPTS DOCUMENT UPLOAD) ---
   const handleOnboardingDialogue = (lower, originalText) => {
     const extracted = extractCandidateName(originalText);
-    const candidateName = extracted || 'Harsh Makadiya';
+    
+    // If no candidate name was provided (e.g. user typed "onboard new employee")
+    if (!extracted) {
+      setAgentThought('User initiated onboarding without specifying candidate name. Prompting for candidate name or document.');
+      setTimeout(() => {
+        addBotMessage({
+          text: 'Please provide the candidate full name to initiate onboarding, or attach their verification documents to begin.',
+          actionCard: {
+            type: 'attach_prompt'
+          },
+          pills: ['📎 Attach Document', '⚡ AD create user', '🔍 Track Onboarding Status']
+        });
+        setIsProcessing(false);
+      }, 350);
+      return;
+    }
+
+    const candidateName = extracted;
     const cleanEmailName = candidateName.toLowerCase().replace(/[^a-z0-9]/g, '.');
 
     const candidateData = {
@@ -1001,64 +1084,21 @@ Your request will be submitted for supervisor approval and synced with **OrangeH
       data: candidateData
     });
 
-    // MAF Tool Logging: Agent Planning
     setMafSession((prev) => ({ ...prev, activeAgent: 'HROrchestratorAgent' }));
-    setAgentThought(`Thought: Parsed candidate onboarding request for '${candidateName}'. Initiating MAF compliance verification. Next tool required: 'ocr_compliance.request_verification_documents'.`);
-
-    logMafToolCall({
-      agent: 'HROrchestratorAgent',
-      toolName: 'ocr_compliance.request_verification_documents',
-      iconClass: 'ocr',
-      durationMs: 52,
-      status: 'success',
-      description: `Generating document upload manifest for candidate ${candidateName}`,
-      args: {
-        candidateName: candidateName,
-        requiredDocs: ['Government Photo ID / Aadhaar', 'Degree Certificate', 'Signed Offer Letter']
-      },
-      output: {
-        manifestStatus: 'Pending Candidate Upload',
-        aadhaarExpected: true,
-        panVerificationRequired: true
-      }
-    });
+    setAgentThought(`Thought: Parsed candidate onboarding request for '${candidateName}'. Prompting for verification documents.`);
 
     setTimeout(() => {
       addBotMessage({
-        steps: [
-          {
-            id: 'ob-doc-1',
-            iconType: 'user',
-            text: 'Activating 4-Engine Sequential Provisioning Orchestrator',
-            completed: true
-          },
-          {
-            id: 'ob-doc-2',
-            iconType: 'heart',
-            text: `Initiating onboarding compliance pipeline for ${candidateName}`,
-            completed: true
-          }
-        ],
-        text: `Got it! Let's initiate onboarding for **${candidateName}**.
-
-To verify compliance and generate the automated 4-engine provisioning requests (across **ServiceNow**, **Active Directory (AE server)**, **Microsoft 365**, and **OrangeHRM**) in our **Agentic Flow**, please upload or confirm the candidate's verification documents:
-1. **Government Photo ID / Aadhaar Card**
-2. **Degree Certificate / Education Proof**
-3. **Signed Offer Letter**
-
-*(Click the button below to simulate document upload & verification)*`,
+        text: `Got it! Let's initiate onboarding for **${candidateName}**. Please attach verification documents using the attach button below:`,
         actionCard: {
-          type: 'document_upload',
+          type: 'attach_prompt',
           data: candidateData
         },
-        pills: [
-          `📁 Upload Documents for ${candidateName}`,
-          'Cancel'
-        ],
+        pills: ['📎 Attach Document', 'Cancel'],
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
       setIsProcessing(false);
-    }, 600);
+    }, 450);
   };
 
   // --- ONBOARDING DIALOGUE ENGINE: STEP 2 (DOCUMENTS UPLOADED -> CONFIRMATION DOSSIER) ---
@@ -1407,7 +1447,7 @@ Would you like to initiate onboarding for a candidate or check approvals?`,
         }
       }
     }
-    if (!candidateName) candidateName = 'Harsh Makadiya';
+    if (!candidateName) candidateName = 'New Employee';
     const emailPrefix = candidateName.toLowerCase().replace(/\s+/g, '.');
     const userPrincipal = `${emailPrefix}@automationedge.ai`;
 
@@ -1985,49 +2025,26 @@ You can trigger this workflow directly on AE server using the manual run button 
                     {/* Interactive Action Card Embedded in Bot Bubble */}
                     {msg.actionCard && (
                       <div className="leena-action-card-wrapper">
-                        {/* A. Document Upload Step (Simulated) */}
-                        {msg.actionCard.type === 'document_upload' && (
-                          <div className="leena-card leena-upload-card">
-                            <div className="leena-card-header">
-                              <span className="leena-card-title">
-                                <i className="fa-solid fa-folder-open text-orange"></i> Verification Documents Package
-                              </span>
-                              <span className="leena-badge orange">Pending Upload</span>
-                            </div>
-                            <div className="leena-doc-list">
-                              <div className="leena-doc-item">
-                                <i className="fa-solid fa-file-pdf text-rose"></i>
-                                <div className="leena-doc-info">
-                                  <strong>Aadhaar_Card_{msg.actionCard.data.fullName.replace(/\s+/g, '_')}.pdf</strong>
-                                  <span>Government ID / Proof of Identity • 2.4 MB</span>
-                                </div>
-                                <span className="leena-doc-status ready">Ready</span>
+                        {/* A. Document Upload Step */}
+                        {(msg.actionCard.type === 'attach_prompt' || msg.actionCard.type === 'document_upload') && (
+                          <div className="leena-card leena-upload-card" style={{ maxWidth: '440px', padding: '1.1rem', background: '#f8fafc', border: '1.5px dashed #0284c7', borderRadius: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.85rem' }}>
+                              <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>
+                                <i className="fa-solid fa-file-arrow-up"></i>
                               </div>
-                              <div className="leena-doc-item">
-                                <i className="fa-solid fa-file-pdf text-rose"></i>
-                                <div className="leena-doc-info">
-                                  <strong>Degree_Certificate_{msg.actionCard.data.fullName.replace(/\s+/g, '_')}.pdf</strong>
-                                  <span>Educational Qualification Proof • 1.8 MB</span>
-                                </div>
-                                <span className="leena-doc-status ready">Ready</span>
-                              </div>
-                              <div className="leena-doc-item">
-                                <i className="fa-solid fa-file-pdf text-rose"></i>
-                                <div className="leena-doc-info">
-                                  <strong>Signed_Offer_Letter_{msg.actionCard.data.fullName.replace(/\s+/g, '_')}.pdf</strong>
-                                  <span>Signed Employment Acceptance • 1.2 MB</span>
-                                </div>
-                                <span className="leena-doc-status ready">Ready</span>
+                              <div>
+                                <strong style={{ fontSize: '0.92rem', color: '#1e293b', display: 'block' }}>Upload Document from System</strong>
+                                <span style={{ fontSize: '0.76rem', color: '#64748b' }}>Select PDF, JPG, PNG or DOCX from your computer</span>
                               </div>
                             </div>
-                            <div style={{ marginTop: '0.75rem' }}>
-                              <button
-                                className="leena-upload-trigger-btn"
-                                onClick={() => handleDocumentsUploaded(msg.actionCard.data)}
-                              >
-                                <i className="fa-solid fa-cloud-arrow-up"></i> Upload & Verify All Documents (Simulated)
-                              </button>
-                            </div>
+                            <button
+                              type="button"
+                              className="leena-upload-trigger-btn"
+                              style={{ width: '100%', padding: '0.7rem 1rem', background: '#0284c7', color: '#ffffff', borderRadius: '8px', border: 'none', fontWeight: 600, fontSize: '0.86rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                              onClick={() => fileInputRef.current?.click()}
+                            >
+                              <i className="fa-solid fa-paperclip"></i> Choose File from Device
+                            </button>
                           </div>
                         )}
 
@@ -2274,7 +2291,13 @@ You can trigger this workflow directly on AE server using the manual run button 
                           <button
                             key={pIdx}
                             className="leena-pill-btn"
-                            onClick={() => handleSend(pill)}
+                            onClick={() => {
+                              if (pill.toLowerCase().includes('attach') || pill.toLowerCase().includes('attch')) {
+                                fileInputRef.current?.click();
+                              } else {
+                                handleSend(pill);
+                              }
+                            }}
                           >
                             {pill}
                           </button>
@@ -2408,11 +2431,20 @@ You can trigger this workflow directly on AE server using the manual run button 
                   disabled={isProcessing}
                 />
 
+                {/* Hidden File Input for system document upload */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileInputChange}
+                  style={{ display: 'none' }}
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                />
+
                 {/* Attachment Paperclip Button */}
                 <button
                   type="button"
                   className="leena-pill-icon-btn"
-                  title="Attach sample document / proof"
+                  title="Attach document from device"
                   onClick={handleAttachClick}
                 >
                   <i className="fa-solid fa-paperclip"></i>

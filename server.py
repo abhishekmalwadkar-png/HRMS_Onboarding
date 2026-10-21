@@ -934,7 +934,7 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # AutomationEdge RPA: Active Directory User Creation
         elif self.path == '/api/rpa/create-ad-account' or self.path == '/api/rpa/create-ad-user':
-            full_name = payload.get('fullName') or payload.get('name') or payload.get('candidateName') or 'Harsh Makadiya'
+            full_name = payload.get('fullName') or payload.get('name') or payload.get('candidateName') or 'New Employee'
             parts = full_name.strip().split(' ', 1)
             first_name = parts[0]
             last_name = parts[1] if len(parts) > 1 else 'Employee'
