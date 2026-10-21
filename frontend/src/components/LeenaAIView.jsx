@@ -2445,14 +2445,7 @@ You can trigger this workflow directly on AE server using the manual run button 
                   </button>
                 </>
               )}
-              <button
-                className="leena-chip"
-                style={{ marginLeft: 'auto', background: isMafPanelOpen ? '#e0f2fe' : '#ffffff', borderColor: '#0284c7', color: '#0284c7' }}
-                onClick={() => setIsMafPanelOpen((prev) => !prev)}
-                title="Toggle Microsoft Agent Framework (MAF) Tool Inspector"
-              >
-                <i className="fa-solid fa-code-fork"></i> {isMafPanelOpen ? 'Hide MAF Tools' : 'Show MAF Tools'}
-              </button>
+
             </div>
 
             {/* Attached file chip indicator */}
@@ -2518,119 +2511,7 @@ You can trigger this workflow directly on AE server using the manual run button 
           </div>
         </section>
 
-        {/* RIGHT SIDE: Microsoft Agent Framework (MAF) Agentic Tool Inspector */}
-        {isMafPanelOpen && (
-          <aside className="maf-inspector-panel">
-            {/* Header: Framework metadata & live telemetry */}
-            <div className="maf-panel-header">
-              <div className="maf-brand-title">
-                <span className="maf-framework-tag">MAF</span>
-                <span>Agent Tools & Telemetry</span>
-              </div>
-              <div className="maf-telemetry-pill">
-                <span className="maf-pulse-dot"></span>
-                <span>Agentic Pipeline Active</span>
-              </div>
-            </div>
 
-
-            {/* Agent Thought / Reasoning Stream */}
-            <div className="maf-reasoning-section">
-              <div className="maf-agent-meta-row">
-                <span className="maf-active-agent-badge">
-                  <i className="fa-solid fa-robot"></i> {isProcessing ? `Active Agent: ${mafSession.activeAgent}` : 'Pipeline Ready (Idle)'}
-                </span>
-                <span>Session: {mafSession.sessionId}</span>
-              </div>
-              <div className="maf-thought-bubble">
-                <i className="fa-solid fa-brain" style={{ color: '#0284c7', marginTop: '2px', flexShrink: 0 }}></i>
-                <span>{agentThought}</span>
-              </div>
-            </div>
-
-            {/* Live Tool Calls Stream (Graphical Parameter Chips & Outputs) */}
-            <div className="maf-tool-stream">
-              {mafToolCalls.length === 0 ? (
-                <div className="maf-empty-stream">
-                  <i className="fa-solid fa-code-branch maf-empty-icon"></i>
-                  <p>No tools invoked yet.<br />Trigger a query or workflow to view live MAF tool calls.</p>
-                </div>
-              ) : (
-                mafToolCalls.map((tc) => (
-                  <div key={tc.id} className="maf-tool-card">
-                    <div className="maf-tool-card-header">
-                      <div className="maf-tool-title-col">
-                        <div className={`maf-tool-icon ${tc.iconClass || 'servicenow'}`}>
-                          {tc.iconClass === 'servicenow' && <i className="fa-solid fa-ticket"></i>}
-                          {tc.iconClass === 'ae_rpa' && <i className="fa-solid fa-robot"></i>}
-                          {tc.iconClass === 'm365' && <i className="fa-brands fa-microsoft"></i>}
-                          {tc.iconClass === 'orangehrm' && <i className="fa-solid fa-user-check"></i>}
-                          {tc.iconClass === 'ocr' && <i className="fa-solid fa-file-shield"></i>}
-                          {tc.iconClass === 'pdf' && <i className="fa-solid fa-file-pdf"></i>}
-                        </div>
-                        <span className="maf-tool-name" title={tc.toolName}>
-                          {tc.toolName}
-                        </span>
-                      </div>
-                      <div className="maf-tool-meta-col">
-                        <span className="maf-duration-badge">{tc.durationMs}ms</span>
-                        <span className={`maf-status-badge ${tc.status}`}>{tc.status}</span>
-                      </div>
-                    </div>
-                    <div className="maf-tool-body">
-                      {tc.description && (
-                        <p className="maf-desc-text">
-                          <i className="fa-solid fa-arrow-turn-down" style={{ marginRight: '4px', opacity: 0.6 }}></i>
-                          {tc.description}
-                        </p>
-                      )}
-
-                      {/* Graphical Parameters Visualizer */}
-                      {renderGraphicalArguments(tc)}
-
-                      {/* Graphical Output Visualizer */}
-                      {renderGraphicalOutput(tc)}
-
-                      {/* Optional Raw MAF JSON Inspector Toggle */}
-                      <div className="maf-json-toggle-row">
-                        <button
-                          type="button"
-                          className="maf-json-toggle-btn"
-                          onClick={() => toggleJson(tc.id)}
-                          title="Toggle raw Microsoft Agent Framework JSON payload"
-                        >
-                          <i className="fa-solid fa-code"></i>
-                          {expandedJson[tc.id] ? 'Hide Raw JSON' : 'Inspect MAF JSON Schema'}
-                        </button>
-                      </div>
-
-                      {expandedJson[tc.id] && (
-                        <div style={{ marginTop: '0.35rem' }}>
-                          <strong style={{ fontSize: '0.65rem', color: '#64748b' }}>RAW MAF PAYLOAD</strong>
-                          <pre className="maf-json-details">{JSON.stringify({ arguments: tc.args, output: tc.output }, null, 2)}</pre>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-              <div ref={toolStreamBottomRef} />
-            </div>
-
-            {/* Bottom Footer Statistics */}
-            <div className="maf-panel-footer">
-              <span>Tools Executed: <strong>{mafToolCalls.length}</strong></span>
-              <span>Model: <code>gpt-5.4-mini</code></span>
-              <button
-                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.72rem' }}
-                onClick={() => setMafToolCalls([])}
-                title="Clear tool call history"
-              >
-                <i className="fa-solid fa-trash-can"></i> Clear
-              </button>
-            </div>
-          </aside>
-        )}
       </div>
     </div>
   );
