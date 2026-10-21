@@ -760,8 +760,15 @@ export default function LeenaAIView({ onNavigate, currentSubtab }) {
       setAgentThought('User aborted active workflow. Returning agent state to idle.');
       setTimeout(() => {
         addBotMessage({
-          text: 'No problem! The action has been cancelled. What else would you like help with?',
-          pills: ['🌴 Apply for Leave', '🚀 Onboard', '📝 Submit Resignation', '📄 Download Payslip']
+          text: 'No problem! The action has been cancelled. What can I help you with?',
+          pills:
+            selectedCatalog === 'onboarding'
+              ? ['📄 Document Upload', '🚀 Onboard New Employee', '⚡ AD create user', '🔍 Track Onboarding Status']
+              : selectedCatalog === 'leave'
+              ? ['🌴 Apply for Leave', '🔍 Check Leave Balance']
+              : selectedCatalog === 'services'
+              ? ['📄 Download Payslip', '💻 Hardware Replacement']
+              : ['📝 Submit Resignation', '🔍 Track Clearance']
         });
         setIsProcessing(false);
       }, 450);
@@ -775,7 +782,18 @@ export default function LeenaAIView({ onNavigate, currentSubtab }) {
     }
 
     // 2. ONBOARDING FLOW (Extracts name dynamically & asks for simulated documents)
-    if (lower.includes('onboard') || lower.includes('hire') || lower.includes('new joiner') || lower.includes('new employee') || lower.includes('candidate')) {
+    if (
+      lower.includes('onboard') ||
+      lower.includes('hire') ||
+      lower.includes('new joiner') ||
+      lower.includes('new employee') ||
+      lower.includes('candidate') ||
+      lower.includes('document upload') ||
+      lower.includes('upload document') ||
+      lower.includes('upload doc') ||
+      lower.includes('verify document') ||
+      lower.includes('document')
+    ) {
       handleOnboardingDialogue(lower, query);
       return;
     }
@@ -811,20 +829,36 @@ export default function LeenaAIView({ onNavigate, currentSubtab }) {
     }
 
     // FALLBACK
-    setAgentThought(`Query received: "${query}". No direct intent classified. Routing to GeneralHRAssistant.`);
+    setAgentThought(`Query received: "${query}". Routing according to catalog context.`);
     setTimeout(() => {
-      addBotMessage({
-        text: `I can help you with HR operations! Here are key workflows you can trigger naturally:
-• **"Onboard"** (or type any candidate name)
-• **"Apply for casual leave for 2 days from tomorrow"**
-• **"Submit my resignation with 30 days notice"**
-• **"Download my latest salary slip"**
-
-Please pick one or type your request:`,
-        pills: ['🌴 Apply for Leave', '🚀 Onboard', '📝 Submit Resignation', '📄 Download Payslip']
-      });
+      if (selectedCatalog === 'onboarding') {
+        addBotMessage({
+          text: 'What can I help you with?',
+          pills: ['📄 Document Upload', '🚀 Onboard New Employee', '⚡ AD create user', '🔍 Track Onboarding Status']
+        });
+      } else if (selectedCatalog === 'leave') {
+        addBotMessage({
+          text: 'What can I help you with?',
+          pills: ['🌴 Apply for Leave', '🔍 Check Leave Balance']
+        });
+      } else if (selectedCatalog === 'services') {
+        addBotMessage({
+          text: 'What can I help you with?',
+          pills: ['📄 Download Payslip', '💻 Hardware Replacement', '🔍 Track Requests']
+        });
+      } else if (selectedCatalog === 'offboarding') {
+        addBotMessage({
+          text: 'What can I help you with?',
+          pills: ['📝 Submit Resignation', '🔍 Track Clearance']
+        });
+      } else {
+        addBotMessage({
+          text: 'What can I help you with?',
+          pills: ['📄 Document Upload', '🚀 Onboard New Employee', '⚡ AD create user', '🔍 Track Onboarding Status']
+        });
+      }
       setIsProcessing(false);
-    }, 500);
+    }, 400);
   };
 
   // --- LEAVE DIALOGUE ENGINE ---
@@ -1344,7 +1378,10 @@ Confirm to proceed?`,
 • **System Health**: All 4 integration engines reporting operational.
 
 Would you like to initiate onboarding for a candidate or check approvals?`,
-          pills: ['🚀 Onboard', '🌴 Apply for Leave', '📝 Submit Resignation']
+          pills:
+            selectedCatalog === 'onboarding'
+              ? ['🚀 Onboard New Employee', '📄 Document Upload', '⚡ AD create user']
+              : ['🚀 Onboard New Employee', '🌴 Apply for Leave', '📝 Submit Resignation']
         });
         setIsProcessing(false);
       }, 450);
@@ -1447,7 +1484,7 @@ You can trigger this workflow directly on AE server using the manual run button 
             type: 'ad_trigger_manual',
             data: { candidateName, userPrincipal, t4ReqId }
           },
-          pills: ['🚀 Onboard', '🌴 Apply for Leave', '📄 Download Payslip', '📝 Submit Resignation'],
+          pills: ['🚀 Onboard New Employee', '📄 Document Upload', '🔍 Track Onboarding Status'],
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         });
         showToast(`⚡ Active Directory account staged for ${candidateName}!`, 'success');
@@ -1737,7 +1774,7 @@ You can trigger this workflow directly on AE server using the manual run button 
               offerDownloadUrl: `/generated_offers/Offer_Letter_${data.fullName.replace(/\s+/g, '_')}.pdf`
             }
           },
-          pills: ['🚀 Onboard Another Candidate', '🌴 Apply for Leave', '📝 Submit Resignation'],
+          pills: ['🚀 Onboard Another Candidate', '📄 Document Upload', '⚡ AD create user'],
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         });
         showToast(`🎉 4-Engine Provisioning completed for ${data.fullName}!`, 'success');
@@ -2290,14 +2327,14 @@ You can trigger this workflow directly on AE server using the manual run button 
             <div className="leena-predefined-chips">
               {selectedCatalog === 'onboarding' && (
                 <>
-                  <button className="leena-chip" onClick={() => handleSend('Onboard')}>
-                    🚀 Onboard
+                  <button className="leena-chip" onClick={() => handleSend('Onboard New Employee')}>
+                    🚀 Onboard New Employee
+                  </button>
+                  <button className="leena-chip" onClick={() => handleSend('Document upload')}>
+                    📄 Document Upload
                   </button>
                   <button className="leena-chip" onClick={() => handleSend('AD create user')}>
                     ⚡ AD create user
-                  </button>
-                  <button className="leena-chip" onClick={() => handleSend('Onboard')}>
-                    📄 Verify Documents
                   </button>
                   <button className="leena-chip" onClick={() => handleSend('Check live onboarding status')}>
                     🔍 Track Status
