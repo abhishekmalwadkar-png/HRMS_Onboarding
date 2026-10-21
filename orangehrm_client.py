@@ -742,56 +742,50 @@ class OrangeHRMClient:
             "message": f"Employee record '{target_name}' deleted in simulated mode."
         }
 
-    def get_active_employees(self) -> list:
+    _active_emp_cache = {"data": None, "ts": 0}
+    _is_refreshing_emp = False
+
+    def get_active_employees(self, force_refresh=False) -> list:
         """
-        Fetches the live list of employees from OrangeHRM PIM API.
+        Fetches the live list of employees from OrangeHRM PIM API with an instantaneous file/memory cache
+        and background asynchronous revalidation so requests never block.
         """
-        self.reload_config()
-        if self.is_configured():
+        import threading
+        now = time.time()
+        cache_file = os.path.join(os.path.dirname(__file__), '.orangehrm_emp_cache.json')
+
+        # Load from disk cache on cold start if memory cache empty
+        if not self._active_emp_cache["data"] and os.path.exists(cache_file):
             try:
-                opener = self._get_authenticated_session()
-                pim_url = f"{self.base_url}/web/index.php/api/v2/pim/employees?limit=50"
-                resp = opener.open(pim_url, timeout=10)
-                pim_data = json.loads(resp.read().decode('utf-8'))
-                emp_list = pim_data.get('data', [])
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    cached_file_data = json.load(f)
+                    if isinstance(cached_file_data, dict) and cached_file_data.get('data'):
+                        self._active_emp_cache = {
+                            "data": cached_file_data.get('data'),
+                            "ts": cached_file_data.get('ts', 0)
+                        }
+            except Exception:
+                pass
 
-                parsed_employees = []
-                for emp in emp_list:
-                    emp_num = emp.get('empNumber')
-                    fn = (emp.get('firstName') or '').strip()
-                    mn = (emp.get('middleName') or '').strip()
-                    ln = (emp.get('lastName') or '').strip()
-                    full_name = f"{fn} {mn} {ln}".replace('  ', ' ').strip() or f"{fn} {ln}".strip() or "Employee"
-                    emp_id = str(emp.get('employeeId') or f"EMP-{emp_num}")
-                    
-                    # Job and subunit
-                    job = "Software Engineer"
-                    if isinstance(emp.get('jobTitle'), dict) and emp.get('jobTitle').get('title'):
-                        job = emp.get('jobTitle').get('title')
-                    
-                    subunit = "Engineering"
-                    if isinstance(emp.get('subunit'), dict) and emp.get('subunit').get('name'):
-                        subunit = emp.get('subunit').get('name')
-                        if subunit not in ['Engineering', 'Product', 'IT Systems', 'Human Resources', 'Finance']:
-                            subunit = 'Engineering'
+        # If cache exists and is fresh (< 10 minutes), return instantly
+        if not force_refresh and self._active_emp_cache["data"] and (now - self._active_emp_cache["ts"] < 600):
+            return list(self._active_emp_cache["data"])
 
-                    parsed_employees.append({
-                        "empNumber": emp_num,
-                        "employeeId": emp_id,
-                        "empId": emp_id if emp_id.startswith("EMP-") else f"EMP-{emp_id}",
-                        "fullName": full_name,
-                        "firstName": fn,
-                        "lastName": ln,
-                        "department": subunit,
-                        "jobTitle": job,
-                        "workEmail": f"{fn.lower()}.{ln.lower()}@automationedge.ai" if fn and ln else f"emp{emp_num}@automationedge.ai"
-                    })
+        # If cache exists but is stale, return stale data immediately and refresh in background
+        if not force_refresh and self._active_emp_cache["data"] and not OrangeHRMClient._is_refreshing_emp:
+            def _bg_refresh():
+                try:
+                    OrangeHRMClient._is_refreshing_emp = True
+                    self._fetch_and_cache_employees(cache_file)
+                finally:
+                    OrangeHRMClient._is_refreshing_emp = False
+            threading.Thread(target=_bg_refresh, daemon=True).start()
+            return list(self._active_emp_cache["data"])
 
-                if parsed_employees:
-                    return parsed_employees
-
-            except Exception as e:
-                print(f"[OrangeHRM Fetch Employees Error]: {e}")
+        # Otherwise perform synchronous fetch
+        res = self._fetch_and_cache_employees(cache_file)
+        if res:
+            return res
 
         # Fallback list of pre-configured OrangeHRM employee profiles
         return [
@@ -802,6 +796,63 @@ class OrangeHRMClient:
             {"empNumber": 5, "employeeId": "4213", "empId": "EMP-4213", "fullName": "Suhas Kulkarni", "department": "Engineering", "jobTitle": "Senior DevOps Engineer"},
             {"empNumber": 19, "employeeId": "9075", "empId": "EMP-9075", "fullName": "Jagdish Verma", "department": "Finance", "jobTitle": "Financial Operations Lead"}
         ]
+
+    def _fetch_and_cache_employees(self, cache_file=None):
+        now = time.time()
+        self.reload_config()
+        if not self.is_configured():
+            return None
+        try:
+            opener = self._get_authenticated_session()
+            pim_url = f"{self.base_url}/web/index.php/api/v2/pim/employees?limit=50"
+            resp = opener.open(pim_url, timeout=5)
+            pim_data = json.loads(resp.read().decode('utf-8'))
+            emp_list = pim_data.get('data', [])
+
+            parsed_employees = []
+            for emp in emp_list:
+                emp_num = emp.get('empNumber')
+                fn = (emp.get('firstName') or '').strip()
+                mn = (emp.get('middleName') or '').strip()
+                ln = (emp.get('lastName') or '').strip()
+                full_name = f"{fn} {mn} {ln}".replace('  ', ' ').strip() or f"{fn} {ln}".strip() or "Employee"
+                emp_id = str(emp.get('employeeId') or f"EMP-{emp_num}")
+                
+                # Job and subunit
+                job = "Software Engineer"
+                if isinstance(emp.get('jobTitle'), dict) and emp.get('jobTitle').get('title'):
+                    job = emp.get('jobTitle').get('title')
+                
+                subunit = "Engineering"
+                if isinstance(emp.get('subunit'), dict) and emp.get('subunit').get('name'):
+                    subunit = emp.get('subunit').get('name')
+                    if subunit not in ['Engineering', 'Product', 'IT Systems', 'Human Resources', 'Finance']:
+                        subunit = 'Engineering'
+
+                parsed_employees.append({
+                    "empNumber": emp_num,
+                    "employeeId": emp_id,
+                    "empId": emp_id if emp_id.startswith("EMP-") else f"EMP-{emp_id}",
+                    "fullName": full_name,
+                    "firstName": fn,
+                    "lastName": ln,
+                    "department": subunit,
+                    "jobTitle": job,
+                    "workEmail": f"{fn.lower()}.{ln.lower()}@automationedge.ai" if fn and ln else f"emp{emp_num}@automationedge.ai"
+                })
+
+            if parsed_employees:
+                self._active_emp_cache = {"data": parsed_employees, "ts": now}
+                if cache_file:
+                    try:
+                        with open(cache_file, 'w', encoding='utf-8') as f:
+                            json.dump(self._active_emp_cache, f)
+                    except Exception:
+                        pass
+                return parsed_employees
+        except Exception as e:
+            print(f"[OrangeHRM Fetch Employees Error]: {e}")
+        return None
 
     def get_random_employee(self) -> dict:
         """

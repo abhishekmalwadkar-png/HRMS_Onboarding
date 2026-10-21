@@ -299,7 +299,7 @@ export default function OffboardingView() {
       });
       const data = await res.json();
       const createdItem = data?.data || newExit;
-      showToast(`✓ Resignation submitted for ${formName} (${empId}). T4 RPA workflow (HR Demo Offboarding SN Req) & ServiceNow request created.`, 'success');
+      showToast(`✓ Resignation submitted for ${formName} (${empId}). AE server workflow (HR Demo Offboarding SN Req) & ServiceNow request created.`, 'success');
       setExitRequests((prev) => [createdItem, ...prev]);
       setSubmittedCandidateData(createdItem);
     } catch (err) {

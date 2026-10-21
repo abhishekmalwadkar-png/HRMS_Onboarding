@@ -1158,9 +1158,9 @@ export default function RecruitmentView() {
 
                 <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step2 === 'complete' ? '#bfdbfe' : '#e2e8f0'}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#c2500a' }}>2. T4 RPA: HR Demo Recruitment Get JD</strong>
+                    <strong style={{ fontSize: '0.82rem', color: '#c2500a' }}>2. AE server: HR Demo Recruitment Get JD</strong>
                     <span className={`badge ${flowStepStatus.step2 === 'running' ? 'badge-pending' : (flowStepStatus.step2 === 'complete' ? 'badge-verified' : '')}`} style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
-                      {flowStepStatus.step2 === 'running' ? 'RUNNING ON T4' : (flowStepStatus.step2 === 'complete' ? '✓ WORKFLOW COMPLETE' : 'WAITING')}
+                      {flowStepStatus.step2 === 'running' ? 'RUNNING ON AE SERVER' : (flowStepStatus.step2 === 'complete' ? '✓ WORKFLOW COMPLETE' : 'WAITING')}
                     </span>
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
@@ -1170,7 +1170,7 @@ export default function RecruitmentView() {
                 </div>
               </div>
 
-              {/* STEP 3: T4 Workflow: HR Demo Recruitment Match JD */}
+              {/* STEP 3: AE server Workflow: HR Demo Recruitment Match JD */}
               <div style={{ position: 'relative', marginBottom: '0.45rem' }}>
                 <div
                   style={{
@@ -1195,9 +1195,9 @@ export default function RecruitmentView() {
 
                 <div style={{ background: 'var(--bg-primary)', border: `1px solid ${flowStepStatus.step3 === 'complete' ? '#bfdbfe' : '#e2e8f0'}`, borderRadius: '7px', padding: '0.45rem 0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#c2500a' }}>3. T4 RPA: HR Demo Recruitment Match JD</strong>
+                    <strong style={{ fontSize: '0.82rem', color: '#c2500a' }}>3. AE server: HR Demo Recruitment Match JD</strong>
                     <span className={`badge ${flowStepStatus.step3 === 'running' ? 'badge-pending' : (flowStepStatus.step3 === 'complete' ? 'badge-verified' : '')}`} style={{ fontSize: '0.64rem', padding: '1px 6px' }}>
-                      {flowStepStatus.step3 === 'running' ? 'RUNNING ON T4' : (flowStepStatus.step3 === 'complete' ? '✓ WORKFLOW COMPLETE' : 'WAITING')}
+                      {flowStepStatus.step3 === 'running' ? 'RUNNING ON AE SERVER' : (flowStepStatus.step3 === 'complete' ? '✓ WORKFLOW COMPLETE' : 'WAITING')}
                     </span>
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>

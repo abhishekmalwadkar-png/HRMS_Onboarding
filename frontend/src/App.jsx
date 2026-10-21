@@ -14,9 +14,11 @@ import AnalyticsView from './components/AnalyticsView';
 import DashboardView from './components/DashboardView';
 import WhatsAppView from './components/WhatsAppView';
 import CredentialsView from './components/CredentialsView';
+import LeenaAIView from './components/LeenaAIView';
 
 const VALID_VIEWS = [
   'home',
+  'ai-assistant',
   'wizard',
   'approvals',
   'recruitment',
@@ -37,6 +39,16 @@ function parseRouteFromHash() {
   const subtab = (parts[1] || '').toLowerCase();
   if (view === 'offboarding') view = 'exit';
   if (view === 'directory') view = 'dashboard';
+  if (view === 'chat' || view === 'ai' || view === 'leena' || view === 'assistant' || view === 'ai-assistant') {
+    view = 'ai-assistant';
+    // Clean browser address bar immediately so it never shows leena in browser URL
+    if (window.location.hash && (window.location.hash.toLowerCase().includes('leena') || window.location.hash === '#/ai' || window.location.hash === '#/chat')) {
+      const cleanHash = subtab ? `#/ai-assistant/${subtab}` : '#/ai-assistant';
+      try {
+        window.history.replaceState({ view: 'ai-assistant', subtab }, '', cleanHash);
+      } catch (_) {}
+    }
+  }
   return { view, subtab };
 }
 
@@ -49,11 +61,20 @@ export default function App() {
     if (route.view && VALID_VIEWS.includes(route.view)) {
       return route.view;
     }
-    return isHR ? 'home' : 'wizard';
+    return 'ai-assistant';
   });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     return localStorage.getItem('mangohrms_sidebar_collapsed') !== 'false';
   });
+
+  // Dynamic document title based on active view
+  useEffect(() => {
+    if (currentView === 'ai-assistant') {
+      document.title = 'AI Assistant | AutomationEdge HR Suite';
+    } else {
+      document.title = 'AutomationEdge HR - Onboarding & ITSM Orchestrator';
+    }
+  }, [currentView]);
 
   // Below this width the sidebar is an overlay opened from the header menu button (matches index.css)
   const MOBILE_BREAKPOINT = 992;
@@ -77,14 +98,21 @@ export default function App() {
     }
   }, []);
 
+  const [currentSubtab, setCurrentSubtab] = useState(() => {
+    const route = parseRouteFromHash();
+    return route.subtab || null;
+  });
+
   const navigateTo = useCallback((view, subtab = null, replace = false) => {
     let resolvedView = view;
     if (resolvedView === 'offboarding') resolvedView = 'exit';
     if (resolvedView === 'directory') resolvedView = 'dashboard';
+    if (resolvedView === 'chat' || resolvedView === 'ai' || resolvedView === 'leena' || resolvedView === 'assistant') resolvedView = 'ai-assistant';
 
     if (!VALID_VIEWS.includes(resolvedView)) return;
 
     setCurrentView(resolvedView);
+    setCurrentSubtab(subtab);
     setIsMobileNavOpen(false);
 
     const newHash = subtab ? `#/${resolvedView}/${subtab}` : `#/${resolvedView}`;
@@ -102,12 +130,16 @@ export default function App() {
       fetchEmployees();
       const route = parseRouteFromHash();
       const defaultView = currentUser.role === 'hr' ? 'home' : 'wizard';
-      const initialView = route.view && VALID_VIEWS.includes(route.view) ? route.view : defaultView;
+      let initialView = route.view && VALID_VIEWS.includes(route.view) ? route.view : defaultView;
+      if (initialView === 'leena' || initialView === 'ai' || initialView === 'chat') {
+        initialView = 'ai-assistant';
+      }
       setCurrentView(initialView);
+      setCurrentSubtab(route.subtab || null);
 
-      // Initialize browser history entry so clicking back doesn't immediately exit the app
+      // Initialize browser history entry so clicking back doesn't immediately exit the app & never displays leena
       const initialHash = route.subtab ? `#/${initialView}/${route.subtab}` : `#/${initialView}`;
-      if (window.location.hash !== initialHash) {
+      if (window.location.hash !== initialHash || window.location.hash.toLowerCase().includes('leena')) {
         window.history.replaceState({ view: initialView, subtab: route.subtab }, '', initialHash);
       }
     }
@@ -118,11 +150,19 @@ export default function App() {
     const handlePopState = (event) => {
       const route = parseRouteFromHash();
       const stateView = event.state?.view;
-      const targetView = stateView || route.view || (isHR ? 'home' : 'wizard');
+      let targetView = stateView || route.view || (isHR ? 'home' : 'wizard');
+      if (targetView === 'leena' || targetView === 'ai' || targetView === 'chat') {
+        targetView = 'ai-assistant';
+      }
 
       if (VALID_VIEWS.includes(targetView)) {
         setCurrentView(targetView);
+        setCurrentSubtab(route.subtab || null);
         setIsMobileNavOpen(false);
+        if (targetView === 'ai-assistant' && window.location.hash.toLowerCase().includes('leena')) {
+          const cleanHash = route.subtab ? `#/ai-assistant/${route.subtab}` : '#/ai-assistant';
+          window.history.replaceState({ view: 'ai-assistant', subtab: route.subtab }, '', cleanHash);
+        }
       }
     };
 
@@ -211,6 +251,10 @@ export default function App() {
         >
           {currentView === 'home' && isHR && (
             <DashboardView employees={employees} isLoading={isLoadingEmployees} onNavigate={navigateTo} />
+          )}
+
+          {(currentView === 'ai-assistant' || currentView === 'leena') && (
+            <LeenaAIView onNavigate={navigateTo} currentSubtab={currentSubtab} />
           )}
 
           {currentView === 'whatsapp' && <WhatsAppView />}

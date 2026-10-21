@@ -52,7 +52,7 @@ export function openT4Direct(destinationUrl, showToast) {
 
   if (typeof showToast === 'function') {
     showToast(
-      `⚡ Opening AutomationEdge T4 Server (${username}) — password copied!`,
+      `⚡ Opening AutomationEdge AE server (${username}) — password copied!`,
       'success'
     );
   }

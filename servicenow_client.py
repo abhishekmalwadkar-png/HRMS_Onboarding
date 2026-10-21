@@ -1182,18 +1182,19 @@ class ServiceNowClient:
 
         if self.is_configured():
             try:
-                # 1. Fetch active users in ServiceNow to pick a random assignee
+                # 1. Fetch active users in ServiceNow to pick a random assignee (cached)
                 assigned_user_id = ""
                 try:
-                    user_url = f"{self.instance_url}/api/now/table/sys_user?sysparm_query=active=true&sysparm_limit=30&sysparm_fields=sys_id,name,user_name"
-                    req_u = urllib.request.Request(user_url, headers=self._get_headers())
-                    with urllib.request.urlopen(req_u, timeout=8, context=self.ctx) as resp_u:
-                        users = json.loads(resp_u.read().decode('utf-8')).get('result', [])
-                        if users:
-                            import random
-                            chosen = random.choice(users)
-                            assigned_user_id = chosen.get('sys_id')
-                            assigned_name = chosen.get('name') or chosen.get('user_name') or "IT Specialist"
+                    if not hasattr(self, '_cached_users') or not self._cached_users:
+                        user_url = f"{self.instance_url}/api/now/table/sys_user?sysparm_query=active=true&sysparm_limit=25&sysparm_fields=sys_id,name,user_name"
+                        req_u = urllib.request.Request(user_url, headers=self._get_headers())
+                        with urllib.request.urlopen(req_u, timeout=4, context=self.ctx) as resp_u:
+                            self._cached_users = json.loads(resp_u.read().decode('utf-8')).get('result', [])
+                    if self._cached_users:
+                        import random
+                        chosen = random.choice(self._cached_users)
+                        assigned_user_id = chosen.get('sys_id')
+                        assigned_name = chosen.get('name') or chosen.get('user_name') or "IT Specialist"
                 except Exception as ue:
                     print(f"[ServiceNow Offboarding] User fetch note: {ue}")
 
@@ -1207,7 +1208,7 @@ class ServiceNowClient:
                         "stage": "in_process"
                     }
                     req_post = urllib.request.Request(req_url, data=json.dumps(req_body).encode('utf-8'), headers=self._get_headers(), method="POST")
-                    with urllib.request.urlopen(req_post, timeout=10, context=self.ctx) as resp_r:
+                    with urllib.request.urlopen(req_post, timeout=6, context=self.ctx) as resp_r:
                         r_data = json.loads(resp_r.read().decode('utf-8')).get('result', {})
                         if r_data.get('number'):
                             offboarding_req = r_data.get('number')
@@ -1233,7 +1234,7 @@ class ServiceNowClient:
                     "assigned_to": assigned_user_id
                 }
                 inc_post = urllib.request.Request(inc_url, data=json.dumps(inc_body).encode('utf-8'), headers=self._get_headers(), method="POST")
-                with urllib.request.urlopen(inc_post, timeout=12, context=self.ctx) as resp_i:
+                with urllib.request.urlopen(inc_post, timeout=6, context=self.ctx) as resp_i:
                     i_data = json.loads(resp_i.read().decode('utf-8')).get('result', {})
                     if i_data.get('number'):
                         laptop_ticket = i_data.get('number')
@@ -1241,7 +1242,7 @@ class ServiceNowClient:
                         laptop_ticket_url = f"{self.instance_url}/nav_to.do?uri=incident.do?sys_id={inc_sys_id}"
                         print(f"[ServiceNow LIVE SUCCESS] Created Offboarding Laptop Recovery Incident: {laptop_ticket} (Assigned to: {assigned_name}) under category 'Hardware'")
 
-                # 4. Generate & Attach Resignation Letter PDF to ServiceNow Offboarding Tickets
+                # 4. Generate & Attach Resignation Letter PDF to ServiceNow Offboarding Tickets (in background)
                 rl_filename = None
                 rl_pdf_path = None
                 try:
@@ -1262,15 +1263,23 @@ class ServiceNowClient:
                             rl_bytes = f_rl.read()
                         rl_filename = os.path.basename(rl_pdf_path)
 
-                        # Attach to Parent Request (sc_request)
-                        if req_sys_id:
-                            self.attach_file("sc_request", req_sys_id, rl_filename, rl_bytes)
-                            print(f"[ServiceNow LIVE SUCCESS] Attached Resignation Letter '{rl_filename}' to sc_request {offboarding_req}")
+                        def _bg_attach_docs(r_sys_id, i_sys_id, fname, fbytes, r_num, l_num):
+                            import time as _t
+                            if r_sys_id:
+                                try:
+                                    self.attach_file("sc_request", r_sys_id, fname, fbytes)
+                                    print(f"[ServiceNow LIVE SUCCESS] Attached Resignation Letter '{fname}' to sc_request {r_num}")
+                                except Exception as e1:
+                                    print(f"[ServiceNow Req Attach Note]: {e1}")
+                            if i_sys_id:
+                                try:
+                                    self.attach_file("incident", i_sys_id, fname, fbytes)
+                                    print(f"[ServiceNow LIVE SUCCESS] Attached Resignation Letter '{fname}' to incident {l_num}")
+                                except Exception as e2:
+                                    print(f"[ServiceNow Inc Attach Note]: {e2}")
 
-                        # Attach to Laptop Incident (incident)
-                        if inc_sys_id:
-                            self.attach_file("incident", inc_sys_id, rl_filename, rl_bytes)
-                            print(f"[ServiceNow LIVE SUCCESS] Attached Resignation Letter '{rl_filename}' to incident {laptop_ticket}")
+                        import threading
+                        threading.Thread(target=_bg_attach_docs, args=(req_sys_id, inc_sys_id, rl_filename, rl_bytes, offboarding_req, laptop_ticket), daemon=True).start()
                 except Exception as rl_err:
                     print(f"[ServiceNow Resignation Letter Attachment Error]: {rl_err}")
             except Exception as e:
@@ -1331,7 +1340,7 @@ class ServiceNowClient:
                     q = f"number={inc_ident}^ORsys_id={inc_ident}"
                     u = f"{self.instance_url}/api/now/table/sc_request?sysparm_query={urllib.parse.quote(q)}&sysparm_display_value=all&sysparm_fields=sys_id,number,approval,request_state,state,stage"
                     req = urllib.request.Request(u, headers=self._get_headers())
-                    with urllib.request.urlopen(req, timeout=10, context=self.ctx) as resp:
+                    with urllib.request.urlopen(req, timeout=4, context=self.ctx) as resp:
                         res = json.loads(resp.read().decode('utf-8')).get('result', [])
                         if res:
                             rec = res[0]
@@ -1353,7 +1362,7 @@ class ServiceNowClient:
                     query = f"number={inc_ident}^ORsys_id={inc_ident}"
                     url = f"{self.instance_url}/api/now/table/incident?sysparm_query={query}&sysparm_display_value=all&sysparm_fields=sys_id,number,state,incident_state,assigned_to,category,short_description"
                     req = urllib.request.Request(url, headers=self._get_headers())
-                    with urllib.request.urlopen(req, timeout=10, context=self.ctx) as resp:
+                    with urllib.request.urlopen(req, timeout=4, context=self.ctx) as resp:
                         data = json.loads(resp.read().decode('utf-8'))
                         res = data.get('result', [])
                         if res:
@@ -1552,69 +1561,76 @@ class ServiceNowClient:
             n = str(name_str or '').lower()
             return 'suhas' in n or 'kajawe' in n or 'kajwe' in n
 
-        # 1. First, evaluate existing exit requests if passed
+        # 1. First, evaluate existing exit requests concurrently in parallel
         if existing_exit_requests:
-            for item in existing_exit_requests:
-                emp_name = item.get('empName') or item.get('fullName')
-                if is_excluded(emp_name):
-                    continue
-                if valid_orange_names and str(emp_name or '').strip().lower() not in valid_orange_names:
-                    continue
-                
-                # Check if ticket was deleted in ServiceNow
-                if not self.is_exit_ticket_alive(item):
-                    continue
+            import concurrent.futures
 
-                # Check laptop recovery incident state in ServiceNow
-                laptop_ticket = item.get('laptopTicket') or item.get('laptopTicketSysId')
-                is_incident_active = True
-                if laptop_ticket:
-                    clearance = self.check_incident_clearance(laptop_ticket)
-                    item['itClearance'] = clearance.get('isCleared', False)
-                    item['itClearanceStatus'] = clearance.get('uiMessage', 'Clearance waiting from IT department')
-                    item['laptopIncidentState'] = clearance.get('stateLabel', 'In Progress')
-                    if clearance.get('assignedTo') and clearance.get('assignedTo') != "IT Asset Specialist":
-                        item['assignedTo'] = clearance.get('assignedTo')
-                    
-                    # If cleared (state 6 Resolved or 7 Closed), then it is NOT active
-                    if clearance.get('isCleared'):
-                        is_incident_active = False
+            def _check_single_exit(item):
+                try:
+                    emp_name = item.get('empName') or item.get('fullName')
+                    if is_excluded(emp_name):
+                        return None
+                    if valid_orange_names and str(emp_name or '').strip().lower() not in valid_orange_names:
+                        return None
 
-                # Check parent sc_request state in ServiceNow
-                is_req_active = True
-                req_num = item.get('serviceNowReq')
-                req_sys_id = item.get('serviceNowReqSysId')
-                if req_sys_id or req_num:
-                    try:
-                        q = f"sys_id={req_sys_id}" if req_sys_id else f"number={req_num}"
-                        u = f"{self.instance_url}/api/now/table/sc_request?sysparm_query={urllib.parse.quote(q)}&sysparm_fields=state,request_state"
-                        req_r = urllib.request.Request(u, headers=self._get_headers())
-                        with urllib.request.urlopen(req_r, timeout=6, context=self.ctx) as resp_r:
-                            r_items = json.loads(resp_r.read().decode('utf-8')).get('result', [])
-                            if r_items:
+                    # Check laptop recovery incident state in ServiceNow
+                    laptop_ticket = item.get('laptopTicket') or item.get('laptopTicketSysId')
+                    if laptop_ticket:
+                        clearance = self.check_incident_clearance(laptop_ticket)
+                        if clearance.get('deleted'):
+                            return None
+                        item['itClearance'] = clearance.get('isCleared', False)
+                        item['itClearanceStatus'] = clearance.get('uiMessage', 'Clearance waiting from IT department')
+                        item['laptopIncidentState'] = clearance.get('stateLabel', 'In Progress')
+                        if clearance.get('assignedTo') and clearance.get('assignedTo') != "IT Asset Specialist":
+                            item['assignedTo'] = clearance.get('assignedTo')
+
+                    # Check parent sc_request state in ServiceNow only if relieving letter was already issued
+                    is_req_active = True
+                    req_num = item.get('serviceNowReq')
+                    req_sys_id = item.get('serviceNowReqSysId')
+                    if (req_sys_id or req_num) and item.get('relievingLetterIssued'):
+                        try:
+                            q = f"sys_id={req_sys_id}" if req_sys_id else f"number={req_num}"
+                            u = f"{self.instance_url}/api/now/table/sc_request?sysparm_query={urllib.parse.quote(q)}&sysparm_fields=state,request_state"
+                            req_r = urllib.request.Request(u, headers=self._get_headers())
+                            with urllib.request.urlopen(req_r, timeout=3, context=self.ctx) as resp_r:
+                                r_items = json.loads(resp_r.read().decode('utf-8')).get('result', [])
+                                if not r_items:
+                                    return None
                                 r_st = str(r_items[0].get('state', '1'))
                                 r_req_st = str(r_items[0].get('request_state', '')).lower()
-                                if r_st in ('3', '4', '7') or 'closed' in r_req_st or 'cancel' in r_req_st or 'reject' in r_req_st:
+                                if (r_st in ('3', '4', '7') or 'closed' in r_req_st or 'cancel' in r_req_st or 'reject' in r_req_st) and item.get('accessRevoked'):
                                     is_req_active = False
-                    except Exception as re:
-                        print(f"[ServiceNow Request Active Check Note]: {re}")
+                        except Exception:
+                            pass
 
-                # If NEITHER the incident nor the request is closed/resolved, it is ACTIVE
-                if is_incident_active and is_req_active:
-                    name_key = str(emp_name or '').strip().lower()
+                    if is_req_active:
+                        return item
+                except Exception as ex_item_err:
+                    print(f"[Exit Item Eval Error]: {ex_item_err}")
+                return None
+
+            max_workers = min(len(existing_exit_requests), 8) or 1
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                checked_results = list(executor.map(_check_single_exit, existing_exit_requests))
+
+            for checked_item in checked_results:
+                if checked_item:
+                    name_key = str(checked_item.get('empName') or checked_item.get('fullName') or '').strip().lower()
                     if name_key and name_key not in seen_names:
                         seen_names.add(name_key)
-                        active_items.append(item)
+                        active_items.append(checked_item)
 
         # 2. If no active items found from local list (e.g. logs were cleared or fresh session),
         # query ServiceNow directly for the latest active incident & request pairs!
         if not active_items:
             try:
-                # Query active laptop recovery incidents (state NOT IN 6=Resolved, 7=Closed, 8=Canceled)
-                query_inc = 'short_descriptionSTARTSWITHIT Asset Recovery: Laptop Submission for^stateNOT IN6,7,8^ORDERBYDESCsys_created_on'
-                url_inc = f"{self.instance_url}/api/now/table/incident?sysparm_query={urllib.parse.quote(query_inc)}&sysparm_display_value=all&sysparm_fields=sys_id,number,short_description,state,assigned_to,sys_created_on&sysparm_limit=15"
+                # Query active laptop recovery incidents (limit to top 4)
+                query_inc = 'short_descriptionSTARTSWITHIT Asset Recovery: Laptop Submission for^stateNOT IN7,8^ORDERBYDESCsys_created_on'
+                url_inc = f"{self.instance_url}/api/now/table/incident?sysparm_query={urllib.parse.quote(query_inc)}&sysparm_display_value=all&sysparm_fields=sys_id,number,short_description,state,assigned_to,sys_created_on&sysparm_limit=4"
                 req_i = urllib.request.Request(url_inc, headers=self._get_headers())
-                with urllib.request.urlopen(req_i, timeout=8, context=self.ctx) as resp_i:
+                with urllib.request.urlopen(req_i, timeout=4, context=self.ctx) as resp_i:
                     incidents = json.loads(resp_i.read().decode('utf-8')).get('result', [])
                     for inc in incidents:
                         short_desc = inc.get('short_description', {}).get('display_value') if isinstance(inc.get('short_description'), dict) else str(inc.get('short_description', ''))
@@ -1632,20 +1648,10 @@ class ServiceNowClient:
                         assign_obj = inc.get('assigned_to', {})
                         assign_name = assign_obj.get('display_value') if isinstance(assign_obj, dict) else (assign_obj or "IT Asset Specialist")
 
-                        # Query corresponding parent sc_request
-                        q_req = f"short_descriptionLIKEEmployee Offboarding & Exit Clearance: {emp_name}^request_stateNOT INclosed_complete,closed_cancelled,closed_rejected^stateNOT IN3,4,7^ORDERBYDESCsys_created_on"
-                        url_req = f"{self.instance_url}/api/now/table/sc_request?sysparm_query={urllib.parse.quote(q_req)}&sysparm_fields=sys_id,number,short_description,state,request_state,description,sys_created_on&sysparm_limit=1"
-                        req_r = urllib.request.Request(url_req, headers=self._get_headers())
-                        req_num = ""
-                        req_sys_id = ""
-                        try:
-                            with urllib.request.urlopen(req_r, timeout=6, context=self.ctx) as resp_r:
-                                r_res = json.loads(resp_r.read().decode('utf-8')).get('result', [])
-                                if r_res:
-                                    req_num = r_res[0].get('number', '')
-                                    req_sys_id = r_res[0].get('sys_id', '')
-                        except Exception:
-                            pass
+                        inc_st = inc.get('state', {})
+                        st_code = str(inc_st.get('value', '2') if isinstance(inc_st, dict) else inc_st)
+                        is_cleared = st_code in ('6', '7', 'Resolved', 'Closed')
+                        st_label = inc_st.get('display_value') if isinstance(inc_st, dict) else ('Resolved' if is_cleared else 'In Progress')
 
                         now_ts = int(time.time())
                         exit_id = f"EXIT-{now_ts % 900 + 100 + len(active_items)}"
@@ -1660,18 +1666,18 @@ class ServiceNowClient:
                             "resignationDate": time.strftime('%Y-%m-%d'),
                             "lastWorkingDay": time.strftime('%Y-%m-%d', time.localtime(now_ts + 25 * 86400)),
                             "reason": "Resignation and professional transition.",
-                            "itClearance": False,
-                            "itClearanceStatus": "Clearance waiting from IT department",
-                            "laptopIncidentState": "In Progress",
+                            "itClearance": is_cleared,
+                            "itClearanceStatus": "IT Approved (Laptop Submitted)" if is_cleared else "Clearance waiting from IT department",
+                            "laptopIncidentState": st_label,
                             "accessRevoked": False,
                             "o365Deleted": False,
                             "orangeHrmDeleted": False,
                             "emailSent": False,
                             "relievingLetterIssued": False,
                             "fnfStatus": "Pending Initiation",
-                            "serviceNowReq": req_num or f"REQ001{now_ts % 9000 + 1000}",
-                            "serviceNowReqUrl": f"{self.instance_url}/nav_to.do?uri=sc_request.do?sys_id={req_sys_id}" if req_sys_id else f"{self.instance_url}/nav_to.do?uri=sc_request_list.do?sysparm_query=number={req_num}",
-                            "serviceNowReqSysId": req_sys_id,
+                            "serviceNowReq": f"REQ001{now_ts % 9000 + 1000}",
+                            "serviceNowReqUrl": f"{self.instance_url}/nav_to.do?uri=sc_request_list.do",
+                            "serviceNowReqSysId": "",
                             "serviceNowRitm": f"RITM001{now_ts % 9000 + 1000}",
                             "laptopTicket": inc_num,
                             "laptopTicketSysId": inc_sys_id,

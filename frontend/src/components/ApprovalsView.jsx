@@ -356,7 +356,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
       step5: Boolean(cand.laptopTicket) && Boolean(cand.offerLetterEmailed),
     };
     const notRecorded = {
-      step2: 'No Active Directory (T4) request was recorded for this employee.',
+      step2: 'No Active Directory (AE server) request was recorded for this employee.',
       step3: 'No Microsoft 365 account was recorded for this employee.',
       step4: 'No OrangeHRM profile was recorded for this employee.',
       step5: !cand.laptopTicket ? 'No laptop ticket was recorded for this employee.' : 'No offer-letter email was recorded for this employee.',
@@ -880,7 +880,7 @@ export default function ApprovalsView({ employees, onRefreshEmployees }) {
             {
               key: 'step2',
               icon: 'fa-robot',
-              title: 'Active Directory (AutomationEdge T4)',
+              title: 'Active Directory (AutomationEdge AE server)',
               done: 'Domain user created',
               details: (
                 <>

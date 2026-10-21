@@ -110,16 +110,16 @@ export default function CredentialsView() {
   const systems = [
     {
       id: 't4',
-      name: 'AutomationEdge T4 Server',
+      name: 'AutomationEdge AE server',
       icon: 'fa-solid fa-robot',
       badge: 'RPA Engine',
       tone: '#ea580c',
       bgLight: 'rgba(234, 88, 12, 0.08)',
       borderColor: 'rgba(234, 88, 12, 0.25)',
-      description: 'Cloud RPA automation server for Active Directory user provisioning & email notifications.',
+      description: 'Cloud automation server for Active Directory user provisioning & email notifications.',
       targetUrl: t4Config?.targetUrl || 'https://t4.automationedge.com/#/requests/list',
       passToCopy: t4Config?.password || 'Msp@12345',
-      launchLabel: 'Launch & Login to T4 Server',
+      launchLabel: 'Launch & Login to AE server',
     },
     {
       id: 'orangehrm',

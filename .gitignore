@@ -72,4 +72,5 @@ backend_flow.html
 backend_architecture.json
 backend_workflow.json
 .wrangler/
+.orangehrm_emp_cache.json
 

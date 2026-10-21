@@ -280,10 +280,10 @@ export default function DirectoryView({ employees }) {
             <SystemCard
               tone="brand"
               icon="fa-solid fa-robot"
-              title="Active Directory (T4)"
+              title="Active Directory (AE server)"
               status={sel.aeT4Status || (sel.aeT4RequestId ? 'Complete' : 'Runs on approval')}
               href={sel.aeT4Url || (sel.aeT4RequestId ? `https://t4.automationedge.com/#/workflowinstances/${sel.aeT4RequestId}` : 'https://t4.automationedge.com/#/taskhistory')}
-              linkLabel={sel.aeT4RequestId ? `Open T4 request #${sel.aeT4RequestId}` : 'Open T4 portal'}
+              linkLabel={sel.aeT4RequestId ? `Open AE server request #${sel.aeT4RequestId}` : 'Open AE server portal'}
             >
               <div>Workflow: <code>{sel.aeT4Workflow || 'AD-Create User and Assin Role'}</code></div>
               {sel.aeT4RequestId && <div>Automation request: <strong>#{sel.aeT4RequestId}</strong></div>}

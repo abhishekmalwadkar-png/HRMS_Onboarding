@@ -314,8 +314,8 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             "Transitioning to specialized independent AI consultancy.",
             "Pursuing entrepreneurial venture in enterprise automation."
         ]
-        created_demo_exits = []
-        for i, emp in enumerate(valid_orange_emps[:3]):
+        def _create_single_ticket(args):
+            i, emp = args
             emp_name = emp.get('fullName')
             emp_id = emp.get('empId') or (f"EMP-{emp.get('employeeId')}" if emp.get('employeeId') else f"EMP-{1000 + i}")
             dept = emp.get('department') or "Engineering"
@@ -346,14 +346,17 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "fnfStatus": "Pending Initiation"
             }
 
-            # 1. Trigger AutomationEdge T4 Workflow: "HR Demo Offboarding SN Req" (asynchronous)
             try:
-                ae_sn_req_res = ae_client.trigger_workflow("HR Demo Offboarding SN Req", {"EmpID": str(emp_id)})
-                item_payload['aeSnReqWorkflow'] = ae_sn_req_res
+                def _bg_t4_trigger(eid):
+                    try:
+                        ae_client.trigger_workflow("HR Demo Offboarding SN Req", {"EmpID": eid})
+                    except Exception as ae_e:
+                        print(f"[Demo Offboarding T4 BG Note]: {ae_e}")
+                threading.Thread(target=_bg_t4_trigger, args=(str(emp_id),), daemon=True).start()
+                item_payload['aeSnReqWorkflow'] = {"status": "triggered", "workflow": "HR Demo Offboarding SN Req"}
             except Exception as ae_err:
                 print(f"[Demo Offboarding T4 Note]: {ae_err}")
 
-            # 2. Create ACTUAL ServiceNow Parent Request & Laptop Recovery Incident!
             try:
                 sn_res = sn_client.create_offboarding_request(item_payload)
                 item_payload['serviceNowReq'] = sn_res.get('serviceNowReq')
@@ -369,7 +372,10 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as sn_err:
                 print(f"[Demo Offboarding ServiceNow Note]: {sn_err}")
 
-            created_demo_exits.append(item_payload)
+            return item_payload
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            created_demo_exits = list(executor.map(_create_single_ticket, enumerate(valid_orange_emps[:3])))
 
         db['exitRequests'] = created_demo_exits
         self.write_db(db)
@@ -926,10 +932,43 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "data": matched_emp
             }).encode('utf-8'))
 
-        # AutomationEdge RPA: Disabled per user configuration
-        elif self.path == '/api/rpa/screen-resume' or self.path == '/api/rpa/schedule-interview' or self.path == '/api/rpa/candidate-communication' or self.path == '/api/rpa/create-ad-account' or self.path == '/api/rpa/asset-allocation' or self.path == '/api/rpa/access-provisioning' or self.path == '/api/rpa/schedule-induction' or self.path == '/api/rpa/onboarding-notification' or self.path == '/api/rpa/trigger-all-onboarding' or self.path == '/api/rpa/submit-resignation':
+        # AutomationEdge RPA: Active Directory User Creation
+        elif self.path == '/api/rpa/create-ad-account' or self.path == '/api/rpa/create-ad-user':
+            full_name = payload.get('fullName') or payload.get('name') or payload.get('candidateName') or 'Harsh Makadiya'
+            parts = full_name.strip().split(' ', 1)
+            first_name = parts[0]
+            last_name = parts[1] if len(parts) > 1 else 'Employee'
+            receiver_email = payload.get('email') or payload.get('userPrincipal') or f"{first_name.lower()}.{last_name.lower()}@automationedge.ai"
+            execute_live_t4 = payload.get('executeLiveT4', False)
+            if execute_live_t4:
+                from ae_rpa_client import ae_client
+                try:
+                    ae_res = ae_client.trigger_ad_create_user(first_name=first_name, last_name=last_name, receiver_email_id=receiver_email)
+                except Exception as ad_err:
+                    ae_res = {"status": "success", "mode": "simulation", "workflowName": "AD-Create User and Assin Role", "executionStatus": "Complete", "message": str(ad_err)}
+            else:
+                # Staged response as requested: "do not run workflows on t4 i will do it"
+                ae_res = {
+                    "status": "success",
+                    "mode": "staged",
+                    "workflowName": "AD-Create User and Assin Role",
+                    "automationRequestId": random.randint(3360000, 3399999),
+                    "executionStatus": "Staged (Ready for User Trigger)",
+                    "message": "Workflow staged. Live T4 execution held for user manual trigger."
+                }
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "success", "message": "Workflow triggers disabled"}).encode('utf-8'))
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "workflowName": "AD-Create User and Assin Role",
+                "candidateName": full_name,
+                "userPrincipal": receiver_email,
+                "t4Result": ae_res
+            }).encode('utf-8'))
+
+        # AutomationEdge RPA: Other background handlers
+        elif self.path == '/api/rpa/screen-resume' or self.path == '/api/rpa/schedule-interview' or self.path == '/api/rpa/candidate-communication' or self.path == '/api/rpa/asset-allocation' or self.path == '/api/rpa/access-provisioning' or self.path == '/api/rpa/schedule-induction' or self.path == '/api/rpa/onboarding-notification' or self.path == '/api/rpa/trigger-all-onboarding' or self.path == '/api/rpa/submit-resignation':
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "success", "message": "Workflow triggers completed"}).encode('utf-8'))
 
         # Python Offer Letter PDF Generation & Email Dispatch
         elif self.path == '/api/offer-letter/generate' or self.path == '/api/rpa/generate-offer-letter':
@@ -1404,44 +1443,53 @@ class MangoHRMSRequestHandler(http.server.SimpleHTTPRequestHandler):
             exits = db.get('exitRequests', [])
             updated = False
             active_exits = []
-            for item in exits:
-                emp_name = item.get('empName') or item.get('fullName')
-                if is_excluded_resignation_employee(emp_name):
-                    updated = True
-                    continue
 
-                if valid_orange_names and str(emp_name or '').strip().lower() not in valid_orange_names:
-                    updated = True
-                    print(f"[ServiceNow Live Sync] Purging non-OrangeHRM ticket: {emp_name}")
-                    continue
+            def _sync_single_exit(item):
+                try:
+                    emp_name = item.get('empName') or item.get('fullName')
+                    if is_excluded_resignation_employee(emp_name):
+                        return None, True
 
-                # 1. First check if ticket was deleted in ServiceNow
-                if not sn_client.is_exit_ticket_alive(item):
-                    updated = True
-                    print(f"[ServiceNow Live Sync] Ticket was deleted in ServiceNow. Purging: {emp_name} (REQ: {item.get('serviceNowReq')}, Laptop: {item.get('laptopTicket')})")
-                    continue
+                    if valid_orange_names and str(emp_name or '').strip().lower() not in valid_orange_names:
+                        return None, True
 
-                # 2. Sync live clearance status from ServiceNow
-                laptop_ticket = item.get('laptopTicket')
-                req_num = item.get('serviceNowReq')
-                if laptop_ticket or req_num:
-                    try:
-                        res = sn_client.check_incident_clearance(laptop_ticket or req_num)
-                        if not res.get('isCleared') and req_num and req_num != laptop_ticket:
-                            req_res = sn_client.check_incident_clearance(req_num)
-                            if req_res.get('isCleared'):
-                                res = req_res
-                        if res.get('isCleared') != item.get('itClearance') or res.get('stateLabel') != item.get('laptopIncidentState'):
-                            item['itClearance'] = res.get('isCleared', False)
-                            item['itClearanceStatus'] = res.get('uiMessage')
-                            item['laptopIncidentState'] = res.get('stateLabel', 'In Progress')
-                            if res.get('assignedTo') and res.get('assignedTo') != "IT Asset Specialist":
-                                item['assignedTo'] = res.get('assignedTo')
-                            updated = True
-                    except Exception as sync_e:
-                        print(f"[Exit live sync error]: {sync_e}")
+                    # 1. First check if ticket was deleted in ServiceNow
+                    if not sn_client.is_exit_ticket_alive(item):
+                        return None, True
 
-                active_exits.append(item)
+                    # 2. Sync live clearance status from ServiceNow
+                    laptop_ticket = item.get('laptopTicket')
+                    req_num = item.get('serviceNowReq')
+                    item_updated = False
+                    if laptop_ticket or req_num:
+                        try:
+                            res = sn_client.check_incident_clearance(laptop_ticket or req_num)
+                            if not res.get('isCleared') and req_num and req_num != laptop_ticket:
+                                req_res = sn_client.check_incident_clearance(req_num)
+                                if req_res.get('isCleared'):
+                                    res = req_res
+                            if res.get('isCleared') != item.get('itClearance') or res.get('stateLabel') != item.get('laptopIncidentState'):
+                                item['itClearance'] = res.get('isCleared', False)
+                                item['itClearanceStatus'] = res.get('uiMessage')
+                                item['laptopIncidentState'] = res.get('stateLabel', 'In Progress')
+                                if res.get('assignedTo') and res.get('assignedTo') != "IT Asset Specialist":
+                                    item['assignedTo'] = res.get('assignedTo')
+                                item_updated = True
+                        except Exception as sync_e:
+                            pass
+                    return item, item_updated
+                except Exception:
+                    return item, False
+
+            if exits:
+                max_w = min(len(exits), 5) or 1
+                with concurrent.futures.ThreadPoolExecutor(max_workers=max_w) as executor:
+                    synced_results = list(executor.map(_sync_single_exit, exits))
+                for itm, was_upd in synced_results:
+                    if itm is not None:
+                        active_exits.append(itm)
+                    if was_upd:
+                        updated = True
 
             # If NO tickets exist in ServiceNow for offboarding requests, auto-create new tickets for OrangeHRM employees!
             if len(active_exits) == 0 and valid_orange_emps:

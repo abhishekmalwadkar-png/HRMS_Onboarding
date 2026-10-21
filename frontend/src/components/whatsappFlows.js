@@ -12,7 +12,7 @@ export const WHATSAPP_FLOWS = [
     systems: [
       { icon: 'fa-brands fa-whatsapp', label: 'WhatsApp bot', note: 'Collects details & documents' },
       { icon: 'fa-solid fa-ticket', label: 'ServiceNow', note: 'Onboarding request REQ0010421' },
-      { icon: 'fa-solid fa-robot', label: 'Active Directory (T4)', note: 'Domain user & role' },
+      { icon: 'fa-solid fa-robot', label: 'Active Directory (AE server)', note: 'Domain user & role' },
       { icon: 'fa-brands fa-microsoft', label: 'Microsoft 365', note: 'Mailbox & Teams' },
       { icon: 'fa-solid fa-user-check', label: 'OrangeHRM', note: 'Employee profile' },
     ],
@@ -44,7 +44,7 @@ export const WHATSAPP_FLOWS = [
     systems: [
       { icon: 'fa-brands fa-whatsapp', label: 'WhatsApp bot', note: 'Captures resignation' },
       { icon: 'fa-solid fa-ticket', label: 'ServiceNow', note: 'Exit request & laptop return' },
-      { icon: 'fa-solid fa-robot', label: 'Active Directory (T4)', note: 'Account disabled' },
+      { icon: 'fa-solid fa-robot', label: 'Active Directory (AE server)', note: 'Account disabled' },
       { icon: 'fa-brands fa-microsoft', label: 'Microsoft 365', note: 'Licence removed' },
       { icon: 'fa-solid fa-file-pdf', label: 'Relieving letter', note: 'PDF emailed' },
     ],

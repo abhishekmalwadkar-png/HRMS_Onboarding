@@ -3,17 +3,9 @@ import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
-// hrOnly items are hidden for non-HR roles (Curated multicolor palette matching brand orange)
+// Curated nav menu: Only HR AI Assistant and WhatsApp Discovery
 const NAV_ITEMS = [
-  { view: 'home', icon: 'fa-solid fa-gauge-high', label: 'Dashboard', color: '#f97316', hrOnly: true },
-  { view: 'wizard', icon: 'fa-solid fa-id-card', label: 'Onboarding', color: '#3b82f6' },
-  { view: 'approvals', icon: 'fa-solid fa-clipboard-check', label: 'Approvals', color: '#10b981', hrOnly: true },
-  { view: 'recruitment', icon: 'fa-solid fa-user-plus', label: 'Recruitment', color: '#fb923c', hrOnly: true },
-  { view: 'dashboard', icon: 'fa-solid fa-users-gear', label: 'Directory', color: '#8b5cf6', hrOnly: true },
-  { view: 'credentials', icon: 'fa-solid fa-key', label: 'Credential Pool', color: '#eab308', hrOnly: true },
-  { view: 'services', icon: 'fa-solid fa-headset', label: 'Services & AI', color: '#06b6d4', hrOnly: true },
-  { view: 'exit', icon: 'fa-solid fa-person-walking-arrow-right', label: 'Offboarding', color: '#f43f5e' },
-  { view: 'analytics', icon: 'fa-solid fa-chart-pie', label: 'HR Analytics', color: '#d946ef', hrOnly: true },
+  { view: 'ai-assistant', icon: 'fa-solid fa-robot', label: 'HR AI Assistant', color: '#0284c7' },
   { view: 'whatsapp', icon: 'fa-solid fa-comments', label: 'WhatsApp Discovery', color: '#22c55e' },
 ];
 
@@ -74,7 +66,7 @@ export default function Sidebar({ currentView, setCurrentView, isCollapsed, isMo
           className="brand"
           onClick={() => {
             if (!isCollapsed) {
-              setCurrentView('home');
+              setCurrentView('ai-assistant');
             }
           }}
           title="AutomationEdge HR Suite"
